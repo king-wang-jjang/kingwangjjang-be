@@ -35,7 +35,7 @@ jobs:
 
     # docker hub 퍼블리시
     - name: Publish to docker hub
-      run: docker push hwanju1596/kingwangjjang:v0.1
+      run: docker push hwanju1596/kingwangjjang
 
     # WAS 인스턴스 접속 & 애플리케이션 실행
     - name: Connect to WAS & Execute Application
