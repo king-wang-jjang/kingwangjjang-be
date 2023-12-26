@@ -46,7 +46,4 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         port: ${{ secrets.WAS_SSH_PORT }}
         script: |
-          docker stop $(docker ps -a -q) 
-          docker rm $(docker ps -a -q) 
-          docker pull kingwangjjang
-          docker run -d -p 8000:8000 --name kingwangjjang_container kingwangjjang
+          whoami
