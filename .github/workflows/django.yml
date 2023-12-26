@@ -24,7 +24,7 @@ jobs:
    
     # docker image 빌드
     - name: Build docker image
-      run: docker build -t kingwangjjang .
+      run: docker build -t kingwangjjang ./kingwangjjang
 
     # docker hub 로그인
     - name: Login docker hub
@@ -37,7 +37,7 @@ jobs:
     - name: Publish to docker hub
       run: docker push kingwangjjang
 
-    # WAS 인스턴스 접속 & 애플리케이션 실행 
+    # WAS 인스턴스 접속 & 애플리케이션 실행
     - name: Connect to WAS & Execute Application
       uses: appleboy/ssh-action@v0.1.6
       with:
