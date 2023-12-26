@@ -24,7 +24,7 @@ jobs:
    
     # docker image 빌드
     - name: Build docker image
-      run: docker build -t kingwangjjang ./kingwangjjang
+      run: docker build -t hwanju1596/kingwangjjang:0.0.1 ./kingwangjjang
 
     # docker hub 로그인
     - name: Login docker hub
