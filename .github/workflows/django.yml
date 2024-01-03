@@ -43,7 +43,7 @@ jobs:
       with:
         host: ${{ secrets.WAS_HOST }}
         username: ${{ secrets.WAS_USERNAME }}
-        password: ${{secrets.SSH_PASSWORD }}
+        key: ${{secrets.SSH_KEY}}
         port: ${{ secrets.WAS_SSH_PORT }}
         script: |
           whoami
