@@ -36,7 +36,14 @@ jobs:
     # docker hub 퍼블리시
     - name: Publish to docker hub
       run: docker push hwanju1596/kingwangjjang:0.0.1
+  run:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.9]
 
+    steps:
     # WAS 인스턴스 접속 & 애플리케이션 실행
     - name: Connect to WAS & Execute Application
       uses: appleboy/ssh-action@master
@@ -46,4 +53,7 @@ jobs:
         key: ${{secrets.SSH_KEY}}
         port: ${{ secrets.WAS_SSH_PORT }}
         script: |
-          whoami
+          docker stop kingwangjjang_container || true
+          docker rm kingwangjjang_container || true
+          docker pull hwanju1596/kingwangjjang:0.0.1
+          docker run -d -p 8000:8000 --name kingwangjjang_container hwanju1596/kingwangjjang:0.0.1
