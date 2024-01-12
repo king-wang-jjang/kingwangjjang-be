@@ -84,17 +84,23 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'kingwangjjang.wsgi.application'
 
-
 # Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+# MongoDB settings
+DB_HOST = get_secret("DB_HOST")
+DB_USER = get_secret("DB_USER")
+DB_PASSWORD = get_secret("DB_PASSWORD")
+DB_NAME = get_secret("DB_NAME")
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+        'default': {
+            'ENGINE': 'djongo',
+            'NAME': DB_NAME,
+            'ENFORCE_SCHEMA': False,
+            'CLIENT': {
+                'host': 'mongodb://'+ DB_HOST + '/' + DB_USER + ':' + DB_PASSWORD
+            }  
+        }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
