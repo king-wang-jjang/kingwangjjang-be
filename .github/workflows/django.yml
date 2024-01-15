@@ -75,7 +75,7 @@ jobs:
         username: ${{ secrets.WAS_USERNAME }}
         key: ${{secrets.SSH_KEY}}
         port: ${{ secrets.WAS_SSH_PORT }}
-        timeout-minutes: 10
+        timeout: 10m
         script: |
           docker stop $(docker ps -a -q) 
           docker rm $(docker ps -a -q) 
