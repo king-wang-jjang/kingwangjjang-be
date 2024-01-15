@@ -77,14 +77,4 @@ jobs:
         port: ${{ secrets.WAS_SSH_PORT }}
         timeout: 100m
         script: |
-          docker stop $(docker ps -a -q) 
-          docker rm $(docker ps -a -q) 
-          docker pull hwanju1596/kingwangjjang
-          docker run -d -p 8000:8000 --name kingwangjjang_container \
-          -e DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} \
-          -e DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }} \
-          -e DB_HOST=${{ secrets.DB_HOST }} \
-          -e DB_USER=${{ secrets.DB_USER }} \
-          -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-          -e DB_NAME=${{ secrets.DB_NAME }} \
-          hwanju1596/kingwangjjang
+          whoami
