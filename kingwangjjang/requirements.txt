@@ -1,2 +1,4 @@
 django
 beautifulsoup4
+lxml
+requests
