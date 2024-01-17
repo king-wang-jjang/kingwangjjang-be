@@ -39,7 +39,7 @@ jobs:
 
     # WAS 인스턴스 접속 & 애플리케이션 실행
     - name: Connect to WAS & Execute Application
-      uses: appleboy/ssh-action@master
+      uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.WAS_HOST }}
         username: ${{ secrets.WAS_USERNAME }}
