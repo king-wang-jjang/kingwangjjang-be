@@ -67,8 +67,9 @@ jobs:
     #     docker exec kingwangjjang_test python manage.py test
     #     docker stop kingwangjjang_test
     #     docker rm kingwangjjang_test
-
-    # WAS 인스턴스 접속 & 애플리케이션 실행
+    - name: Check Docker version
+      run: docker version
+      # WAS 인스턴스 접속 & 애플리케이션 실행
     - name: Connect to WAS & Execute Application
       uses: appleboy/ssh-action@master
       with:
@@ -77,6 +78,8 @@ jobs:
         key: ${{secrets.SSH_KEY}}
         port: ${{ secrets.WAS_SSH_PORT }}
         script: |
+          run: echo "${HOME}/.local/bin" >> $GITHUB_PATH
+          docker version
           apt --help
           instll --help
           apt-get --help
