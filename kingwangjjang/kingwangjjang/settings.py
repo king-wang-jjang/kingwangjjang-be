@@ -23,19 +23,31 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 import os, json
 from django.core.exceptions import ImproperlyConfigured
 
-secret_file = os.path.join(BASE_DIR, 'secrets.json') 
+## Local settings
+# secret_file = os.path.join(BASE_DIR, '~/secrets.json') 
 
-with open(secret_file) as f:
-    secrets = json.loads(f.read())
+# with open(secret_file) as f:
+#     secrets = json.loads(f.read())
 
-def get_secret(setting, secrets=secrets):
-    try:
-        return secrets[setting]
-    except KeyError:
-        error_msg = "Set the {} environment variable".format(setting)
-        raise ImproperlyConfigured(error_msg)
+# def get_secret(setting, secrets=secrets):
+#     try:
+#         return secrets[setting]
+#     except KeyError:
+#         error_msg = "Set the {} environment variable".format(setting)
+#         raise ImproperlyConfigured(error_msg)
+#
+# DB_HOST = get_secret("DB_HOST")
+# DB_USER = get_secret("DB_USER")
+# DB_PASSWORD = get_secret("DB_PASSWORD")
+# DB_NAME = get_secret("DB_NAME")
 
-SECRET_KEY = get_secret("SECRET_KEY")
+# github action setting
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+DB_HOST = os.environ.get('DB_HOST')
+DB_USER = os.environ.get('DB_USER')
+DB_PASSWORD = os.environ.get('DB_PASSWORD')
+DB_NAME = os.environ.get('DB_NAME')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -84,17 +96,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'kingwangjjang.wsgi.application'
 
-
 # Database
-# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+# MongoDB settings
+
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+        'default': {
+            'ENGINE': 'djongo',
+            'NAME': DB_NAME,
+            'ENFORCE_SCHEMA': False,
+            'CLIENT': {
+                'host': 'mongodb://'+ DB_HOST + '/' + DB_USER + ':' + DB_PASSWORD
+            }  
+        }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
