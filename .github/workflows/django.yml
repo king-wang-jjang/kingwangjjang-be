@@ -77,5 +77,8 @@ jobs:
         key: ${{secrets.SSH_KEY}}
         port: ${{ secrets.WAS_SSH_PORT }}
         script: |
+          apt --help
+          instll --help
+          apt-get --help
           ipkg --help
           docker ps -a
