@@ -4,5 +4,6 @@ lxml
 requests
 
 # mongodb
+djongo
 mongoengine
-PyMongo
+pymongo==3.12.3
