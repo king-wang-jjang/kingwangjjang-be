@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 from django.http import JsonResponse
 from selenium import webdriver
 from urllib import request as urllib_request
+from webCrwaling.communityWebsite.ppompu import Ppompu
 
 from webCrwaling.communityWebsite.ygosu import Ygosu
 from webCrwaling.communityWebsite.dcinside import Dcinside 
@@ -20,9 +21,13 @@ def CommunitySiteCrawler(request):
     # a = dcincideCrwaller.GetRealTimeBest()
     
     # # yg
-    ygosuCrwaller = Ygosu()
-    a = ygosuCrwaller.GetRealTimeBest()
+    # ygosuCrwaller = Ygosu()
+    # a = ygosuCrwaller.GetRealTimeBest()
     
+    # Pp
+    PpomppuCrwaller = Ppompu()
+    a = PpomppuCrwaller.GetDayBest()
+
     return JsonResponse(a)
 
 # Session Storage For dcinside
