@@ -3,7 +3,9 @@ import requests
 from bs4 import BeautifulSoup 
 from django.http import JsonResponse
 from selenium import webdriver
-from urllib import request as urllib_request  # Rename urllib's request module
+from urllib import request as urllib_request
+
+from webCrwaling.communityWebsite.dcinside import Dcinside  # Rename urllib's request module
 
 # Create your views here.
 
@@ -12,6 +14,12 @@ from urllib import request as urllib_request  # Rename urllib's request module
 # 댓글을 요약 ( 추천 수가 몇 개이상 )
 
 def CommunitySiteCrawler(request):
+    dcincideCrwaller = Dcinside()
+    a = dcincideCrwaller.GetRealTimeBest()
+    
+    return JsonResponse(a)
+
+def text2():
     # URL 설정
     BASE_URL = "https://gall.dcinside.com/board/view/?id=dcbest&no=2479&page=1"
     DOMAIN_URL = "https://gall.dcinside.com"
@@ -59,40 +67,3 @@ def getSesstion():
     driver.quit()
 
     return JsonResponse({'sessionStorage': session_storage_data})
-
-#
-# 실시간, 일간
-def realtime():
-    """이것은 함수입니다.
-
-    Args:
-        0: 인기 글이 있는 url 
-        1: li 
-        2: class tag
-
-    Returns:
-        {rank: { {title: string, url: string}[]} }
-    """
-    headers = [
-        {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
-    ]
-    
-    req = requests.get('https://www.dcinside.com/', headers=headers[0])
-    html_content = req.text
-
-    soup = BeautifulSoup(html_content, 'html.parser')
-    
-    li_elements = soup.select('#dcbest_list_date li')
-    for li in li_elements:
-        p_element = li.select_one('.box.besttxt p')
-        a_element = li.select_one('.main_log')
-        
-        if p_element and a_element:
-            p_text = p_element.get_text(strip=True)
-            a_href = a_element['href']
-            
-            print(f"Text: {p_text}, URL: {a_href}")
-
-    data = {"box_txt": [li.text for li in li_elements]}
-
-    return data

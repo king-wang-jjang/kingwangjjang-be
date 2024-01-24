@@ -6,9 +6,9 @@ class AbstractCommunityWebsite():
     realtimeBestUrl = ''
     
     @abstractmethod
-    def getDayBest():
+    def GetDayBest(self):
         return {}        
 
     @abstractmethod
-    def getRealTimeBest():
+    def GetRealTimeBest(self):
         return {} 
