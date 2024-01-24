@@ -17,6 +17,9 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from webCrwaling.views import CommunitySiteCrawler
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+     path('api/CommunitySiteCrawler/', CommunitySiteCrawler, name='CommunitySiteCrawler')
 ]

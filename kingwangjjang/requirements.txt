@@ -1,5 +1,7 @@
 django
 beautifulsoup4
+lxml
+requests
 
 # mongodb
 mongoengine
