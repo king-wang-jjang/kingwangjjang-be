@@ -1,6 +1,4 @@
-2
-from communityWebsite.communityWebsite import AbstractCommunityWebsite
-
+from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 
 class Ppompu(AbstractCommunityWebsite):
     def __init__(self):
