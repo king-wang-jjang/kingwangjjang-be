@@ -6,6 +6,10 @@ from selenium import webdriver
 from urllib import request as urllib_request
 
 from mongo import DBController  
+from webCrwaling.communityWebsite.ppompu import Ppompu
+
+from webCrwaling.communityWebsite.ygosu import Ygosu
+from webCrwaling.communityWebsite.dcinside import Dcinside 
 
 # Create your views here.
 
@@ -56,6 +60,21 @@ def test():
 
 # Session Storage For dcinside
 
+    # # DC
+    # dcincideCrwaller = Dcinside()
+    # a = dcincideCrwaller.GetRealTimeBest()
+    
+    # # yg
+    # ygosuCrwaller = Ygosu()
+    # a = ygosuCrwaller.GetRealTimeBest()
+    
+    # Pp
+    PpomppuCrwaller = Ppompu()
+    a = PpomppuCrwaller.GetDayBest()
+
+    return JsonResponse(a)
+
+# Session Storage For dcinside
 def getSesstion():
     url = 'https://www.dcinside.com/'
 

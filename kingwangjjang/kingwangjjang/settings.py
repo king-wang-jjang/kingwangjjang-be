@@ -35,7 +35,6 @@ def get_secret(setting, secrets=secrets):
     except KeyError:
         error_msg = "Set the {} environment variable".format(setting)
         raise ImproperlyConfigured(error_msg)
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 SECRET_KEY = get_secret('SECRET_KEY')
@@ -72,6 +71,7 @@ INSTALLED_APPS = [
     
     'webCrwaling',
     'kingwangjjang',
+
 ]
 
 MIDDLEWARE = [
@@ -118,6 +118,7 @@ DATABASES = {
                 'host': DB_URI
             }  
         }
+
 }
 
 # Password validation

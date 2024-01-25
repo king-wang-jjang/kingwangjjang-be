@@ -1,10 +1,13 @@
 django
 beautifulsoup4
+lxml
+requests
 
 # mongodb
+djongo
 mongoengine
-PyMongo
 
 # API
 graphene-django
 graphene_mongo
+pymongo==3.12.3
