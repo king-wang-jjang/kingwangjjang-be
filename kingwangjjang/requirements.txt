@@ -6,4 +6,8 @@ requests
 # mongodb
 djongo
 mongoengine
+
+# API
+graphene-django
+graphene_mongo
 pymongo==3.12.3
