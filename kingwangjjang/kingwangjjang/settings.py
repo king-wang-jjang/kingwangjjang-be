@@ -23,34 +23,36 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 import os, json
 from django.core.exceptions import ImproperlyConfigured
 
-## Local settings
-# secret_file = os.path.join(BASE_DIR, '~/secrets.json') 
+# Local settings
+secret_file = os.path.join(BASE_DIR, './secrets.json') 
 
-# with open(secret_file) as f:
-#     secrets = json.loads(f.read())
+with open(secret_file) as f:
+    secrets = json.loads(f.read())
 
-# def get_secret(setting, secrets=secrets):
-#     try:
-#         return secrets[setting]
-#     except KeyError:
-#         error_msg = "Set the {} environment variable".format(setting)
-#         raise ImproperlyConfigured(error_msg)
-#
-# DB_HOST = get_secret("DB_HOST")
-# DB_USER = get_secret("DB_USER")
-# DB_PASSWORD = get_secret("DB_PASSWORD")
-# DB_NAME = get_secret("DB_NAME")
-
-# github action setting
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
-DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
-DB_HOST = os.environ.get('DB_HOST')
-DB_USER = os.environ.get('DB_USER')
-DB_PASSWORD = os.environ.get('DB_PASSWORD')
-DB_NAME = os.environ.get('DB_NAME')
+def get_secret(setting, secrets=secrets):
+    try:
+        return secrets[setting]
+    except KeyError:
+        error_msg = "Set the {} environment variable".format(setting)
+        raise ImproperlyConfigured(error_msg)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+SECRET_KEY = get_secret('SECRET_KEY')
+DB_HOST = get_secret("DB_HOST")
+DB_USER = get_secret("DB_USER")
+DB_PASSWORD = get_secret("DB_PASSWORD")
+DB_NAME = get_secret("DB_NAME")
+
+# # github action setting
+# SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+# DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+# DB_HOST = os.environ.get('DB_HOST')
+# DB_USER = os.environ.get('DB_USER')
+# DB_PASSWORD = os.environ.get('DB_PASSWORD')
+# DB_NAME = os.environ.get('DB_NAME')
+
+
 
 ALLOWED_HOSTS = []
 
@@ -64,6 +66,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Graph QL
+    'graphene_django',
+    'graphene_mongo',
+    
+    'webCrwaling',
+    'kingwangjjang',
 ]
 
 MIDDLEWARE = [
@@ -74,6 +82,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # 'webCrwalling.userInfo',
+    # 'graphene_django',
 ]
 
 ROOT_URLCONF = 'kingwangjjang.urls'
@@ -98,15 +108,14 @@ WSGI_APPLICATION = 'kingwangjjang.wsgi.application'
 
 # Database
 # MongoDB settings
-
-
+DB_URI = 'mongodb://'+ DB_HOST + '/' + DB_USER + ':' + DB_PASSWORD
 DATABASES = {
         'default': {
             'ENGINE': 'djongo',
             'NAME': DB_NAME,
             'ENFORCE_SCHEMA': False,
             'CLIENT': {
-                'host': 'mongodb://'+ DB_HOST + '/' + DB_USER + ':' + DB_PASSWORD
+                'host': DB_URI
             }  
         }
 }
@@ -151,3 +160,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+GRAPHENE = {
+    "SCHEMA": "webCrwaling.schema.schema"
+}

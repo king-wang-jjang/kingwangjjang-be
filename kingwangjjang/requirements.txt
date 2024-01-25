@@ -4,3 +4,7 @@ beautifulsoup4
 # mongodb
 mongoengine
 PyMongo
+
+# API
+graphene-django
+graphene_mongo
