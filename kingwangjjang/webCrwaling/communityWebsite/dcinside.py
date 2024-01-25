@@ -29,7 +29,6 @@ class Dcinside(AbstractCommunityWebsite):
         for li in li_elements:
             p_element = li.select_one('.box.besttxt p')
             a_element = li.select_one('.main_log')
-            
             if p_element and a_element:
                 p_text = p_element.get_text(strip=True)
                 a_href = a_element['href']
