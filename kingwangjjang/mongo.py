@@ -23,3 +23,18 @@ class DBController(object):
         result = collection.insert_one(data)
         client.close()
         return result
+
+    def select(self, collection_name, query=None):
+        dbHandle, client = self.GetDBHandle()
+        collection = dbHandle[collection_name]
+
+        if query:
+            print(f"Query: {query}")
+            result = collection.find(query)
+        else:
+            result = collection.find()
+
+        result_list = list(result)
+
+        client.close()
+        return result_list
