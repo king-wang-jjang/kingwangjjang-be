@@ -4,6 +4,8 @@ from bs4 import BeautifulSoup
 from django.http import JsonResponse
 from selenium import webdriver
 from urllib import request as urllib_request
+from bson import json_util
+from .models import RealTime
 
 from mongo import DBController  
 from webCrwaling.communityWebsite.ppompu import Ppompu
@@ -11,13 +13,66 @@ from webCrwaling.communityWebsite.ppompu import Ppompu
 from webCrwaling.communityWebsite.ygosu import Ygosu
 from webCrwaling.communityWebsite.dcinside import Dcinside 
 
+from djongo import models
+
+# class RealTime(models.Model):
+
 # Create your views here.
 
 ### 이미지가 많은 상황
 # JPG -> Text 
 # 댓글을 요약 ( 추천 수가 몇 개이상 )
-
 def CommunitySiteCrawler(request):
+    dynamic_key = "202559" 
+
+    # 동적인 키 값을 사용하여 데이터 생성
+    data = {
+        "title": "첫 혼자(?) 여행으로 도쿄 3박4일 갔다온 후기",
+        "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=202559",
+        "time": "14:10"
+    }
+
+    # MongoDB에 데이터 저장
+    real_time_instance = RealTime()
+    setattr(real_time_instance, dynamic_key, data)
+    real_time_instance.save()
+
+    return JsonResponse({})
+#     db_controller = DBController()
+#     collection_name = "pymongotest"
+
+#     try:
+#         # Fetch data from MongoDB
+#         result = db_controller.select(collection_name)
+
+#         # Convert BSON to JSON
+#         json_data = json.loads(json_util.dumps(result))
+
+#         return JsonResponse(json_data, safe=False)
+#     except Exception as e:
+#         print(f"Error during insertion: {e}")
+#         return JsonResponse({"error": str(e)})
+
+def testsetste():
+    # DC
+    dcincideCrwaller = Dcinside()
+    a = dcincideCrwaller.GetRealTimeBest()
+    db_controller = DBController()
+    collection_name = "pymongotest"
+
+    try:
+        result = db_controller.insert(collection_name, a)
+        print(f"Insertion Result: {result}")
+
+        # Convert ObjectId to string for JSON serialization
+        a_json_serializable = json.loads(json.dumps(a, default=str))
+        
+        return JsonResponse(a_json_serializable)
+    except Exception as e:
+        print(f"Error during insertion: {e}")
+        return JsonResponse({"error": str(e)})
+
+def DBInsertTest():
     db_controller = DBController()
     collection_name = "pymongotest"
     data_to_insert = {
