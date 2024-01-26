@@ -1,4 +1,4 @@
-from django.db import models
+from djongo import models
 
 class RealTime(models.Model):
     rank = models.IntegerField()
