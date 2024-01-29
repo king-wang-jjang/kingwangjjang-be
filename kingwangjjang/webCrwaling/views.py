@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from selenium import webdriver
 from urllib import request as urllib_request
 from bson import json_util
-from .models import RealTime
+from .communityWebsite.models import RealTime
 
 from mongo import DBController  
 from webCrwaling.communityWebsite.ppompu import Ppompu
@@ -23,51 +23,11 @@ from djongo import models
 # JPG -> Text 
 # 댓글을 요약 ( 추천 수가 몇 개이상 )
 def CommunitySiteCrawler(request):
-  # Create a RealTime instance
-    real_time_instance = RealTime(
-        _id="202559",
-        title="첫 혼자(?) 여행으로 도쿄 3박4일 갔다온 후기",
-        url="https://gall.dcinside.com/board/view/?id=dcbest&no=202559",
-        create_time="2024-01-28T14:10:00"
-    )
-
-    # Save the instance to MongoDB
-    real_time_instance.save()
-
-    return JsonResponse({})
-#     db_controller = DBController()
-#     collection_name = "pymongotest"
-
-#     try:
-#         # Fetch data from MongoDB
-#         result = db_controller.select(collection_name)
-
-#         # Convert BSON to JSON
-#         json_data = json.loads(json_util.dumps(result))
-
-#         return JsonResponse(json_data, safe=False)
-#     except Exception as e:
-#         print(f"Error during insertion: {e}")
-#         return JsonResponse({"error": str(e)})
-
-def testsetste():
     # DC
     dcincideCrwaller = Dcinside()
     a = dcincideCrwaller.GetRealTimeBest()
-    db_controller = DBController()
-    collection_name = "pymongotest"
 
-    try:
-        result = db_controller.insert(collection_name, a)
-        print(f"Insertion Result: {result}")
-
-        # Convert ObjectId to string for JSON serialization
-        a_json_serializable = json.loads(json.dumps(a, default=str))
-        
-        return JsonResponse(a_json_serializable)
-    except Exception as e:
-        print(f"Error during insertion: {e}")
-        return JsonResponse({"error": str(e)})
+    return JsonResponse({})
 
 def DBInsertTest():
     db_controller = DBController()

@@ -12,4 +12,4 @@ class Daily(models.Model):
     rank = models.IntegerField()
     title = models.CharField(max_length=255)
     url = models.URLField()
-    createTime = models.DateTimeField()
+    create_time = models.DateTimeField()

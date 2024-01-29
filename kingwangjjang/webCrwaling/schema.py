@@ -4,7 +4,7 @@ import graphene
 from graphene_django.types import DjangoObjectType
 
 from mongo import DBController
-from .models import RealTime, Daily
+from .communityWebsite.models import RealTime, Daily
 
 class RealTimeType(DjangoObjectType):
     class Meta:
@@ -15,12 +15,10 @@ class DailyType(DjangoObjectType):
         model = Daily
 
 class Query(graphene.ObjectType):
-    print(RealTimeType)
     all_realtime = graphene.List(RealTimeType)
     all_daily = graphene.List(DailyType)
 
     def resolve_all_realtime(self, info, **kwargs):
-        print("RealTime.objects.all()", RealTime.objects.all())
         return RealTime.objects.all()
 
     def resolve_all_daily(self, info, **kwargs):
