@@ -4,6 +4,8 @@ from bs4 import BeautifulSoup
 from django.http import JsonResponse
 from selenium import webdriver
 from urllib import request as urllib_request
+from bson import json_util
+from .communityWebsite.models import RealTime
 
 from mongo import DBController  
 from webCrwaling.communityWebsite.ppompu import Ppompu
@@ -11,13 +13,23 @@ from webCrwaling.communityWebsite.ppompu import Ppompu
 from webCrwaling.communityWebsite.ygosu import Ygosu
 from webCrwaling.communityWebsite.dcinside import Dcinside 
 
+from djongo import models
+
+# class RealTime(models.Model):
+
 # Create your views here.
 
 ### 이미지가 많은 상황
 # JPG -> Text 
 # 댓글을 요약 ( 추천 수가 몇 개이상 )
-
 def CommunitySiteCrawler(request):
+    # DC
+    dcincideCrwaller = Dcinside()
+    a = dcincideCrwaller.GetRealTimeBest()
+
+    return JsonResponse({})
+
+def DBInsertTest():
     db_controller = DBController()
     collection_name = "pymongotest"
     data_to_insert = {

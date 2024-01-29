@@ -35,6 +35,7 @@ def get_secret(setting, secrets=secrets):
     except KeyError:
         error_msg = "Set the {} environment variable".format(setting)
         raise ImproperlyConfigured(error_msg)
+    
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 SECRET_KEY = get_secret('SECRET_KEY')
@@ -71,7 +72,6 @@ INSTALLED_APPS = [
     
     'webCrwaling',
     'kingwangjjang',
-
 ]
 
 MIDDLEWARE = [
@@ -82,8 +82,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    # 'webCrwalling.userInfo',
-    # 'graphene_django',
 ]
 
 ROOT_URLCONF = 'kingwangjjang.urls'
@@ -110,15 +108,14 @@ WSGI_APPLICATION = 'kingwangjjang.wsgi.application'
 # MongoDB settings
 DB_URI = 'mongodb://'+ DB_HOST + '/' + DB_USER + ':' + DB_PASSWORD
 DATABASES = {
-        'default': {
-            'ENGINE': 'djongo',
-            'NAME': DB_NAME,
-            'ENFORCE_SCHEMA': False,
-            'CLIENT': {
-                'host': DB_URI
-            }  
-        }
-
+    'default': {
+        'ENGINE': 'djongo',
+        'NAME': DB_NAME,
+        'ENFORCE_SCHEMA': True,
+        'CLIENT': {
+            'host': DB_URI
+        }  
+    }
 }
 
 # Password validation
@@ -162,6 +159,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-GRAPHENE = {
-    "SCHEMA": "webCrwaling.schema.schema"
-}
+# GRAPHENE = {
+#     "SCHEMA": "webCrwaling.schema.schema"
+# }

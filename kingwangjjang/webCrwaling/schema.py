@@ -2,7 +2,9 @@
 
 import graphene
 from graphene_django.types import DjangoObjectType
-from .models import RealTime, Daily
+
+from mongo import DBController
+from .communityWebsite.models import RealTime, Daily
 
 class RealTimeType(DjangoObjectType):
     class Meta:
