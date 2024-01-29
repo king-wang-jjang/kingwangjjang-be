@@ -15,6 +15,7 @@ class DailyType(DjangoObjectType):
         model = Daily
 
 class Query(graphene.ObjectType):
+    print(RealTimeType)
     all_realtime = graphene.List(RealTimeType)
     all_daily = graphene.List(DailyType)
 

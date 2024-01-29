@@ -23,18 +23,15 @@ from djongo import models
 # JPG -> Text 
 # 댓글을 요약 ( 추천 수가 몇 개이상 )
 def CommunitySiteCrawler(request):
-    dynamic_key = "202559" 
+  # Create a RealTime instance
+    real_time_instance = RealTime(
+        _id="202559",
+        title="첫 혼자(?) 여행으로 도쿄 3박4일 갔다온 후기",
+        url="https://gall.dcinside.com/board/view/?id=dcbest&no=202559",
+        create_time="2024-01-28T14:10:00"
+    )
 
-    # 동적인 키 값을 사용하여 데이터 생성
-    data = {
-        "title": "첫 혼자(?) 여행으로 도쿄 3박4일 갔다온 후기",
-        "url": "https://gall.dcinside.com/board/view/?id=dcbest&no=202559",
-        "time": "14:10"
-    }
-
-    # MongoDB에 데이터 저장
-    real_time_instance = RealTime()
-    setattr(real_time_instance, dynamic_key, data)
+    # Save the instance to MongoDB
     real_time_instance.save()
 
     return JsonResponse({})
