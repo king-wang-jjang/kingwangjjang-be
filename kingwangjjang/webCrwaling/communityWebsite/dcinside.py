@@ -8,10 +8,10 @@ class Dcinside(AbstractCommunityWebsite):
     def __init__(self):
         pass
 
-    def GetDayBest(self):
+    def get_daily_best(self):
         pass
 
-    def GetRealTimeBest(self):
+    def get_real_time_best(self):
         headers = [
             {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
         ]
