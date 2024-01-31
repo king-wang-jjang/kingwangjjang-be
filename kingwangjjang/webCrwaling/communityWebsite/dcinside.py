@@ -1,10 +1,14 @@
 from datetime import datetime, timedelta
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 import requests
 from .models import RealTime
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 
 class Dcinside(AbstractCommunityWebsite):
+    g_headers = [
+            {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
+        ]
+    
     def __init__(self):
         pass
 
@@ -12,11 +16,7 @@ class Dcinside(AbstractCommunityWebsite):
         pass
 
     def get_real_time_best(self):
-        headers = [
-            {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
-        ]
-
-        req = requests.get('https://www.dcinside.com/', headers=headers[0])
+        req = requests.get('https://www.dcinside.com/', headers=self.g_headers[0])
         html_content = req.text
 
         soup = BeautifulSoup(html_content, 'html.parser')
@@ -51,3 +51,36 @@ class Dcinside(AbstractCommunityWebsite):
                 real_time_instances.append(real_time_instance)
 
         RealTime.objects.bulk_create(real_time_instances)
+    
+    def get_board_contents(self, board_id):
+        _url = "https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id
+        req = requests.get(_url, headers=self.g_headers[0])
+        html_content = req.text
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        second_article = soup.find_all('article')[1]
+        title = second_article.find('h3').get_text(strip=True)
+        content_list = []
+
+        write_div = soup.find('div', class_='write_div')
+        
+        for element in write_div.find_all(['p']):
+            text_content = element.text.strip()
+            content_list.append({'type': 'text', 'content': text_content})
+
+            # Check if there are img tags inside the p tag
+            img_tags = element.find_all('img')
+            for img_tag in img_tags:
+                image_url = img_tag['src']
+                content_list.append({'type': 'image', 'url': image_url})
+
+              # Check for video tags inside the p tag
+            video_tags = element.find_all('video')
+            for video_tag in video_tags:
+                # Check for source tags inside the video tag
+                source_tags = video_tag.find_all('source')
+                for source_tag in source_tags:
+                    video_url = source_tag['src']
+                    content_list.append({'type': 'video', 'url': video_url})
+                    
+        return content_list
