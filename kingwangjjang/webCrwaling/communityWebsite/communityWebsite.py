@@ -12,3 +12,7 @@ class AbstractCommunityWebsite():
     @abstractmethod
     def get_real_time_best(self):
         return {} 
+    
+    @abstractmethod
+    def get_board_contents(self, board_id):
+        return {} 

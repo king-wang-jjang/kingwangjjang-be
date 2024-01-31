@@ -25,9 +25,15 @@ from djongo import models
 def CommunitySiteCrawler(request):
     # DC
     dcincideCrwaller = Dcinside()
-    a = dcincideCrwaller.get_real_time_best()
+    # a = dcincideCrwaller.get_real_time_best()
+    a = dcincideCrwaller.get_board_contents("203621")
+    image_contents = [item for item in a if item['type'] == 'image']
 
-    return JsonResponse({})
+    # json_content = json.dumps(a, ensure_ascii=False, indent=2, safe=False)
+    json_content = json.dumps(a, ensure_ascii=False, indent=2)
+    json_object = json.loads(json_content)
+    
+    return JsonResponse({'data': json_object})
 
 def DBInsertTest():
     db_controller = DBController()
