@@ -6,10 +6,10 @@ class Ppompu(AbstractCommunityWebsite):
     def __init__(self):
         pass
     
-    def GetDayBest(self):
+    def get_daily_best(self):
         pass
 
-    def GetRealTimeBest(self):
+    def get_real_time_best(self):
         '''
         ppomppu daily post 
 

@@ -25,7 +25,7 @@ from djongo import models
 def CommunitySiteCrawler(request):
     # DC
     dcincideCrwaller = Dcinside()
-    a = dcincideCrwaller.GetRealTimeBest()
+    a = dcincideCrwaller.get_real_time_best()
 
     return JsonResponse({})
 
@@ -74,15 +74,15 @@ def test():
 
     # # DC
     # dcincideCrwaller = Dcinside()
-    # a = dcincideCrwaller.GetRealTimeBest()
+    # a = dcincideCrwaller.get_real_time_best()
     
     # # yg
     # ygosuCrwaller = Ygosu()
-    # a = ygosuCrwaller.GetRealTimeBest()
+    # a = ygosuCrwaller.get_real_time_best()
     
     # Pp
     PpomppuCrwaller = Ppompu()
-    a = PpomppuCrwaller.GetDayBest()
+    a = PpomppuCrwaller.get_daily_best()
 
     return JsonResponse(a)
 

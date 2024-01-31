@@ -8,7 +8,7 @@ class Ygosu(AbstractCommunityWebsite):
     def __init__(self):
         pass
     
-    def GetDayBest(self):
+    def get_daily_best(self):
         '''
         ygosu RealTimeBest post 
 
@@ -29,7 +29,7 @@ class Ygosu(AbstractCommunityWebsite):
 
         return data
 
-    def GetRealTimeBest(self):
+    def get_real_time_best(self):
         '''
         ygosu RealTimeBest post 
 
