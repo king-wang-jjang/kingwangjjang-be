@@ -1,10 +1,13 @@
 import json
+import time
+import webbrowser
 import requests 
 from bs4 import BeautifulSoup 
 from django.http import JsonResponse
 from selenium import webdriver
 from urllib import request as urllib_request
 from bson import json_util
+import urllib.request
 from .communityWebsite.models import RealTime
 
 from mongo import DBController  
@@ -15,6 +18,11 @@ from webCrwaling.communityWebsite.dcinside import Dcinside
 
 from djongo import models
 
+from PIL import Image
+from io import BytesIO
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = r'C:\Users\nori\AppData\Local\tesseract.exe'
+
 # class RealTime(models.Model):
 
 # Create your views here.
@@ -23,6 +31,88 @@ from djongo import models
 # JPG -> Text 
 # 댓글을 요약 ( 추천 수가 몇 개이상 )
 def CommunitySiteCrawler(request):
+    dcincideCrwaller = Dcinside()
+    a = dcincideCrwaller.get_board_contents("203621")
+    json_content = json.dumps(a, ensure_ascii=False, indent=2)
+    json_object = json.loads(json_content)
+    
+    return JsonResponse({'data': json_object})
+
+    return JsonResponse({})
+    # 다운받을 이미지 url
+    
+    url = "https://image.dcinside.com/viewimage.php?id=&no=24b0d769e1d32ca73de985fa11d02831f8aadc88aabcff47e8021605d37bf1436ebb78a575eb9e18042afbf9848bfd403905acb77b9ac250540b76e4781bf2"
+        # "https://dcimg3.dcinside.co.kr/viewimage.php?id=3dafdf35f5d73bb2&no=24b0d769e1d32ca73de985fa11d02831f8aadc88aabcff47e8021605d37bf1436ebb78a575eb9e18417faa9f8489fd48c473b37af0006de42028103fa06405e2a729ca"
+    # url = "https://dcimg6.dcinside.co.kr/viewimage.php?id=3dafdf35f5d73bb2&no=24b0d769e1d32ca73de985fa11d02831f8aadc88aabcff47e8021605d37bf1436ebb78a575eb9e18417faa9f8489fd48c473b37af0006de42028103fa06405e2a729ca"
+    # https://dcimg3.dcinside.co.kr/viewimage.php?id=3dafdf35f5d73bb2&no=24b0d769e1d32ca73de985fa11d02831f8aadc88aabcff47e8021605d37bf1436ebb78a575eb9e18417faaf2e98bfe4266db21f3aafbf2c8ab367ab72ef3366f3e4f8863
+    # 헤더 추가
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+    }
+    BASE_URL = 'https://www.dcinside.com/'
+    # webbrowser.open_new_tab(BASE_URL)
+    webbrowser.open_new_tab(url)
+
+    # 이미지 다운로드
+    response = requests.get(url, headers=headers)
+    
+    return JsonResponse({})
+
+    driver = webdriver.Chrome()
+    # 이미지 다운로드
+    try:
+        # 해당 URL 열기
+        driver.get(url)
+
+        time.sleep(5)
+
+        # 이미지가 로딩될 때까지 잠시 대기
+    finally:
+        # 브라우저 종료
+        driver.quit()
+    response = requests.get(url, headers=headers)
+    print(response.content)
+    
+    img_data = BytesIO(response.content)
+    
+    # BytesIO 객체에서 이미지 열기
+    img = Image.open(img_data)
+
+    # 이미지 저장 (optional)
+    img.save("downloaded_image.jpg")
+
+    # 텍스트 추출
+    # text = pytesseract.image_to_string(img, lang="kor")  # 영어로 추출
+
+    # print(text)
+    return JsonResponse({})
+    # 이미지 파일의 URL
+    image_url = "https://image.dcinside.com/viewimage.php?id=&no=24b0d769e1d32ca73de985fa11d02831f8aadc88aabcff47e8021605d37bf1436ebb78a575eb9e18042afbf9848bfd403905acb77b9ac250540b76e4781bf2"
+
+    # 헤더 설정
+    headers = [
+        {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
+    ]
+
+    # 이미지 다운로드
+    response = requests.get(image_url, headers=headers[0])
+    image_data = BytesIO(response.content)
+    # img = Image.open(BytesIO(response.content))
+    # print(image_data)
+    # # 로컬 파일로 저장 (optional)
+    # image_data.save("downloaded_image.jpg")
+    # BytesIO에서 이미지 열기
+    img = Image.open(image_data)
+
+    # 텍스트 추출
+    # text = pytesseract.image_to_string(img)
+    # # 텍스트 추출
+    text = pytesseract.image_to_string(img)
+
+    # print("추출된 텍스트:")
+    print(text)
+    return JsonResponse({})
+    
     # DC
     dcincideCrwaller = Dcinside()
     # a = dcincideCrwaller.get_real_time_best()
@@ -37,12 +127,7 @@ def CommunitySiteCrawler(request):
 
 def DBInsertTest():
     db_controller = DBController()
-    collection_name = "pymongotest"
-    data_to_insert = {
-    "userName": "Bob",
-    "age": 25,
-    "sex": "male"
-    }
+    collection_name = "realtimebest"
 
     result = db_controller.insert(collection_name, data_to_insert)
     print(f"Insertion Result: {result}")
@@ -77,22 +162,6 @@ def test():
     return JsonResponse({})
 
 # Session Storage For dcinside
-
-    # # DC
-    # dcincideCrwaller = Dcinside()
-    # a = dcincideCrwaller.get_real_time_best()
-    
-    # # yg
-    # ygosuCrwaller = Ygosu()
-    # a = ygosuCrwaller.get_real_time_best()
-    
-    # Pp
-    PpomppuCrwaller = Ppompu()
-    a = PpomppuCrwaller.get_daily_best()
-
-    return JsonResponse(a)
-
-# Session Storage For dcinside
 def getSesstion():
     url = 'https://www.dcinside.com/'
 
@@ -111,40 +180,3 @@ def getSesstion():
     driver.quit()
 
     return JsonResponse({'sessionStorage': session_storage_data})
-
-#
-# 실시간, 일간
-def realtime():
-    """이것은 함수입니다.
-
-    :param request:
-        0: 인기 글이 있는 url 
-        1: li 
-        2: class tag
-
-    :return:
-        {rank: { {title: string, url: string}[]} }
-    """
-    headers = [
-        {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
-    ]
-    
-    req = requests.get('https://www.dcinside.com/', headers=headers[0])
-    html_content = req.text
-
-    soup = BeautifulSoup(html_content, 'html.parser')
-    
-    li_elements = soup.select('#dcbest_list_date li')
-    for li in li_elements:
-        p_element = li.select_one('.box.besttxt p')
-        a_element = li.select_one('.main_log')
-        
-        if p_element and a_element:
-            p_text = p_element.get_text(strip=True)
-            a_href = a_element['href']
-            
-            print(f"Text: {p_text}, URL: {a_href}")
-
-    data = {"box_txt": [li.text for li in li_elements]}
-
-    return data

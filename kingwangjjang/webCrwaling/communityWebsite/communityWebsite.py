@@ -16,3 +16,7 @@ class AbstractCommunityWebsite():
     @abstractmethod
     def get_board_contents(self, board_id):
         return {} 
+    
+    @abstractmethod
+    def save_img(self, url):
+        return {} 

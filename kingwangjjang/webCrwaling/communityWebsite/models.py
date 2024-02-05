@@ -6,7 +6,7 @@ class RealTime(models.Model):
     url = models.URLField()
     create_time = models.DateTimeField()
     class Meta:
-        db_table = 'pymongotest'
+        db_table = 'realtimebest'
 
 class Daily(models.Model):
     rank = models.IntegerField()

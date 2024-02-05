@@ -2,6 +2,7 @@ django
 beautifulsoup4
 lxml
 requests
+selenium
 
 # mongodb
 djongo
@@ -11,3 +12,7 @@ mongoengine
 graphene-django
 graphene_mongo
 pymongo==3.12.3
+
+# Img To Text
+pytesseract
+
