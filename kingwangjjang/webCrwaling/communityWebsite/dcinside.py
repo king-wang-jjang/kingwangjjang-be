@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import sys
 from bs4 import BeautifulSoup, NavigableString
 import requests
 from .models import RealTime
@@ -54,6 +55,7 @@ class Dcinside(AbstractCommunityWebsite):
     
     def get_board_contents(self, board_id):
         _url = "https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id
+        print(_url)
         req = requests.get(_url, headers=self.g_headers[0])
         html_content = req.text
         soup = BeautifulSoup(html_content, 'html.parser')
@@ -63,24 +65,29 @@ class Dcinside(AbstractCommunityWebsite):
         content_list = []
 
         write_div = soup.find('div', class_='write_div')
-        
-        for element in write_div.find_all(['p']):
+
+        # 총 경우는 3가지이나 두 가지의 경우가 많이 나와서 2개만 한다. 
+        # https://www.notion.so/dcincide-f996acc8355e4f0d8320b6f7e06abd57?pvs=4
+        find_all = (
+            write_div.find_all(['p'])
+            if len(write_div.find_all(['p'])) > len(write_div.find_all(['div']))
+            else write_div.find_all(['div'])
+        )
+     
+        for element in find_all:
             text_content = element.text.strip()
             content_list.append({'type': 'text', 'content': text_content})
-
-            # Check if there are img tags inside the p tag
             img_tags = element.find_all('img')
             for img_tag in img_tags:
+                print(img_tag)
                 image_url = img_tag['src']
                 content_list.append({'type': 'image', 'url': image_url})
 
-              # Check for video tags inside the p tag
             video_tags = element.find_all('video')
             for video_tag in video_tags:
-                # Check for source tags inside the video tag
                 source_tags = video_tag.find_all('source')
                 for source_tag in source_tags:
                     video_url = source_tag['src']
                     content_list.append({'type': 'video', 'url': video_url})
-                    
+
         return content_list
