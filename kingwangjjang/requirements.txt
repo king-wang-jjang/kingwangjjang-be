@@ -1,4 +1,6 @@
 django
+
+# Crawler
 beautifulsoup4
 lxml
 requests
@@ -16,3 +18,5 @@ pymongo==3.12.3
 # Img To Text
 pytesseract
 
+# FTP
+pyftpdlib

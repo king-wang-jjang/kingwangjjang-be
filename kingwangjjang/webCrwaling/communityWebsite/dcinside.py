@@ -122,7 +122,7 @@ class Dcinside(AbstractCommunityWebsite):
 
         if not os.path.exists(download_path):
             os.makedirs(download_path)
-            
+
         initial_file_count = len(os.listdir(download_path))
 
         driver = webdriver.Chrome(options=chrome_options)
@@ -147,5 +147,4 @@ class Dcinside(AbstractCommunityWebsite):
 
         finally:
             driver.quit()
-            driver.close()
         return True
