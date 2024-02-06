@@ -1,10 +1,13 @@
 from datetime import datetime, timedelta
-import sys
-from bs4 import BeautifulSoup, NavigableString
+from sqlite3 import IntegrityError
+from bs4 import BeautifulSoup
 import requests
 from .models import RealTime
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 
+# selenium
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
 class Dcinside(AbstractCommunityWebsite):
     g_headers = [
             {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
@@ -36,22 +39,34 @@ class Dcinside(AbstractCommunityWebsite):
                 a_href = a_element['href']
                 no_value = a_href.split('no=')[-1]
                 time_text = time_element.get_text(strip=True)
-                
-                if(time_text.find('-') > 0): break # 어제껀 추가안함
+
+                if(time_text.find('-') > 0): 
+                    break  # 어제껀 추가안함
+
                 # 시간 13:40 -> 2024.01.29 13:40 로 수정
                 now = datetime.now()
                 hour, minute = map(int, time_text.split(':'))
                 # 시간 설정 및 datetime 객체 생성
                 target_datetime = datetime(now.year, now.month, now.day, hour, minute)
-                real_time_instance = RealTime(
-                    _id=no_value,
-                    title=p_text,
-                    url=a_href,
-                    create_time=target_datetime 
-                )
-                real_time_instances.append(real_time_instance)
 
-        RealTime.objects.bulk_create(real_time_instances)
+                # Use get_or_create to avoid duplicates
+                try:
+                    real_time_instance, created = RealTime.objects.get_or_create(
+                        _id=no_value,
+                        defaults={
+                            'title': p_text,
+                            'url': a_href,
+                            'create_time': target_datetime,
+                        }
+                    )
+                    
+                    # If the instance was not created (already existed), skip it
+                    if not created:
+                        continue
+
+                except IntegrityError:
+                    # Handle any potential integrity error, such as a unique constraint violation
+                    continue
     
     def get_board_contents(self, board_id):
         _url = "https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id
@@ -82,6 +97,7 @@ class Dcinside(AbstractCommunityWebsite):
                 print(img_tag)
                 image_url = img_tag['src']
                 content_list.append({'type': 'image', 'url': image_url})
+                self.save_img(image_url)
 
             video_tags = element.find_all('video')
             for video_tag in video_tags:
@@ -91,3 +107,23 @@ class Dcinside(AbstractCommunityWebsite):
                     content_list.append({'type': 'video', 'url': video_url})
 
         return content_list
+    
+    def save_img(self, url):
+        driver = webdriver.Chrome()
+
+        try:
+            driver.get("https://www.dcinside.com/")
+            driver.implicitly_wait(10)
+            script = f'''
+                var link = document.createElement('a');
+                link.href = "{url}";
+                link.target = "_blank";
+                link.click();
+            '''
+
+            driver.execute_script(script)
+            wait = WebDriverWait(driver, 10)
+           
+        finally:
+            driver.quit()
+        return True
