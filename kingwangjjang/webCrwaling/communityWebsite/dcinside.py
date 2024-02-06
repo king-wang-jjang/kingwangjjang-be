@@ -59,6 +59,7 @@ class Dcinside(AbstractCommunityWebsite):
                     real_time_instance, created = RealTime.objects.get_or_create(
                         _id=no_value,
                         defaults={
+                            'site' : 'dcinside',
                             'title': p_text,
                             'url': a_href,
                             'create_time': target_datetime,
@@ -73,7 +74,7 @@ class Dcinside(AbstractCommunityWebsite):
                     # Handle any potential integrity error, such as a unique constraint violation
                     continue
     
-    def get_board_contents(self, board_id):
+    def get_board_contents(self, yyyymmddhhmm, board_id):
         _url = "https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id
         print(_url)
         req = requests.get(_url, headers=self.g_headers[0])
@@ -102,7 +103,7 @@ class Dcinside(AbstractCommunityWebsite):
                 print(img_tag)
                 image_url = img_tag['src']
                 content_list.append({'type': 'image', 'url': image_url})
-                self.save_img(image_url)
+                self.save_img(yyyymmddhhmm, board_id, image_url)
 
             video_tags = element.find_all('video')
             for video_tag in video_tags:
@@ -112,14 +113,17 @@ class Dcinside(AbstractCommunityWebsite):
                     content_list.append({'type': 'video', 'url': video_url})
 
         return content_list
-    
 
-    def save_img(self, url):
+    def save_img(self, yyyymmddhhmm, id, url):
         chrome_options = Options()
-        download_path = os.path.abspath(f'./')
-        initial_file_count = len(os.listdir(download_path))
+        download_path = os.path.abspath(f'./{yyyymmddhhmm}/{id}/')
         prefs = {"download.default_directory": download_path}
         chrome_options.add_experimental_option("prefs", prefs)
+
+        if not os.path.exists(download_path):
+            os.makedirs(download_path)
+            
+        initial_file_count = len(os.listdir(download_path))
 
         driver = webdriver.Chrome(options=chrome_options)
 
