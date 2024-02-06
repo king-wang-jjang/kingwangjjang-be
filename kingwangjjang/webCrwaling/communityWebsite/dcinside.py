@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
+import os
 from sqlite3 import IntegrityError
+import time
 from bs4 import BeautifulSoup
 import requests
 from .models import RealTime
@@ -8,6 +10,9 @@ from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsi
 # selenium
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
 class Dcinside(AbstractCommunityWebsite):
     g_headers = [
             {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
@@ -108,22 +113,35 @@ class Dcinside(AbstractCommunityWebsite):
 
         return content_list
     
+
     def save_img(self, url):
-        driver = webdriver.Chrome()
+        chrome_options = Options()
+        download_path = os.path.abspath(f'./')
+        initial_file_count = len(os.listdir(download_path))
+        prefs = {"download.default_directory": download_path}
+        chrome_options.add_experimental_option("prefs", prefs)
+
+        driver = webdriver.Chrome(options=chrome_options)
 
         try:
             driver.get("https://www.dcinside.com/")
-            driver.implicitly_wait(10)
+            WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.XPATH, '//body'))
+            )
             script = f'''
                 var link = document.createElement('a');
                 link.href = "{url}";
                 link.target = "_blank";
                 link.click();
             '''
-
             driver.execute_script(script)
-            wait = WebDriverWait(driver, 10)
-           
+            
+            time.sleep(3)
+            WebDriverWait(driver, 5).until(
+                lambda x: len(os.listdir(download_path)) > initial_file_count
+            )
+
         finally:
             driver.quit()
+            driver.close()
         return True
