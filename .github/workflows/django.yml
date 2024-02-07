@@ -53,7 +53,11 @@ jobs:
         key: ${{secrets.SSH_KEY}}
         port: ${{ secrets.WAS_SSH_PORT }}
         script: |
-          docker stop kingwangjjang_container || true
-          docker rm kingwangjjang_container || true
-          docker pull hwanju1596/kingwangjjang:0.0.1
-          docker run -d -p 8000:8000 --name kingwangjjang_container hwanju1596/kingwangjjang:0.0.1
+          whoami
+          run: echo "${HOME}/.local/bin" >> $GITHUB_PATH
+          docker version
+          apt --help
+          instll --help
+          apt-get --help
+          ipkg --help
+          docker ps -a
