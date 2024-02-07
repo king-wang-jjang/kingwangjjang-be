@@ -2,7 +2,7 @@ name: Django CI
 
 on:
   push:
-    branches: [ "test/ci" ]
+    branches: [ "main" ]
   pull_request:
     branches: [ "main", "develop" ]
 
@@ -42,7 +42,7 @@ jobs:
       max-parallel: 4
       matrix:
         python-version: [3.9]
-
+        
     steps:
     # WAS 인스턴스 접속 & 애플리케이션 실행
     - name: Connect to WAS & Execute Application
@@ -61,3 +61,51 @@ jobs:
           apt-get --help
           ipkg --help
           docker ps -a
+    # # Django 데이터베이스 마이그레이션
+    # - name: Django DB Migration
+    #   run: |
+    #     docker run -d --name kingwangjjang_migration \
+    #       -e DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} \
+    #       -e DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }} \
+    #       -e DB_HOST=${{ secrets.DB_HOST }} \
+    #       -e DB_USER=${{ secrets.DB_USER }} \
+    #       -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+    #       -e DB_NAME=${{ secrets.DB_NAME }} \
+    #       hwanju1596/kingwangjjang:0.0.1
+    #     docker exec kingwangjjang_migration python manage.py migrate
+    #     docker stop kingwangjjang_migration
+    #     docker rm kingwangjjang_migration
+
+    # # Django 테스트 실행
+    # - name: Django Tests
+    #   run: |
+    #     docker run -d --name kingwangjjang_test \
+    #       -e DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} \
+    #       -e DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }} \
+    #       -e DB_HOST=${{ secrets.DB_HOST }} \
+    #       -e DB_USER=${{ secrets.DB_USER }} \
+    #       -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+    #       -e DB_NAME=${{ secrets.DB_NAME }} \
+    #       hwanju1596/kingwangjjang:0.0.1
+    #     docker exec kingwangjjang_test python manage.py test
+    #     docker stop kingwangjjang_test
+    #     docker rm kingwangjjang_test
+    
+    # - name: Check Docker version
+    #   run: docker version
+    #   # WAS 인스턴스 접속 & 애플리케이션 실행
+    # - name: Connect to WAS & Execute Application
+    #   uses: appleboy/ssh-action@master
+    #   with:
+    #     host: ${{ secrets.WAS_HOST }}
+    #     username: ${{ secrets.WAS_USERNAME }}
+    #     key: ${{secrets.SSH_KEY}}
+    #     port: ${{ secrets.WAS_SSH_PORT }}
+    #     script: |
+    #       run: echo "${HOME}/.local/bin" >> $GITHUB_PATH
+    #       docker version
+    #       apt --help
+    #       instll --help
+    #       apt-get --help
+    #       ipkg --help
+    #       docker ps -a
