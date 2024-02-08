@@ -43,6 +43,8 @@ DB_HOST = get_secret("DB_HOST")
 DB_USER = get_secret("DB_USER")
 DB_PASSWORD = get_secret("DB_PASSWORD")
 DB_NAME = get_secret("DB_NAME")
+FTP_USER = get_secret("FTP_USER")
+FTP_PASSWORD = get_secret("FTP_PASSWORD")
 
 # # github action setting
 # SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
@@ -55,7 +57,6 @@ DB_NAME = get_secret("DB_NAME")
 
 
 ALLOWED_HOSTS = []
-
 
 # Application definition
 

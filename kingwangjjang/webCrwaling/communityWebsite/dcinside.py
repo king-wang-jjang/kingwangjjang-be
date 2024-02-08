@@ -164,3 +164,10 @@ class Dcinside(AbstractCommunityWebsite):
             print("다운로드된 파일명:", newest_file)
         finally:
             return True
+        
+    def local_to_server(self, local_path):
+        b = FTPClient(server_address=getattr(settings, 'DB_HOST', None),
+                  username=getattr(settings, 'FTP_USER', None),
+                  password=getattr(settings, 'FTP_PASSWORD', None))
+    
+        b.ftp_upload_file("C:/Users/nori/Envs/kingwangjjang-be/kingwangjjang/202402061210/203621/1706443238.png", "/home/17064433238.png")
