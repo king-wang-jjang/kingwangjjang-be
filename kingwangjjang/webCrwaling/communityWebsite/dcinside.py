@@ -21,11 +21,23 @@ class Dcinside(AbstractCommunityWebsite):
             {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
         ]
     
-    def __init__(self, yyyymmddhhmm, board_id):
-        self.download_path = os.path.abspath(f'./{yyyymmddhhmm}/{board_id}/')
-        self.yyyymmddhhmm = yyyymmddhhmm
+    def __init__(self, yyyymmdd, board_id):
+        self.ftp_client = FTPClient(server_address=getattr(settings, 'DB_HOST', None),
+                  username=getattr(settings, 'FTP_USER', None),
+                  password=getattr(settings, 'FTP_PASSWORD', None))
+        try:
+            super().__init__(yyyymmdd, self.ftp_client)
+            print("ready to today directory")
+        except Exception:
+            print("error:", Exception)
+            return False # Directory 생성을 못 하면 일단 멈춤 나중에 Exception 처리 필요
+        
+        # self.ftp_client.ftp_upload_folder("./202402061210", "./202402061210")
+        self.download_path = os.path.abspath(f'./{yyyymmdd}/{board_id}/')
+        self.yyyymmdd = yyyymmdd
         self.board_id = board_id
         self.BASE_URL = 'https://www.dcinside.com/'
+        self.directory_name = str(yyyymmdd) + "/" + str(board_id) + "/"
         self.set_driver_options()
 
     def get_daily_best(self):
@@ -102,8 +114,12 @@ class Dcinside(AbstractCommunityWebsite):
             img_tags = element.find_all('img')
             for img_tag in img_tags:
                 image_url = img_tag['src']
-                content_list.append({'type': 'image', 'url': image_url})
-                self.save_img(image_url)
+                try:
+                    img_txt = super().img_to_text(self.save_img(image_url))
+                    content_list.append({'type': 'image', 'url': image_url, 
+                                        'text': img_txt})
+                except Exception:
+                    print(f'Error {Exception}')
 
             video_tags = element.find_all('video')
             for video_tag in video_tags:
@@ -145,29 +161,20 @@ class Dcinside(AbstractCommunityWebsite):
 
         initial_file_count = len(os.listdir(self.download_path))
 
-        try:
-            script = f'''
-                var link = document.createElement('a');
-                link.href = "{url}";
-                link.target = "_blank";
-                link.click();
-            '''
-            self.driver.execute_script(script)
-            
-            WebDriverWait(self.driver, 5).until(
-                lambda x: len(os.listdir(self.download_path)) > initial_file_count
-            )
-
-            # 가장 최근에 다운로드된 파일 찾기
-            files = os.listdir(self.download_path)
-            newest_file = max(files, key=lambda x: os.path.getctime(os.path.join(self.download_path, x)))
-            print("다운로드된 파일명:", newest_file)
-        finally:
-            return True
+        script = f'''
+            var link = document.createElement('a');
+            link.href = "{url}";
+            link.target = "_blank";
+            link.click();
+        '''
+        self.driver.execute_script(script)
         
-    def local_to_server(self, local_path):
-        b = FTPClient(server_address=getattr(settings, 'DB_HOST', None),
-                  username=getattr(settings, 'FTP_USER', None),
-                  password=getattr(settings, 'FTP_PASSWORD', None))
-    
-        b.ftp_upload_file("C:/Users/nori/Envs/kingwangjjang-be/kingwangjjang/202402061210/203621/1706443238.png", "/home/17064433238.png")
+        WebDriverWait(self.driver, 5).until(
+            lambda x: len(os.listdir(self.download_path)) > initial_file_count
+        )
+
+        # 가장 최근에 다운로드된 파일 찾기
+        files = os.listdir(self.download_path)
+        newest_file = max(files, key=lambda x: os.path.getctime(os.path.join(self.download_path, x)))
+
+        return self.download_path + "/" + newest_file
