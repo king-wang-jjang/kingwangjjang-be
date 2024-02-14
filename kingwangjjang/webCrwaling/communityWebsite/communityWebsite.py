@@ -1,16 +1,23 @@
 from abc import abstractmethod
+from django.conf import settings
 
 # img to text
 import pytesseract
+
+from utils import FTPClient
 pytesseract.pytesseract.tesseract_cmd = r'C:\Users\nori\AppData\Local\tesseract.exe'
 from PIL import Image
-from io import BytesIO
 
 
 class AbstractCommunityWebsite():
     dayBestUrl = ''
     realtimeBestUrl = ''
-    
+
+    def __init__(self, yyyymmdd, ftp_client: FTPClient) -> None:
+        self.ftp_client = ftp_client
+        if not self.ftp_client.create_today_directory(yyyymmdd):
+            raise ValueError("Failed to create today's directory.")
+        
     @abstractmethod
     def get_daily_best(self):
         return {}        
