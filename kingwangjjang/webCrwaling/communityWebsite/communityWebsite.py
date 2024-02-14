@@ -36,6 +36,8 @@ class AbstractCommunityWebsite():
     
     def img_to_text(self, img_path):
         img = Image.open(img_path)
-        text = pytesseract.image_to_string(img)
+        custom_config = r'--oem 3 --psm 6 -l kor+eng' 
+
+        text = pytesseract.image_to_string(img, config=custom_config)
 
         return text
