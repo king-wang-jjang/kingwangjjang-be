@@ -54,6 +54,7 @@ jobs:
         port: ${{ secrets.WAS_SSH_PORT }}
         script: |
           ls /usr/local/bin
+          /usr/local/bin/docker version
           whoami
       env:
         ACTIONS_STEP_DEBUG: true
