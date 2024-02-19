@@ -37,6 +37,7 @@ jobs:
     - name: Publish to docker hub 
       run: docker push hwanju1596/kingwangjjang:0.0.1
   run:
+    needs: build
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
