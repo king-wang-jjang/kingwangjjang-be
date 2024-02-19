@@ -63,7 +63,8 @@ jobs:
         SUDO_PASSWORD: ${{ secrets.WAS_PASSWORD }}
         # ACTIONS_STEP_DEBUG: true
       run: |
-        echo ${SUDO_PASSWORD}} | sudo -S /usr/local/bin/docker version
+        echo ${SUDO_PASSWORD} | sudo -S /usr/local/bin/docker version
+        
     
 
     - name: Django DB Mdigration.
