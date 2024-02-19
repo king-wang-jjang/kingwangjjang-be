@@ -58,6 +58,7 @@ jobs:
         script: |
           sudo -S /usr/local/bin/docker version <<< "${SUDO_PASSWORD}"
           echo ${SUDO_PASSWORD} | sudo -S /usr/local/bin/docker version
+          whoami
     # # Django 데이터베이스 마이그레이션
     # - name: Django DB Migration
     #   run: |
