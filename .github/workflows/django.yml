@@ -56,7 +56,6 @@ jobs:
         key: ${{secrets.SSH_KEY}}
         port: ${{ secrets.WAS_SSH_PORT }}
         script: |
-          sudo -S /usr/local/bin/docker version <<< "${{ secrets.WAS_PASSWORD }}"
           echo ${{ secrets.WAS_SSH_PORT }} | sudo -S /usr/local/bin/docker version
     # # Django 데이터베이스 마이그레이션
     # - name: Django DB Migration
