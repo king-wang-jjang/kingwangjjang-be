@@ -54,13 +54,7 @@ jobs:
         port: ${{ secrets.WAS_SSH_PORT }}
         script: |
           ls /usr/local/bin
-          echo "${HOME}/.local/bin" >> $GITHUB_PATH
-          docker version
-          apt --help
-          instll --help
-          apt-get --help
-          ipkg --help
-          docker ps -a
+          whoami
       env:
         ACTIONS_STEP_DEBUG: true
     # # Django 데이터베이스 마이그레이션
