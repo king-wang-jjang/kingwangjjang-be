@@ -48,7 +48,7 @@ jobs:
     - name: Connect to WAS & Execute Application
       env:
         SUDO_PASSWORD: ${{ secrets.WAS_PASSWORD }}
-        # ACTIONS_STEP_DEBUG: true
+        ACTIONS_STEP_DEBUG: true
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.WAS_HOST }}
