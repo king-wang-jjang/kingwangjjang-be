@@ -46,6 +46,9 @@ jobs:
     steps:
     # WAS 인스턴스 접속 & 애플리케이션 실행
     - name: Connect to WAS & Execute Application
+      env:
+        SUDO_PASSWORD: ${{ secrets.WAS_PASSWORD }}
+        ACTIONS_STEP_DEBUG: true
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.WAS_HOST }}
@@ -54,10 +57,8 @@ jobs:
         port: ${{ secrets.WAS_SSH_PORT }}
         script: |
           ls /usr/local/bin
-          sudo /usr/local/bin/docker version
+          sudo -S /usr/local/bin/docker version <<< "${SUDO_PASSWORD}"
           whoami
-      env:
-        ACTIONS_STEP_DEBUG: true
     # # Django 데이터베이스 마이그레이션
     # - name: Django DB Migration
     #   run: |
