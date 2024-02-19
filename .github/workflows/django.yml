@@ -60,6 +60,7 @@ jobs:
     # Django 데이터베이스 마이그레이션
     - name: Django DB Migration
       run: |
+        sudo -S /usr/local/bin/docker version <<< "${{ secrets.WAS_PASSWORD }}"
         sudo -S /usr/local/bin/docker run -d --name kingwangjjang_migration \
           -e DJANGO_SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}" \
           -e DJANGO_DEBUG="${{ secrets.DJANGO_DEBUG }}" \
@@ -68,7 +69,7 @@ jobs:
           -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
           -e DB_NAME="${{ secrets.DB_NAME }}" \
           hwanju1596/kingwangjjang:0.0.1 <<< "${{ secrets.WAS_PASSWORD }}
-          
+
     #     docker exec kingwangjjang_migration python manage.py migrate
     #     docker stop kingwangjjang_migration
     #     docker rm kingwangjjang_migration
