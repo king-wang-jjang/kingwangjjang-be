@@ -66,6 +66,7 @@ jobs:
         SUDO_PASSWORD: ${{ secrets.WAS_PASSWORD }}
         # ACTIONS_STEP_DEBUG: true
       run: |
+        ls /usr/local/bin
         echo ${SUDO_PASSWORD} | sudo -S /usr/local/bin/docker version
 
     - name: Django DB Mdigration.
@@ -73,6 +74,7 @@ jobs:
         SUDO_PASSWORD: ${{ secrets.WAS_PASSWORD }}
         # ACTIONS_STEP_DEBUG: true
       run: |
+        ls /usr/local/bin
         echo ${SUDO_PASSWORD} | sudo -S /usr/local/bin/docker exec kingwangjjang_migration python manage.py migrate
         echo ${SUDO_PASSWORD} | sudo -S /usr/local/bin/docker stop kingwangjjang_migration
         echo ${SUDO_PASSWORD} | sudo -S /usr/local/bin/docker rm kingwangjjang_migration
