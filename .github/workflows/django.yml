@@ -36,7 +36,7 @@ jobs:
   #   # docker hub 퍼블리시
   #   - name: Publish to docker hub 
   #     run: docker push hwanju1596/kingwangjjang:0.0.1
- run:
+  run:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -56,6 +56,9 @@ jobs:
         key: ${{secrets.SSH_KEY}}
         port: ${{ secrets.WAS_SSH_PORT }}
         script: |
+          ls /usr/local/bin
+          sudo -S /usr/local/bin/docker version <<< "${SUDO_PASSWORD}"
+          sudo -S /usr/local/bin/docker version <<< "${{ secrets.WAS_PASSWORD }}"
           echo ${{ secrets.WAS_SSH_PORT }} | sudo -S /usr/local/bin/docker version
           echo ${SUDO_PASSWORD} | sudo -S /usr/local/bin/docker version
           whoami
