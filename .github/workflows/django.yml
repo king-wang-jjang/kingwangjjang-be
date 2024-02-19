@@ -7,35 +7,35 @@ on:
     branches: [ "main", "develop" ]
 
 jobs:
-  build:
+  # build:
 
-    runs-on: ubuntu-latest
-    strategy:
-      max-parallel: 4
-      matrix:
-        python-version: [3.9]
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     max-parallel: 4
+  #     matrix:
+  #       python-version: [3.9]
 
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
+  #   steps:
+  #   - uses: actions/checkout@v3
+  #   - name: Set up Python ${{ matrix.python-version }}
+  #     uses: actions/setup-python@v3
+  #     with:
+  #       python-version: ${{ matrix.python-version }}
    
-    # docker image 빌드
-    - name: Build docker image
-      run: docker build -t hwanju1596/kingwangjjang:0.0.1 ./kingwangjjang
+  #   # docker image 빌드
+  #   - name: Build docker image
+  #     run: docker build -t hwanju1596/kingwangjjang:0.0.1 ./kingwangjjang
 
-    # docker hub 로그인
-    - name: Login docker hub
-      uses: docker/login-action@master
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+  #   # docker hub 로그인
+  #   - name: Login docker hub
+  #     uses: docker/login-action@master
+  #     with:
+  #       username: ${{ secrets.DOCKERHUB_USERNAME }}
+  #       password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    # docker hub 퍼블리시
-    - name: Publish to docker hub
-      run: docker push hwanju1596/kingwangjjang:0.0.1
+  #   # docker hub 퍼블리시
+  #   - name: Publish to docker hub 
+  #     run: docker push hwanju1596/kingwangjjang:0.0.1
   run:
     runs-on: ubuntu-latest
     strategy:
