@@ -1,4 +1,7 @@
 django
+pytz
+
+# Crawler
 beautifulsoup4
 lxml
 requests
