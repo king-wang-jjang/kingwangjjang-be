@@ -58,7 +58,7 @@ jobs:
         script: |
           whoami
     # Django 데이터베이스 마이그레이션
-    - name: Django DB Migration.
+    - name: Pull Django Project
       env:
         SUDO_PASSWORD: ${{ secrets.WAS_PASSWORD }}
         # ACTIONS_STEP_DEBUG: true
@@ -71,6 +71,13 @@ jobs:
           -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
           -e DB_NAME=${{ secrets.DB_NAME }} \
           hwanju1596/kingwangjjang:0.0.1
+
+    - name: Django DB Mdigration.
+      env:
+        SUDO_PASSWORD: ${{ secrets.WAS_PASSWORD }}
+        # ACTIONS_STEP_DEBUG: true
+      run: |
         echo ${SUDO_PASSWORD} | sudo -S /usr/local/bin/docker exec kingwangjjang_migration python manage.py migrate
         echo ${SUDO_PASSWORD} | sudo -S /usr/local/bin/docker stop kingwangjjang_migration
         echo ${SUDO_PASSWORD} | sudo -S /usr/local/bin/docker rm kingwangjjang_migration
+    
