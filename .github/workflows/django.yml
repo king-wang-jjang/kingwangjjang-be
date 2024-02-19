@@ -67,7 +67,8 @@ jobs:
           -e DB_USER="${{ secrets.DB_USER }}" \
           -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
           -e DB_NAME="${{ secrets.DB_NAME }}" \
-          hwanju1596/kingwangjjang:0.0.1 <<< "${{ secrets.WAS_PASSWORD }}"
+          hwanju1596/kingwangjjang:0.0.1 <<< "${{ secrets.WAS_PASSWORD }}
+          
     #     docker exec kingwangjjang_migration python manage.py migrate
     #     docker stop kingwangjjang_migration
     #     docker rm kingwangjjang_migration
