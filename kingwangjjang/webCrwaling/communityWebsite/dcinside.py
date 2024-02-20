@@ -28,18 +28,17 @@ class Dcinside(AbstractCommunityWebsite):
         try:
             super().__init__(yyyymmdd, self.ftp_client)
             print("ready to today directory")
-        except Exception:
-            print("error:", Exception)
-            return False # Directory 생성을 못 하면 일단 멈춤 나중에 Exception 처리 필요
+        except Exception as e:
+            print("error:", e)
+            raise  # Directory 생성을 못 하면 일단 멈춤 나중에 Exception 처리 필요
         
-        # self.ftp_client.ftp_upload_folder("./202402061210", "./202402061210")
         self.download_path = os.path.abspath(f'./{yyyymmdd}/{board_id}/')
         self.yyyymmdd = yyyymmdd
         self.board_id = board_id
         self.BASE_URL = 'https://www.dcinside.com/'
         self.directory_name = str(yyyymmdd) + "/" + str(board_id) + "/"
         self.set_driver_options()
-
+    
     def get_daily_best(self):
         pass
 

@@ -115,8 +115,7 @@ class FTPClient(object):
                 self.ftp.cwd(yyyymmdd)
                 print(f"Directory created: {yyyymmdd}")
             except Exception as e:
-                print(f"Error creating directory: {e}")
-                return False
+                raise ValueError(f"Error creating directory: {e}")
             else:
                 return True
         else:
