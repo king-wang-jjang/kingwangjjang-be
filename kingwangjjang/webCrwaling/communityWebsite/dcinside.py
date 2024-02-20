@@ -116,7 +116,7 @@ class Dcinside(AbstractCommunityWebsite):
                 try:
                     img_txt = super().img_to_text(self.save_img(image_url))
                     content_list.append({'type': 'image', 'url': image_url, 
-                                        'text': img_txt})
+                                        'content': img_txt})
                 except Exception:
                     print(f'Error {Exception}')
 
