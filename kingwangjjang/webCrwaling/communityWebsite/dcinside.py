@@ -22,7 +22,7 @@ class Dcinside(AbstractCommunityWebsite):
         ]
     
     def __init__(self, yyyymmdd, board_id):
-        self.ftp_client = FTPClient(server_address=getattr(settings, 'DB_HOST', None),
+        self.ftp_client = FTPClient(server_address=getattr(settings, 'WAS_HOST', None),
                   username=getattr(settings, 'FTP_USER', None),
                   password=getattr(settings, 'FTP_PASSWORD', None))
         try:
