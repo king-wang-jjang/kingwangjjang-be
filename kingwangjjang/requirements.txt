@@ -1,4 +1,5 @@
 django
+pytz
 
 # Crawler
 beautifulsoup4
