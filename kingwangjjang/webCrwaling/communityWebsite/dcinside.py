@@ -1,17 +1,44 @@
 from datetime import datetime, timedelta
-from bs4 import BeautifulSoup, NavigableString
+import os
+from sqlite3 import IntegrityError
+from bs4 import BeautifulSoup
+from django.conf import settings
 import requests
+
+from utils import FTPClient
 from .models import RealTime
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
+
+# selenium
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
 
 class Dcinside(AbstractCommunityWebsite):
     g_headers = [
             {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
         ]
     
-    def __init__(self):
-        pass
-
+    def __init__(self, yyyymmdd, board_id):
+        self.ftp_client = FTPClient(server_address=getattr(settings, 'WAS_HOST', None),
+                  username=getattr(settings, 'FTP_USER', None),
+                  password=getattr(settings, 'FTP_PASSWORD', None))
+        try:
+            super().__init__(yyyymmdd, self.ftp_client)
+            print("ready to today directory")
+        except Exception as e:
+            print("error:", e)
+            raise  # Directory 생성을 못 하면 일단 멈춤 나중에 Exception 처리 필요
+        
+        self.download_path = os.path.abspath(f'./{yyyymmdd}/{board_id}/')
+        self.yyyymmdd = yyyymmdd
+        self.board_id = board_id
+        self.BASE_URL = 'https://www.dcinside.com/'
+        self.directory_name = str(yyyymmdd) + "/" + str(board_id) + "/"
+        self.set_driver_options()
+    
     def get_daily_best(self):
         pass
 
@@ -35,25 +62,33 @@ class Dcinside(AbstractCommunityWebsite):
                 a_href = a_element['href']
                 no_value = a_href.split('no=')[-1]
                 time_text = time_element.get_text(strip=True)
-                
-                if(time_text.find('-') > 0): break # 어제껀 추가안함
+
+                if(time_text.find('-') > 0): 
+                    break  # 오늘 것만 추가 (이전 글은 제외 (DB에서 확인))
+
                 # 시간 13:40 -> 2024.01.29 13:40 로 수정
                 now = datetime.now()
                 hour, minute = map(int, time_text.split(':'))
                 # 시간 설정 및 datetime 객체 생성
                 target_datetime = datetime(now.year, now.month, now.day, hour, minute)
-                real_time_instance = RealTime(
-                    _id=no_value,
-                    title=p_text,
-                    url=a_href,
-                    create_time=target_datetime 
-                )
-                real_time_instances.append(real_time_instance)
 
-        RealTime.objects.bulk_create(real_time_instances)
+                try:
+                    real_time_instance, created = RealTime.objects.get_or_create(
+                        _id=no_value,
+                        defaults={
+                            'site' : 'dcinside',
+                            'title': p_text,
+                            'url': a_href,
+                            'create_time': target_datetime,
+                        }
+                    )
+                    if not created:
+                        continue
+                except IntegrityError:
+                    continue
     
-    def get_board_contents(self, board_id):
-        _url = "https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id
+    def get_board_contents(self):
+        _url = "https://gall.dcinside.com/board/view/?id=dcbest&no=" + self.board_id
         req = requests.get(_url, headers=self.g_headers[0])
         html_content = req.text
         soup = BeautifulSoup(html_content, 'html.parser')
@@ -63,24 +98,82 @@ class Dcinside(AbstractCommunityWebsite):
         content_list = []
 
         write_div = soup.find('div', class_='write_div')
-        
-        for element in write_div.find_all(['p']):
+
+        # 총 경우는 3가지이나 두 가지의 경우가 많이 나와서 2개만 한다. 
+        # https://www.notion.so/dcincide-f996acc8355e4f0d8320b6f7e06abd57?pvs=4
+        find_all = (
+            write_div.find_all(['p'])
+            if len(write_div.find_all(['p'])) > len(write_div.find_all(['div']))
+            else write_div.find_all(['div'])
+        )
+     
+        for element in find_all:
             text_content = element.text.strip()
             content_list.append({'type': 'text', 'content': text_content})
-
-            # Check if there are img tags inside the p tag
             img_tags = element.find_all('img')
             for img_tag in img_tags:
                 image_url = img_tag['src']
-                content_list.append({'type': 'image', 'url': image_url})
+                try:
+                    img_txt = super().img_to_text(self.save_img(image_url))
+                    content_list.append({'type': 'image', 'url': image_url, 
+                                        'content': img_txt})
+                except Exception:
+                    print(f'Error {Exception}')
 
-              # Check for video tags inside the p tag
             video_tags = element.find_all('video')
             for video_tag in video_tags:
-                # Check for source tags inside the video tag
                 source_tags = video_tag.find_all('source')
                 for source_tag in source_tags:
                     video_url = source_tag['src']
                     content_list.append({'type': 'video', 'url': video_url})
-                    
+
         return content_list
+
+    # 속도 개선 작업 (20s -> 2s)
+    # https://www.notion.so/2-850bc2d1d98145bebcc89f3596798f05?pvs=4
+    def set_driver_options(self):
+        '''
+            :option: download path
+        '''
+        chrome_options = Options()
+        prefs = {"download.default_directory": self.download_path}
+        chrome_options.add_experimental_option("prefs", prefs)
+
+        if not os.path.exists(self.download_path):
+            os.makedirs(self.download_path)
+
+        self.driver = webdriver.Chrome(options=chrome_options)
+        
+        try:
+            self.driver.get("https://www.dcinside.com/")
+            WebDriverWait(self.driver, 5).until(
+                EC.presence_of_element_located((By.XPATH, '//body'))
+            )
+        except Exception:
+            print('Error', Exception)
+        finally:
+            return True
+    
+    def save_img(self, url):
+        if not os.path.exists(self.download_path):
+            os.makedirs(self.download_path)
+
+        initial_file_count = len(os.listdir(self.download_path))
+
+        script = f'''
+            var link = document.createElement('a');
+            link.href = "{url}";
+            link.target = "_blank";
+            link.click();
+        '''
+        self.driver.execute_script(script)
+        
+        WebDriverWait(self.driver, 5).until(
+            lambda x: len(os.listdir(self.download_path)) > initial_file_count
+        )
+
+        # 가장 최근에 다운로드된 파일 찾기
+        files = os.listdir(self.download_path)
+        newest_file = max(files, key=lambda x: os.path.getctime(os.path.join(self.download_path, x)))
+
+        return self.download_path + "/" + newest_file

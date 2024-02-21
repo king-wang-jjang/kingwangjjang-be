@@ -1,10 +1,13 @@
 import json
+import time
+import webbrowser
 import requests 
 from bs4 import BeautifulSoup 
 from django.http import JsonResponse
 from selenium import webdriver
 from urllib import request as urllib_request
 from bson import json_util
+import urllib.request
 from .communityWebsite.models import RealTime
 
 from mongo import DBController  
@@ -15,6 +18,11 @@ from webCrwaling.communityWebsite.dcinside import Dcinside
 
 from djongo import models
 
+from PIL import Image
+from io import BytesIO
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = r'C:\Users\nori\AppData\Local\tesseract.exe'
+
 # class RealTime(models.Model):
 
 # Create your views here.
@@ -23,13 +31,8 @@ from djongo import models
 # JPG -> Text 
 # 댓글을 요약 ( 추천 수가 몇 개이상 )
 def CommunitySiteCrawler(request):
-    # DC
-    dcincideCrwaller = Dcinside()
-    # a = dcincideCrwaller.get_real_time_best()
-    a = dcincideCrwaller.get_board_contents("203621")
-    image_contents = [item for item in a if item['type'] == 'image']
-
-    # json_content = json.dumps(a, ensure_ascii=False, indent=2, safe=False)
+    dcincideCrwaller = Dcinside("20240220", "203621")
+    a = dcincideCrwaller.get_board_contents()
     json_content = json.dumps(a, ensure_ascii=False, indent=2)
     json_object = json.loads(json_content)
     
@@ -37,12 +40,7 @@ def CommunitySiteCrawler(request):
 
 def DBInsertTest():
     db_controller = DBController()
-    collection_name = "pymongotest"
-    data_to_insert = {
-    "userName": "Bob",
-    "age": 25,
-    "sex": "male"
-    }
+    collection_name = "realtimebest"
 
     result = db_controller.insert(collection_name, data_to_insert)
     print(f"Insertion Result: {result}")
@@ -77,22 +75,6 @@ def test():
     return JsonResponse({})
 
 # Session Storage For dcinside
-
-    # # DC
-    # dcincideCrwaller = Dcinside()
-    # a = dcincideCrwaller.get_real_time_best()
-    
-    # # yg
-    # ygosuCrwaller = Ygosu()
-    # a = ygosuCrwaller.get_real_time_best()
-    
-    # Pp
-    PpomppuCrwaller = Ppompu()
-    a = PpomppuCrwaller.get_daily_best()
-
-    return JsonResponse(a)
-
-# Session Storage For dcinside
 def getSesstion():
     url = 'https://www.dcinside.com/'
 
@@ -111,40 +93,3 @@ def getSesstion():
     driver.quit()
 
     return JsonResponse({'sessionStorage': session_storage_data})
-
-#
-# 실시간, 일간
-def realtime():
-    """이것은 함수입니다.
-
-    :param request:
-        0: 인기 글이 있는 url 
-        1: li 
-        2: class tag
-
-    :return:
-        {rank: { {title: string, url: string}[]} }
-    """
-    headers = [
-        {'User-Agent' : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
-    ]
-    
-    req = requests.get('https://www.dcinside.com/', headers=headers[0])
-    html_content = req.text
-
-    soup = BeautifulSoup(html_content, 'html.parser')
-    
-    li_elements = soup.select('#dcbest_list_date li')
-    for li in li_elements:
-        p_element = li.select_one('.box.besttxt p')
-        a_element = li.select_one('.main_log')
-        
-        if p_element and a_element:
-            p_text = p_element.get_text(strip=True)
-            a_href = a_element['href']
-            
-            print(f"Text: {p_text}, URL: {a_href}")
-
-    data = {"box_txt": [li.text for li in li_elements]}
-
-    return data
