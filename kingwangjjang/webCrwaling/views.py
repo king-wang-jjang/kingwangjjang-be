@@ -88,7 +88,10 @@ def getSesstion():
 
     # 세션 스토리지 데이터 가져오기
     session_storage_data = json.loads(driver.execute_script('return window.sessionStorage.getItem("_dcbest_rank_hit");'))
-    driver.execute_script(f'window.open("{session_storage_data[0]['thumb']}");') 
+    # driver.execute_script(f'window.open("{session_storage_data[0]['thumb']}");') 
+    
+    driver.execute_script(f'window.open("{session_storage_data[0]["thumb"]}");')
+
     # 브라우저 닫기
     driver.quit()
 
