@@ -46,6 +46,7 @@ DB_PASSWORD = get_secret("DB_PASSWORD")
 DB_NAME = get_secret("DB_NAME")
 FTP_USER = get_secret("WAS_USERNAME")
 FTP_PASSWORD = get_secret("WAS_PASSWORD")
+CHATGPT_API_KEY = get_secret("CHATGPT_API_KEY")
 
 # # github action setting
 # SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
@@ -57,6 +58,7 @@ FTP_PASSWORD = get_secret("WAS_PASSWORD")
 # DB_NAME = os.environ.get('DB_NAME')
 # FTP_USER = os.environ.get('WAS_USERNAME')
 # FTP_PASSWORD = os.environ.get('WAS_PASSWORD')
+# CHATGPT_API_KEY = os.environ.get("CHATGPT_API_KEY")
 
 
 ALLOWED_HOSTS = []
@@ -76,6 +78,7 @@ INSTALLED_APPS = [
     
     'webCrwaling',
     'kingwangjjang',
+    'chatGPT'
 ]
 
 MIDDLEWARE = [
