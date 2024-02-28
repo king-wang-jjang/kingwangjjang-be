@@ -1,53 +1,31 @@
-aniso8601
-asgiref
-attrs
-beautifulsoup4
-certifi
-cffi
-charset-normalizer
-colorama
-distlib
-Django
+# django
+django==4.1.13
 django-cors-headers
 django-mongoengine
-djongo
-dnspython
-filelock
-graphene
-graphene-django
-graphene-mongo
-graphql-core
-graphql-relay
-h11
-idna
-lxml
-mongoengine
-outcome
-packaging
-pillow
-pip
-pipenv
-platformdirs
-promise
-pycparser
-pyftpdlib
-PySocks
-pytesseract
+
+
 pytz
+
+# Crawler
+beautifulsoup4
+lxml
 requests
 selenium
-setuptools
-singledispatch
-six
-sniffio
-sortedcontainers
-soupsieve
-sqlparse
-text-unidecode
-trio
-trio-websocket
-tzdata
-urllib3
-virtualenv
-virtualenvwrapper-win
-wsproto
+
+# mongodb
+djongo==1.3.6
+mongoengine==0.27.0
+
+# API
+graphene-django
+graphene_mongo
+pymongo==3.12.3
+
+# Img To Text
+pytesseract
+
+# FTP
+pyftpdlib
+
+# chatGPT
+openai==0.28
