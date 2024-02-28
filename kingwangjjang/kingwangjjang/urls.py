@@ -28,5 +28,5 @@ urlpatterns = [
     path('api/CommunitySiteCrawler/', CommunitySiteCrawler, name='CommunitySiteCrawler'),
     # path("graphql", csrf_exempt(GraphQLView.as_view(graphiql=True)), name="graphql-query")
     path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True, schema=schema))),
-    path('chatgpt/', include('chatGPT.urls')),
+    path('chatgpt/', include('chatGPT.urls')), # chatGPT 앱의 urls.py를 이 곳에 불러옵니다.
 ]
