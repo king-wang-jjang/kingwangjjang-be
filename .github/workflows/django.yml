@@ -1,43 +1,74 @@
+# GitHub Actions workflow 이름
 name: Django CI
 
+# 언제 이 Workflow를 실행할지
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main", "develop" ]
+    #branches: [ "main" ] 
+    branches: [ "develop" ]
+    # push 발생할 시 -> main 브랜치에서 실행 
+  pull_request: 
+    branches: [ "main", "develop" ] 
+    # PR 발생할 시 -> main 및 develop 브랜치에서 실행
 
-jobs:
-  build:
 
-    runs-on: ubuntu-latest
+# django.yml (Django CI)workflow 에서 실행할 Job(작업) 정의 
+jobs: 
+  # job 1(build) -> job 2(run)
+
+
+  build: # job 1
+    # Docker 이미지 빌드, Docker Hub에 Push하는 Job
+
+    # job 실행 환경 정의(최신 ubuntu)
+    runs-on: ubuntu-latest 
+
     strategy:
-      max-parallel: 4
-      matrix:
+      max-parallel: 4 # 동시 실행될 최대 Job 수
+      matrix: # 각 Job에 전달될 매트릭스 변수 설정
         python-version: [3.9]
 
     steps:
-    - uses: actions/checkout@v3
+    # Job 수행 단계별 작업
+
+    # actions/checkout 액션 사용(GitHub제공), 소스코드 체크아웃(@v3 == 액션 버전)
+    - uses: actions/checkout@v3 
+
+    # Python 버전 설정 step
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
    
-    # docker image 빌드
+    # Docker Image 빌드 step
     - name: Build docker image
-      run: docker build -t hwanju1596/kingwangjjang:0.0.1 ./kingwangjjang
+      # test 수정!!!!
+      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang:0.0.1 ./kingwangjjang
+      #run: docker build -t hwanju1596/kingwangjjang:0.0.1 ./kingwangjjang
+      
 
-    # docker hub 로그인
+    # Docker Hub 로그인 step
     - name: Login docker hub
       uses: docker/login-action@master
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
+        username: ${{ secrets.DOCKERHUB_USERNAME_JS }}
+        password: ${{ secrets.DOCKERHUB_PASSWD_JS }} # test 수정!!!!!
+        #username: ${{ secrets.DOCKERHUB_USERNAME }}
+        #password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # docker/login-action 사용(GitHub제공) 도커허브 로그인
+      # github actions secrets 민감정보 사용
 
-    # docker hub 퍼블리시
+    # Docker Hub 퍼블리시 step
     - name: Publish to docker hub 
-      run: docker push hwanju1596/kingwangjjang:0.0.1
-  run:
-    needs: build
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang:0.0.1
+      #run: docker push hwanju1596/kingwangjjang:0.0.1
+
+
+
+  run: # job 2
+    # WAS 인스턴스에 접속, Docker 이미지 pull, run하는 Job
+    
+    needs: build # build job이 성공적으로 실행되야 실행
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -45,19 +76,28 @@ jobs:
         python-version: [3.9]
         
     steps:
-    # WAS 인스턴스 접속 & 애플리케이션 실행
+
+    # WAS 인스턴스 접속 & 애플리케이션 실행 step
     - name: Connect to WAS & Execute Application
-      uses: appleboy/ssh-action@master
+      uses: appleboy/ssh-action@master # GitHub제공 액션 사용, ssh로 인스턴스 접속
       with:
         host: ${{ secrets.WAS_HOST }}
         username: ${{ secrets.WAS_USERNAME }}
         key: ${{secrets.SSH_KEY}}
         port: ${{ secrets.WAS_SSH_PORT }}
-        script: |
-          sudo -S /usr/local/bin/docker version <<< "${{ secrets.WAS_PASSWORD }}"
-          sudo -S /usr/local/bin/docker rm -f kingwangjjang || true
-          sudo -S /usr/local/bin/docker pull hwanju1596/kingwangjjang:0.0.1 <<< "${{ secrets.WAS_PASSWORD }}"
-          sudo -S /usr/local/bin/docker run -d --name kingwangjjang -e DJANGO_SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}" -e DJANGO_DEBUG="${{ secrets.DJANGO_DEBUG }}" -e DB_HOST="${{ secrets.DB_HOST }}" -e DB_USER="${{ secrets.DB_USER }}" -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" -e DB_NAME="${{ secrets.DB_NAME }}" hwanju1596/kingwangjjang:0.0.1 <<< "${{ secrets.WAS_PASSWORD }}"
+        script: | # 인스턴스 접속후 실행할 스크립트
+          sudo docker version
+          sudo docker rm -f kingwangjjang || true
+          sudo docker pull ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang:0.0.1
+          sudo docker run -d --name kingwangjjang -e DJANGO_SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}" -e DJANGO_DEBUG="${{ secrets.DJANGO_DEBUG }}" -e DB_HOST="${{ secrets.DB_HOST }}" -e DB_USER="${{ secrets.DB_USER }}" -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" -e DB_NAME="${{ secrets.DB_NAME }}" ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang:0.0.1
+    # 
+    # sudo -S /usr/local/bin/docker version <<< "${{ secrets.WAS_PASSWORD }}"
+    # sudo -S /usr/local/bin/docker rm -f kingwangjjang || true
+    # sudo -S /usr/local/bin/docker pull hwanju1596/kingwangjjang:0.0.1 <<< "${{ secrets.WAS_PASSWORD }}"
+    # sudo -S /usr/local/bin/docker run -d --name kingwangjjang -e DJANGO_SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}" -e DJANGO_DEBUG="${{ secrets.DJANGO_DEBUG }}" -e DB_HOST="${{ secrets.DB_HOST }}" -e DB_USER="${{ secrets.DB_USER }}" -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" -e DB_NAME="${{ secrets.DB_NAME }}" hwanju1596/kingwangjjang:0.0.1 <<< "${{ secrets.WAS_PASSWORD }}"
+    # 도커 버전 출력, 실행중인 kingwangjjang컨테이너 제거
+    # 도커허브에서 hwanju1596/kingwangjjang:0.0.1 이란 이미지 pull
+    # 새로운 컨테이너 실행, 필요한 환경변수 지정
 
     #     docker exec kingwangjjang_migration python manage.py migrate
     #     docker stop kingwangjjang_migration
