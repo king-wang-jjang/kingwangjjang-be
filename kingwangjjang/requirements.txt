@@ -8,7 +8,7 @@ requests
 selenium
 
 # mongodb
-djongo==1.3.6
+djongo
 mongoengine
 
 # API
