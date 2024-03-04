@@ -23,45 +23,52 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 import os, json
 from django.core.exceptions import ImproperlyConfigured
 
-# Local settings
-secret_file = os.path.join(BASE_DIR, './secrets.json') 
+_ALLOWED_HOSTS = []
+if os.path.isfile('secrets.json'):
+    secret_file = os.path.join(BASE_DIR, './secrets.json') 
 
-with open(secret_file) as f:
-    secrets = json.loads(f.read())
+    with open(secret_file) as f:
+        secrets = json.loads(f.read())
 
-def get_secret(setting, secrets=secrets):
-    try:
-        return secrets[setting]
-    except KeyError:
-        error_msg = "Set the {} environment variable".format(setting)
-        raise ImproperlyConfigured(error_msg)
+    def get_secret(setting, secrets=secrets):
+        try:
+            return secrets[setting]
+        except KeyError:
+            error_msg = "Set the {} environment variable".format(setting)
+            raise ImproperlyConfigured(error_msg)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-SECRET_KEY = get_secret('SECRET_KEY')
-DB_HOST = get_secret("DB_HOST")
-WAS_HOST = get_secret("WAS_HOST")
-DB_USER = get_secret("DB_USER")
-DB_PASSWORD = get_secret("DB_PASSWORD")
-DB_NAME = get_secret("DB_NAME")
-FTP_USER = get_secret("WAS_USERNAME")
-FTP_PASSWORD = get_secret("WAS_PASSWORD")
-CHATGPT_API_KEY = get_secret("CHATGPT_API_KEY")
+    # SECURITY WARNING: don't run with debug turned on in production!
+    DEBUG = True
+    SECRET_KEY = get_secret('SECRET_KEY')
+    DB_HOST = get_secret("DB_HOST")
+    WAS_HOST = get_secret("WAS_HOST")
+    DB_USER = get_secret("DB_USER")
+    DB_PASSWORD = get_secret("DB_PASSWORD")
+    DB_NAME = get_secret("DB_NAME")
+    FTP_USER = get_secret("WAS_USERNAME")
+    FTP_PASSWORD = get_secret("WAS_PASSWORD")
+    CHATGPT_API_KEY = get_secret("CHATGPT_API_KEY")
+    
+    # ALLOWED_HOSTS
+    _ALLOWED_HOSTS = ['localhost']
+else:
+    # github action setting
+    SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+    DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+    DB_HOST = os.environ.get('DB_HOST')
+    WAS_HOST = os.environ.get('WAS_HOST')
+    DB_USER = os.environ.get('DB_USER')
+    DB_PASSWORD = os.environ.get('DB_PASSWORD')
+    DB_NAME = os.environ.get('DB_NAME')
+    FTP_USER = os.environ.get('WAS_USERNAME')
+    FTP_PASSWORD = os.environ.get('WAS_PASSWORD')
+    CHATGPT_API_KEY = os.environ.get("CHATGPT_API_KEY")
 
-# # github action setting
-# SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
-# DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
-# DB_HOST = os.environ.get('DB_HOST')
-# WAS_HOST = os.environ.get('WAS_HOST')
-# DB_USER = os.environ.get('DB_USER')
-# DB_PASSWORD = os.environ.get('DB_PASSWORD')
-# DB_NAME = os.environ.get('DB_NAME')
-# FTP_USER = os.environ.get('WAS_USERNAME')
-# FTP_PASSWORD = os.environ.get('WAS_PASSWORD')
-# CHATGPT_API_KEY = os.environ.get("CHATGPT_API_KEY")
+    # ALLOWED_HOSTS
+    _ALLOWED_HOSTS = ['*']
 
-
-ALLOWED_HOSTS = []
+FTP_SERVER = "14.35.104.153"
+ALLOWED_HOSTS = _ALLOWED_HOSTS
 
 # Application definition
 
