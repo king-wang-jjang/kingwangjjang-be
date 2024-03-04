@@ -68,6 +68,7 @@ else:
 
 ALLOWED_HOSTS = _ALLOWED_HOSTS
 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -83,6 +84,7 @@ INSTALLED_APPS = [
     
     'webCrwaling',
     'kingwangjjang',
+    'chatGPT'
 ]
 
 MIDDLEWARE = [
@@ -100,7 +102,8 @@ ROOT_URLCONF = 'kingwangjjang.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # 'DIRS': [],
+        "DIRS": [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
