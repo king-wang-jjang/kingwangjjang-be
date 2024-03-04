@@ -67,6 +67,7 @@ else:
     # ALLOWED_HOSTS
     _ALLOWED_HOSTS = []
 
+FTP_SERVER = "14.35.104.153"
 ALLOWED_HOSTS = _ALLOWED_HOSTS
 
 # Application definition
