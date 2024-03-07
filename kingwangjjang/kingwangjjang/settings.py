@@ -50,7 +50,9 @@ if os.path.isfile('secrets.json'):
     CHATGPT_API_KEY = get_secret("CHATGPT_API_KEY")
     
     # ALLOWED_HOSTS
-    _ALLOWED_HOSTS = ['localhost']
+    #_ALLOWED_HOSTS = ['localhost']
+    _ALLOWED_HOSTS = ['*']
+    
 else:
     # github action setting
     SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
