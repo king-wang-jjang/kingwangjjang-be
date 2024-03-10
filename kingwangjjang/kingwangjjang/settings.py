@@ -51,7 +51,7 @@ if os.path.isfile('secrets.json'):
     
     # ALLOWED_HOSTS
     #_ALLOWED_HOSTS = ['localhost']
-    _ALLOWED_HOSTS = ['*']
+    _ALLOWED_HOSTS = []
     
 else:
     # github action setting
