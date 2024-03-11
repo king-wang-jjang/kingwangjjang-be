@@ -24,6 +24,8 @@ import os, json
 from django.core.exceptions import ImproperlyConfigured
 
 _ALLOWED_HOSTS = []
+
+# 프로젝트 폴더에 secrets.json 있는 경우 -> 로컬 세팅
 if os.path.isfile('secrets.json'):
     secret_file = os.path.join(BASE_DIR, './secrets.json') 
 
@@ -51,6 +53,11 @@ if os.path.isfile('secrets.json'):
     
     # ALLOWED_HOSTS
     _ALLOWED_HOSTS = ['localhost']
+    
+    # Flow Check Log
+    print("setting : Local setting, localhost")
+    
+# 프로젝트 폴더에 secrets.json 없는경우 -> 깃 CI/CD 사용 배포세팅
 else:
     # github action setting
     SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
@@ -66,6 +73,9 @@ else:
 
     # ALLOWED_HOSTS
     _ALLOWED_HOSTS = ['*']
+    
+    # Flow Check Log
+    print("setting : Deploy setting, Git Actions CI/CD")
 
 FTP_SERVER = "14.35.104.153"
 ALLOWED_HOSTS = _ALLOWED_HOSTS
