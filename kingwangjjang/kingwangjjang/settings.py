@@ -53,6 +53,9 @@ if os.path.isfile('secrets.json'):
     #_ALLOWED_HOSTS = ['localhost']
     _ALLOWED_HOSTS = []
     
+    # Flow Check
+    print("debug point - local setting")
+    
 else:
     # github action setting
     SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
@@ -68,6 +71,9 @@ else:
 
     # ALLOWED_HOSTS
     _ALLOWED_HOSTS = ['*']
+    
+    # Flow Check
+    print("debug point - deploy setting")
 
 FTP_SERVER = "14.35.104.153"
 ALLOWED_HOSTS = _ALLOWED_HOSTS
