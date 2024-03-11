@@ -50,8 +50,8 @@ if os.path.isfile('secrets.json'):
     CHATGPT_API_KEY = get_secret("CHATGPT_API_KEY")
     
     # ALLOWED_HOSTS
-    #_ALLOWED_HOSTS = ['localhost']
-    _ALLOWED_HOSTS = []
+    _ALLOWED_HOSTS = ['localhost']
+    #_ALLOWED_HOSTS = []
     
     # Flow Check
     print("debug point - local setting")
