@@ -40,7 +40,7 @@ jobs:
    
     # Docker Image 빌드 step
     - name: Build docker image
-      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang:0.0.1 ./kingwangjjang
+      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }} ./kingwangjjang
       
 
     # Docker Hub 로그인 step
@@ -54,7 +54,7 @@ jobs:
 
     # Docker Hub 퍼블리시 step
     - name: Publish to docker hub 
-      run: docker push ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang:0.0.1
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
 
 
 
@@ -81,12 +81,12 @@ jobs:
         script: | # 인스턴스 접속후 실행할 스크립트
           sudo docker version
           sudo docker rm -f kingwangjjang || true
-          sudo docker pull ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang:0.0.1
-          sudo docker run -d --name kingwangjjang -e DJANGO_SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}" -e DJANGO_DEBUG="${{ secrets.DJANGO_DEBUG }}" -e DB_HOST="${{ secrets.DB_HOST }}" -e DB_USER="${{ secrets.DB_USER }}" -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" -e DB_NAME="${{ secrets.DB_NAME }}" -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang:0.0.1 
+          sudo docker pull ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be
+          sudo docker run -d --name kingwangjjang-be -e DJANGO_SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}" -e DJANGO_DEBUG="${{ secrets.DJANGO_DEBUG }}" -e DB_HOST="${{ secrets.DB_HOST }}" -e DB_USER="${{ secrets.DB_USER }}" -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" -e DB_NAME="${{ secrets.DB_NAME }}" -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
 
     # 도커 버전 출력
     # 실행중인 kingwangjjang컨테이너 제거
-    # 도커허브에서 hwanju1596/kingwangjjang:0.0.1 이미지 pull
+    # 도커허브에서 hwanju1596/kingwangjjang:version 이미지 pull
     # 새로운 컨테이너 실행,백그라운드에서(-d옵션), 환경변수 지정(-e옵션, 명령어 실행전 Secrets에서 해당 값 땡겨옴)
 
     #     docker exec kingwangjjang_migration python manage.py migrate
