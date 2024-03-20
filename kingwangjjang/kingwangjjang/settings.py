@@ -47,12 +47,12 @@ if os.path.isfile('secrets.json'):
     DB_USER = get_secret("DB_USER")
     DB_PASSWORD = get_secret("DB_PASSWORD")
     DB_NAME = get_secret("DB_NAME")
-    FTP_USER = get_secret("WAS_USERNAME")
-    FTP_PASSWORD = get_secret("WAS_PASSWORD")
+    FTP_USER = get_secret("FTP_USER")
+    FTP_PASSWORD = get_secret("FTP_PASSWORD")
     CHATGPT_API_KEY = get_secret("CHATGPT_API_KEY")
     
     # ALLOWED_HOSTS
-    _ALLOWED_HOSTS = ['localhost']
+    _ALLOWED_HOSTS = ['localhost', '127.0.0.1']
     
     # Flow Check Log
     print("setting : Local setting, localhost")
