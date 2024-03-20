@@ -31,12 +31,12 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Users\nori\AppData\Local\tesseract.
 # JPG -> Text 
 # 댓글을 요약 ( 추천 수가 몇 개이상 )
 def CommunitySiteCrawler(request):
-    dcincideCrwaller = Dcinside("20240220", "203621")
-    a = dcincideCrwaller.get_board_contents()
-    json_content = json.dumps(a, ensure_ascii=False, indent=2)
-    json_object = json.loads(json_content)
+    dcincideCrwaller = Dcinside( "203621")
+    # a = dcincideCrwaller.get_board_contents()
+    # json_content = json.dumps(a, ensure_ascii=False, indent=2)
+    # json_object = json.loads(json_content)
     
-    return JsonResponse({'data': json_object})
+    return JsonResponse({'data': ''})
 
 def DBInsertTest():
     db_controller = DBController()

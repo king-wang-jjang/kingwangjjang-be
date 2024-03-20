@@ -21,7 +21,8 @@ class Dcinside(AbstractCommunityWebsite):
             {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
         ]
     
-    def __init__(self, yyyymmdd, board_id):
+    def __init__(self, board_id):
+        yyyymmdd = datetime.today().strftime('%Y%m%d')
         self.ftp_client = FTPClient(server_address=getattr(settings, 'FTP_SERVER', None),
                   username=getattr(settings, 'FTP_USER', None),
                   password=getattr(settings, 'FTP_PASSWORD', None))
