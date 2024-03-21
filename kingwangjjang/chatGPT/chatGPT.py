@@ -3,7 +3,7 @@ from kingwangjjang.settings import CHATGPT_API_KEY # settings.py에서 API KEY�
 
 messages = []
 
-class ChatGptApi:
+class ChatGPT:
     openai.api_key = CHATGPT_API_KEY # API키 입니다. 외부에 공개하면 안됩니다.
 
     def __init__(self):
