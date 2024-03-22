@@ -32,9 +32,6 @@ class Dcinside(AbstractCommunityWebsite):
         except Exception as e:
             print("error:", e)
             raise  # Directory 생성을 못 하면 일단 멈춤 나중에 Exception 처리 필요
-        
-        self.download_path = os.path.abspath(f'./{self.yyyymmdd}/') 
-        self.set_driver_options()
     
     def get_daily_best(self):
         pass
@@ -85,7 +82,7 @@ class Dcinside(AbstractCommunityWebsite):
                     continue
     
     def get_board_contents(self, board_id):
-        self.download_path = os.path.abspath(f'./{self.yyyymmdd}/') 
+        self.download_path = os.path.abspath(f'./{self.yyyymmdd}/{board_id}') 
         self.set_driver_options()
 
         _url = "https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id

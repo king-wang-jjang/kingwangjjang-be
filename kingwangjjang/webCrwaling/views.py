@@ -1,25 +1,19 @@
 import json
-import time
-import webbrowser
+from django.shortcuts import get_object_or_404
 import requests 
 from bs4 import BeautifulSoup 
 from django.http import JsonResponse
 from selenium import webdriver
 from urllib import request as urllib_request
-from bson import json_util
-import urllib.request
+
+from chatGPT.chatGPT import ChatGPT
+
 from .communityWebsite.models import RealTime
-
 from mongo import DBController  
-from webCrwaling.communityWebsite.ppompu import Ppompu
 
-from webCrwaling.communityWebsite.ygosu import Ygosu
 from webCrwaling.communityWebsite.dcinside import Dcinside 
 
-from djongo import models
 
-from PIL import Image
-from io import BytesIO
 import pytesseract
 pytesseract.pytesseract.tesseract_cmd = r'C:\Users\nori\AppData\Local\tesseract.exe'
 
@@ -31,12 +25,34 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Users\nori\AppData\Local\tesseract.
 # JPG -> Text 
 # 댓글을 요약 ( 추천 수가 몇 개이상 )
 def CommunitySiteCrawler(request):
-    dcincideCrwaller = Dcinside( "203621")
-    # a = dcincideCrwaller.get_board_contents()
-    # json_content = json.dumps(a, ensure_ascii=False, indent=2)
-    # json_object = json.loads(json_content)
+    if request.method == 'POST':
+        board_id = request.POST.get('board_id')
+        dcincideCrwaller = Dcinside()
+
+        board_contents = dcincideCrwaller.get_board_contents(board_id)
+        print(board_contents)
+        return JsonResponse({'data': ''}) 
+        # json_content = json.dumps(board_contents, ensure_ascii=False, indent=2)
+        # json_object = json.loads(json_content)
+
+        realtime_object = get_object_or_404(RealTime, _id=board_id)
+        realtime_object.GPTAnswer = "여기에 수정하려는 값 넣기"
+        
+        realtime_object.save()
+        
+        return JsonResponse({'data': json_object}) 
     
+        prompt = request.POST.get('prompt')
+        prompt= "아래 내용에서 이상한 문자는 제외하고 5줄로 요약해줘" + str(prompt)
+        response = ChatGPT.get_completion(prompt)
+        return JsonResponse({'response': response}) 
+    elif request.method == 'GET':
+        return JsonResponse({'data': 'asds'})
     return JsonResponse({'data': ''})
+    dcincideCrwaller = Dcinside()
+    a = dcincideCrwaller.get_real_time_best()
+
+    return JsonResponse({'data': json_object})
 
 def DBInsertTest():
     db_controller = DBController()
