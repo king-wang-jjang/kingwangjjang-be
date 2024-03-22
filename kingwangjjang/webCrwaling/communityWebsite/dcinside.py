@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 from sqlite3 import IntegrityError
 from bs4 import BeautifulSoup
@@ -21,23 +21,19 @@ class Dcinside(AbstractCommunityWebsite):
             {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
         ]
     
-    def __init__(self, board_id):
-        yyyymmdd = datetime.today().strftime('%Y%m%d')
+    def __init__(self):
+        self.yyyymmdd = datetime.today().strftime('%Y%m%d')
         self.ftp_client = FTPClient(server_address=getattr(settings, 'FTP_SERVER', None),
                   username=getattr(settings, 'FTP_USER', None),
-                  password=getattr(settings, 'FTP_PASSWORD', None))
+                password=getattr(settings, 'FTP_PASSWORD', None))
         try:
-            super().__init__(yyyymmdd, self.ftp_client)
+            super().__init__(self.yyyymmdd, self.ftp_client)
             print("ready to today directory")
         except Exception as e:
             print("error:", e)
             raise  # Directory 생성을 못 하면 일단 멈춤 나중에 Exception 처리 필요
         
-        self.download_path = os.path.abspath(f'./{yyyymmdd}/{board_id}/')
-        self.yyyymmdd = yyyymmdd
-        self.board_id = board_id
-        self.BASE_URL = 'https://www.dcinside.com/'
-        self.directory_name = str(yyyymmdd) + "/" + str(board_id) + "/"
+        self.download_path = os.path.abspath(f'./{self.yyyymmdd}/') 
         self.set_driver_options()
     
     def get_daily_best(self):
@@ -46,13 +42,9 @@ class Dcinside(AbstractCommunityWebsite):
     def get_real_time_best(self):
         req = requests.get('https://www.dcinside.com/', headers=self.g_headers[0])
         html_content = req.text
-
         soup = BeautifulSoup(html_content, 'html.parser')
-
         li_elements = soup.select('#dcbest_list_date li')
         
-        real_time_instances = []
-
         for li in li_elements:
             p_element = li.select_one('.box.besttxt p')
             a_element = li.select_one('.main_log')
@@ -74,22 +66,29 @@ class Dcinside(AbstractCommunityWebsite):
                 target_datetime = datetime(now.year, now.month, now.day, hour, minute)
 
                 try:
-                    real_time_instance, created = RealTime.objects.get_or_create(
-                        _id=no_value,
-                        defaults={
-                            'site' : 'dcinside',
-                            'title': p_text,
-                            'url': a_href,
-                            'create_time': target_datetime,
-                        }
-                    )
-                    if not created:
+                    existing_instance = RealTime.objects.filter(_id=no_value).first()
+                    if existing_instance:
+                        print("Already exists", no_value)
                         continue
+                    else:
+                        RealTime.objects.get_or_create(
+                            _id=no_value,
+                            defaults={
+                                'site' : 'dcinside',
+                                'title': p_text,
+                                'url': a_href,
+                                'create_time': target_datetime,
+                                'GPTAnswer': "GPT 생성 중..."
+                            }
+                        )
                 except IntegrityError:
                     continue
     
-    def get_board_contents(self):
-        _url = "https://gall.dcinside.com/board/view/?id=dcbest&no=" + self.board_id
+    def get_board_contents(self, board_id):
+        self.download_path = os.path.abspath(f'./{self.yyyymmdd}/') 
+        self.set_driver_options()
+
+        _url = "https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id
         req = requests.get(_url, headers=self.g_headers[0])
         html_content = req.text
         soup = BeautifulSoup(html_content, 'html.parser')
@@ -100,8 +99,6 @@ class Dcinside(AbstractCommunityWebsite):
 
         write_div = soup.find('div', class_='write_div')
 
-        # 총 경우는 3가지이나 두 가지의 경우가 많이 나와서 2개만 한다. 
-        # https://www.notion.so/dcincide-f996acc8355e4f0d8320b6f7e06abd57?pvs=4
         find_all = (
             write_div.find_all(['p'])
             if len(write_div.find_all(['p'])) > len(write_div.find_all(['div']))
