@@ -30,30 +30,19 @@ def CommunitySiteCrawler(request):
         board_id = data.get('board_id')
         dcincideCrwaller = Dcinside()
     
-        board_contents = dcincideCrwaller.get_board_contents(board_id)
-        print(board_contents)
-        return JsonResponse({'data': ''}) 
-        # json_content = json.dumps(board_contents, ensure_ascii=False, indent=2)
-        # json_object = json.loads(json_content)
-
-        realtime_object = get_object_or_404(RealTime, _id=board_id)
-        realtime_object.GPTAnswer = "여기에 수정하려는 값 넣기"
+        json_contents = dcincideCrwaller.get_board_contents(board_id)
+        str_contents = ''
+        for a in json_contents:
+            if 'content' in a:
+                str_contents += a['content']
         
-        realtime_object.save()
+        # GPT 요약
+        prompt= "아래 내용에서 이상한 문자는 제외하고 5줄로 요약해줘" + str_contents
+        chatGPT = ChatGPT()
+        response = chatGPT.get_completion(content=prompt)
         
-        return JsonResponse({'data': json_object}) 
+    return JsonResponse({'response': response}) 
     
-        prompt = request.POST.get('prompt')
-        prompt= "아래 내용에서 이상한 문자는 제외하고 5줄로 요약해줘" + str(prompt)
-        response = ChatGPT.get_completion(prompt)
-        return JsonResponse({'response': response}) 
-    elif request.method == 'GET':
-        return JsonResponse({'data': 'asds'})
-    return JsonResponse({'data': ''})
-    dcincideCrwaller = Dcinside()
-    a = dcincideCrwaller.get_real_time_best()
-
-    return JsonResponse({'data': json_object})
 
 def DBInsertTest():
     db_controller = DBController()
