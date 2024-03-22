@@ -40,6 +40,10 @@ def CommunitySiteCrawler(request):
         prompt= "아래 내용에서 이상한 문자는 제외하고 5줄로 요약해줘" + str_contents
         chatGPT = ChatGPT()
         response = chatGPT.get_completion(content=prompt)
+
+        # realtime_object = get_object_or_404(RealTime, _id=board_id)
+        # realtime_object.GPTAnswer = response
+        # realtime_object.save()
         
     return JsonResponse({'response': response}) 
     
