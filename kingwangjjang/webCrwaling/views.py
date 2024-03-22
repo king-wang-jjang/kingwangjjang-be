@@ -26,9 +26,10 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Users\nori\AppData\Local\tesseract.
 # 댓글을 요약 ( 추천 수가 몇 개이상 )
 def CommunitySiteCrawler(request):
     if request.method == 'POST':
-        board_id = request.POST.get('board_id')
+        data = json.loads(request.body)
+        board_id = data.get('board_id')
         dcincideCrwaller = Dcinside()
-
+    
         board_contents = dcincideCrwaller.get_board_contents(board_id)
         print(board_contents)
         return JsonResponse({'data': ''}) 
