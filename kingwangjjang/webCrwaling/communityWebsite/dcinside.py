@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from django.conf import settings
 import requests
 
+from constants import DEFAILT_GPT_ANSWER
 from utils import FTPClient
 from .models import RealTime
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
@@ -75,7 +76,7 @@ class Dcinside(AbstractCommunityWebsite):
                                 'title': p_text,
                                 'url': a_href,
                                 'create_time': target_datetime,
-                                'GPTAnswer': "GPT 생성 중..."
+                                'GPTAnswer': DEFAILT_GPT_ANSWER
                             }
                         )
                 except IntegrityError:

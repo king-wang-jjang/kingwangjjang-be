@@ -21,8 +21,6 @@ from graphene_django.views import GraphQLView
 from webCrwaling.schema import schema
 from webCrwaling.views import CommunitySiteCrawler
 
-from webCrwaling.views import CommunitySiteCrawler
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/CommunitySiteCrawler/', CommunitySiteCrawler, name='CommunitySiteCrawler'),
