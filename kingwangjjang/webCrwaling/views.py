@@ -41,9 +41,9 @@ def CommunitySiteCrawler(request):
         chatGPT = ChatGPT()
         response = chatGPT.get_completion(content=prompt)
 
-        # realtime_object = get_object_or_404(RealTime, _id=board_id)
-        # realtime_object.GPTAnswer = response
-        # realtime_object.save()
+        realtime_object = get_object_or_404(RealTime, _id=board_id)
+        realtime_object.GPTAnswer = response
+        realtime_object.save()
         
     return JsonResponse({'response': response}) 
     
