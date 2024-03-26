@@ -82,7 +82,17 @@ jobs:
           sudo docker version
           sudo docker rm -f kingwangjjang-be || true
           sudo docker pull ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be
-          sudo docker run -d --name kingwangjjang-be -e DJANGO_SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}" -e DJANGO_DEBUG="${{ secrets.DJANGO_DEBUG }}" -e DB_HOST="${{ secrets.DB_HOST }}" -e DB_USER="${{ secrets.DB_USER }}" -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" -e DB_NAME="${{ secrets.DB_NAME }}" -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
+          sudo docker run -d --name kingwangjjang-be \
+          -e DJANGO_SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}" \
+          -e DJANGO_DEBUG="${{ secrets.DJANGO_DEBUG }}" \
+          -e DB_HOST="${{ secrets.DB_HOST }}" \
+          -e DB_USER="${{ secrets.DB_USER }}" \
+          -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+          -e DB_NAME="${{ secrets.DB_NAME }}" \
+          -e FTP_USER="${{ secrets.FTP_USER }}" \
+          -e FTP_PASSWORD="${{ secrets.FTP_PASSWORD }}" \
+          -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
+
 
     # 도커 버전 출력
     # 실행중인 kingwangjjang컨테이너 제거

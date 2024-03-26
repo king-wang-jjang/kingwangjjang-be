@@ -56,8 +56,6 @@ def CommunitySiteCrawler(request):
         dcincideCrwaller = Dcinside()
         dcincideCrwaller.get_real_time_best()
 
-    
-
 def DBInsertTest():
     db_controller = DBController()
     collection_name = "realtimebest"
