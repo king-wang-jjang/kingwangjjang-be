@@ -67,8 +67,8 @@ else:
     DB_USER = os.environ.get('DB_USER')
     DB_PASSWORD = os.environ.get('DB_PASSWORD')
     DB_NAME = os.environ.get('DB_NAME')
-    FTP_USER = os.environ.get('WAS_USERNAME')
-    FTP_PASSWORD = os.environ.get('WAS_PASSWORD')
+    FTP_USER = os.environ.get('FTP_USER')
+    FTP_PASSWORD = os.environ.get('FTP_PASSWORD')
     CHATGPT_API_KEY = os.environ.get("CHATGPT_API_KEY")
 
     # ALLOWED_HOSTS
