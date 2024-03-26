@@ -1,42 +1,62 @@
 import json
-import time
-import webbrowser
+from django.shortcuts import get_object_or_404
 import requests 
 from bs4 import BeautifulSoup 
 from django.http import JsonResponse
 from selenium import webdriver
 from urllib import request as urllib_request
-from bson import json_util
-import urllib.request
+
+from chatGPT.chatGPT import ChatGPT
+from constants import DEFAILT_GPT_ANSWER
+
 from .communityWebsite.models import RealTime
-
 from mongo import DBController  
-from webCrwaling.communityWebsite.ppompu import Ppompu
-
-from webCrwaling.communityWebsite.ygosu import Ygosu
+from django.views.decorators.csrf import csrf_exempt
 from webCrwaling.communityWebsite.dcinside import Dcinside 
 
-from djongo import models
 
-from PIL import Image
-from io import BytesIO
 import pytesseract
 pytesseract.pytesseract.tesseract_cmd = r'C:\Users\nori\AppData\Local\tesseract.exe'
-
-# class RealTime(models.Model):
-
-# Create your views here.
 
 ### 이미지가 많은 상황
 # JPG -> Text 
 # 댓글을 요약 ( 추천 수가 몇 개이상 )
+@csrf_exempt
 def CommunitySiteCrawler(request):
-    dcincideCrwaller = Dcinside("20240220", "203621")
-    a = dcincideCrwaller.get_board_contents()
-    json_content = json.dumps(a, ensure_ascii=False, indent=2)
-    json_object = json.loads(json_content)
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        board_id = data.get('board_id')
+        realtime_object = get_object_or_404(RealTime, _id=board_id)
+        
+        if (realtime_object.GPTAnswer != DEFAILT_GPT_ANSWER):
+            return JsonResponse({'response': realtime_object.GPTAnswer}) 
+            return True # 이미 요약이 완료된 상태
+            
+        data = json.loads(request.body)
+        board_id = data.get('board_id')
+
+        dcincideCrwaller = Dcinside()
+        json_contents = dcincideCrwaller.get_board_contents(board_id)
+        str_contents = ''
+        for a in json_contents:
+            if 'content' in a:
+                str_contents += a['content']
+        
+        # GPT 요약
+        prompt= "아래 내용에서 이상한 문자는 제외하고 5줄로 요약해줘" + str_contents
+        chatGPT = ChatGPT()
+        response = chatGPT.get_completion(content=prompt)
+
+        # Insert Mongodb
+        realtime_object.GPTAnswer = response
+        realtime_object.save()
+        
+        return JsonResponse({'response': response}) 
+    else:
+        dcincideCrwaller = Dcinside()
+        dcincideCrwaller.get_real_time_best()
+
     
-    return JsonResponse({'data': json_object})
 
 def DBInsertTest():
     db_controller = DBController()

@@ -6,6 +6,8 @@ class RealTime(models.Model):
     title = models.CharField(max_length=255)
     url = models.URLField()
     create_time = models.DateTimeField()
+    GPTAnswer = models.TextField()
+    
     class Meta:
         db_table = 'realtimebest'
 
