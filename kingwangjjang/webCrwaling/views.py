@@ -11,7 +11,7 @@ from constants import DEFAILT_GPT_ANSWER
 
 from .communityWebsite.models import RealTime
 from mongo import DBController  
-
+from django.views.decorators.csrf import csrf_exempt
 from webCrwaling.communityWebsite.dcinside import Dcinside 
 
 
@@ -21,6 +21,7 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Users\nori\AppData\Local\tesseract.
 ### 이미지가 많은 상황
 # JPG -> Text 
 # 댓글을 요약 ( 추천 수가 몇 개이상 )
+@csrf_exempt
 def CommunitySiteCrawler(request):
     if request.method == 'POST':
         data = json.loads(request.body)
@@ -51,6 +52,10 @@ def CommunitySiteCrawler(request):
         realtime_object.save()
         
         return JsonResponse({'response': response}) 
+    else:
+        dcincideCrwaller = Dcinside()
+        dcincideCrwaller.get_real_time_best()
+
     
 
 def DBInsertTest():
