@@ -81,7 +81,7 @@ jobs:
         script: | # 인스턴스 접속후 실행할 스크립트
           sudo docker version
           sudo docker rm -f kingwangjjang-be || true
-          sudo docker pull ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be
+          sudo docker pull ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
           sudo docker run -d --name kingwangjjang-be \
           -e DJANGO_SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}" \
           -e DJANGO_DEBUG="${{ secrets.DJANGO_DEBUG }}" \
