@@ -25,14 +25,16 @@ class Dcinside(AbstractCommunityWebsite):
     
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
-        self.ftp_client = FTPClient(server_address=getattr(settings, 'FTP_SERVER', None),
-                  username=getattr(settings, 'FTP_USER', None),
-                password=getattr(settings, 'FTP_PASSWORD', None))
+        
         try:
+            self.ftp_client = FTPClient(server_address=getattr(settings, 'FTP_SERVER', None),
+                              username=getattr(settings, 'FTP_USER', None),
+                              password=getattr(settings, 'FTP_PASSWORD', None))
             super().__init__(self.yyyymmdd, self.ftp_client)
             print("ready to today directory")
         except Exception as e:
             print("error:", e)
+            return False
             raise  # Directory 생성을 못 하면 일단 멈춤 나중에 Exception 처리 필요
     
     def get_daily_best(self):
