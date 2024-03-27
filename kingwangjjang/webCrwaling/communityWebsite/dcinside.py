@@ -16,6 +16,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
 
 class Dcinside(AbstractCommunityWebsite):
     g_headers = [
@@ -90,7 +91,7 @@ class Dcinside(AbstractCommunityWebsite):
         req = requests.get(_url, headers=self.g_headers[0])
         html_content = req.text
         soup = BeautifulSoup(html_content, 'html.parser')
-        
+
         second_article = soup.find_all('article')[1]
         title = second_article.find('h3').get_text(strip=True)
         content_list = []
@@ -134,6 +135,11 @@ class Dcinside(AbstractCommunityWebsite):
         chrome_options = Options()
         prefs = {"download.default_directory": self.download_path}
         chrome_options.add_experimental_option("prefs", prefs)
+        chrome_options.add_argument('headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('window-size=1920x1080')
+        chrome_options.add_argument("disable-gpu")
+        chrome_options.add_argument(f'user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36')
 
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
