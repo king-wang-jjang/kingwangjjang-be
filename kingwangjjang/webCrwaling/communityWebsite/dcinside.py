@@ -33,7 +33,7 @@ class Dcinside(AbstractCommunityWebsite):
             super().__init__(self.yyyymmdd, self.ftp_client)
             print("ready to today directory")
         except Exception as e:
-            print("error:", e)
+            print("Dcinside error:", e)
             return None
             raise  # Directory 생성을 못 하면 일단 멈춤 나중에 Exception 처리 필요
     
@@ -85,7 +85,7 @@ class Dcinside(AbstractCommunityWebsite):
                         )
                 except IntegrityError:
                     continue
-                
+
         print("already exists post", already_exists_post)
 
     def get_board_contents(self, board_id):
@@ -120,7 +120,7 @@ class Dcinside(AbstractCommunityWebsite):
                     content_list.append({'type': 'image', 'url': image_url, 
                                         'content': img_txt})
                 except Exception:
-                    print(f'Error {Exception}')
+                    print(f'Dcinside Error {Exception}')
 
             video_tags = element.find_all('video')
             for video_tag in video_tags:
@@ -157,7 +157,7 @@ class Dcinside(AbstractCommunityWebsite):
                 EC.presence_of_element_located((By.XPATH, '//body'))
             )
         except Exception:
-            print('Error', Exception)
+            print('Dcinside Error', Exception)
         finally:
             return True
     

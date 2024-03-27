@@ -22,7 +22,7 @@ class FTPClient(object):
             self.ftp.login(self.username, self.password)
             print("Successfully connected")
         except Exception as e:
-            print(f'Error: {e}')
+            print(f'FTP Error: {e}')
 
     def list_files(self, directory):
         try:
@@ -31,7 +31,7 @@ class FTPClient(object):
             self.ftp.dir(files.append)
             return files
         except Exception as e:
-            print(f'Error: {e}')
+            print(f'FTP Error: {e}')
             return []
         
     def ftp_upload_file(self, local_file_path, remote_file_path):
@@ -41,7 +41,7 @@ class FTPClient(object):
             print(f'File uploaded successfully to {remote_file_path}')
 
         except Exception as e:
-            print(f'Error: {e}')
+            print(f'FTP Error: {e}')
 
     def ftp_download_file(self, remote_file_path, local_file_path):
         try:
@@ -51,7 +51,7 @@ class FTPClient(object):
             print(f'File downloaded successfully to {local_file_path}')
 
         except Exception as e:
-            print(f'Error: {e}')
+            print(f'FTP Error: {e}')
 
     def ftp_upload_folder(self, local_directory, remote_directory):
             """
