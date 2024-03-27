@@ -18,9 +18,11 @@ RUN apt-get -y update && \
     wget -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/$(curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip && \
     unzip /tmp/chromedriver.zip chromedriver -d /usr/bin && \
     rm /tmp/chromedriver.zip
-    
-# 라이브러리 설치
+
 RUN pip install -r requirements.txt
+
+# Chrome 실행 권한 부여
+RUN chmod +x /usr/bin/google-chrome
 
 # Django 애플리케이션 실행 "0.0.0.0:8000" 식으로 ip,port 설정가능
 CMD [ "python", "manage.py", "runserver" , "0.0.0.0:8000"]
