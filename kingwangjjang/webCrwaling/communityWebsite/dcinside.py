@@ -45,7 +45,8 @@ class Dcinside(AbstractCommunityWebsite):
         html_content = req.text
         soup = BeautifulSoup(html_content, 'html.parser')
         li_elements = soup.select('#dcbest_list_date li')
-        
+        already_exists_post = []
+
         for li in li_elements:
             p_element = li.select_one('.box.besttxt p')
             a_element = li.select_one('.main_log')
@@ -69,7 +70,7 @@ class Dcinside(AbstractCommunityWebsite):
                 try:
                     existing_instance = RealTime.objects.filter(_id=no_value).first()
                     if existing_instance:
-                        print("Already exists", no_value)
+                        already_exists_post.append(no_value)
                         continue
                     else:
                         RealTime.objects.get_or_create(
@@ -84,7 +85,9 @@ class Dcinside(AbstractCommunityWebsite):
                         )
                 except IntegrityError:
                     continue
-    
+                
+        print("already exists post", already_exists_post)
+
     def get_board_contents(self, board_id):
         self.download_path = os.path.abspath(f'./{self.yyyymmdd}/{board_id}') 
         self.set_driver_options()
