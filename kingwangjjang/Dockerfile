@@ -17,14 +17,14 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key
     && apt-get update \
     && apt-get install -y google-chrome-stable
 
-RUN chmod +x /usr/bin/google-chrome-stable
-
 # Chromedriver 설치
-RUN wget -q -O /tmp/chromedriver.zip https://chromedriver.storage.googleapis.com/94.0.4606.61/chromedriver_linux64.zip \
+# https://storage.googleapis.com/chrome-for-testing-public/123.0.6312.86/linux64/chrome-linux64.zip 
+# https://chromedriver.storage.googleapis.com/123.0.6312.86/chromedriver_linux64.zip
+RUN wget -q -O /tmp/chromedriver.zip https://storage.googleapis.com/chrome-for-testing-public/123.0.6312.86/linux64/chromedriver-linux64.zip \
     && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
     && rm /tmp/chromedriver.zip
 
-RUN chmod +x /usr/local/bin/chromedriver
+# RUN chmod +x /usr/local/bin/chromedriver
 
 # 작업디렉토리 설정
 WORKDIR /web

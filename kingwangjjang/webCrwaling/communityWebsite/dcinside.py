@@ -34,7 +34,7 @@ class Dcinside(AbstractCommunityWebsite):
             print("ready to today directory")
         except Exception as e:
             print("error:", e)
-            return False
+            return None
             raise  # Directory 생성을 못 하면 일단 멈춤 나중에 Exception 처리 필요
     
     def get_daily_best(self):
