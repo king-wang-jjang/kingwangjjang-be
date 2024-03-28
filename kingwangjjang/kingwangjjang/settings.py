@@ -43,7 +43,6 @@ if os.path.isfile('secrets.json'):
     DEBUG = True
     SECRET_KEY = get_secret('SECRET_KEY')
     DB_HOST = get_secret("DB_HOST")
-    WAS_HOST = get_secret("WAS_HOST")
     DB_USER = get_secret("DB_USER")
     DB_PASSWORD = get_secret("DB_PASSWORD")
     DB_NAME = get_secret("DB_NAME")
@@ -63,7 +62,6 @@ else:
     SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
     DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
     DB_HOST = os.environ.get('DB_HOST')
-    WAS_HOST = os.environ.get('WAS_HOST')
     DB_USER = os.environ.get('DB_USER')
     DB_PASSWORD = os.environ.get('DB_PASSWORD')
     DB_NAME = os.environ.get('DB_NAME')

@@ -16,6 +16,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
 
 class Dcinside(AbstractCommunityWebsite):
     g_headers = [
@@ -24,14 +25,16 @@ class Dcinside(AbstractCommunityWebsite):
     
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
-        self.ftp_client = FTPClient(server_address=getattr(settings, 'FTP_SERVER', None),
-                  username=getattr(settings, 'FTP_USER', None),
-                password=getattr(settings, 'FTP_PASSWORD', None))
+        
         try:
+            self.ftp_client = FTPClient(server_address=getattr(settings, 'FTP_SERVER', None),
+                              username=getattr(settings, 'FTP_USER', None),
+                              password=getattr(settings, 'FTP_PASSWORD', None))
             super().__init__(self.yyyymmdd, self.ftp_client)
             print("ready to today directory")
         except Exception as e:
-            print("error:", e)
+            print("Dcinside error:", e)
+            return None
             raise  # Directory 생성을 못 하면 일단 멈춤 나중에 Exception 처리 필요
     
     def get_daily_best(self):
@@ -42,7 +45,8 @@ class Dcinside(AbstractCommunityWebsite):
         html_content = req.text
         soup = BeautifulSoup(html_content, 'html.parser')
         li_elements = soup.select('#dcbest_list_date li')
-        
+        already_exists_post = []
+
         for li in li_elements:
             p_element = li.select_one('.box.besttxt p')
             a_element = li.select_one('.main_log')
@@ -66,7 +70,7 @@ class Dcinside(AbstractCommunityWebsite):
                 try:
                     existing_instance = RealTime.objects.filter(_id=no_value).first()
                     if existing_instance:
-                        print("Already exists", no_value)
+                        already_exists_post.append(no_value)
                         continue
                     else:
                         RealTime.objects.get_or_create(
@@ -81,7 +85,9 @@ class Dcinside(AbstractCommunityWebsite):
                         )
                 except IntegrityError:
                     continue
-    
+
+        print("already exists post", already_exists_post)
+
     def get_board_contents(self, board_id):
         self.download_path = os.path.abspath(f'./{self.yyyymmdd}/{board_id}') 
         self.set_driver_options()
@@ -90,7 +96,7 @@ class Dcinside(AbstractCommunityWebsite):
         req = requests.get(_url, headers=self.g_headers[0])
         html_content = req.text
         soup = BeautifulSoup(html_content, 'html.parser')
-        
+
         second_article = soup.find_all('article')[1]
         title = second_article.find('h3').get_text(strip=True)
         content_list = []
@@ -114,7 +120,7 @@ class Dcinside(AbstractCommunityWebsite):
                     content_list.append({'type': 'image', 'url': image_url, 
                                         'content': img_txt})
                 except Exception:
-                    print(f'Error {Exception}')
+                    print(f'Dcinside Error {Exception}')
 
             video_tags = element.find_all('video')
             for video_tag in video_tags:
@@ -134,6 +140,12 @@ class Dcinside(AbstractCommunityWebsite):
         chrome_options = Options()
         prefs = {"download.default_directory": self.download_path}
         chrome_options.add_experimental_option("prefs", prefs)
+        chrome_options.add_argument('headless')
+        chrome_options.add_argument('--no-sandbox')
+        chrome_options.add_argument('--incognito')
+        chrome_options.add_argument('--disable-setuid-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_experimental_option('excludeSwitches',['enable-logging'])
 
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
@@ -146,7 +158,7 @@ class Dcinside(AbstractCommunityWebsite):
                 EC.presence_of_element_located((By.XPATH, '//body'))
             )
         except Exception:
-            print('Error', Exception)
+            print('Dcinside Error', Exception)
         finally:
             return True
     
