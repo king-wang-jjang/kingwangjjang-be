@@ -45,6 +45,7 @@ def CommunitySiteCrawler(request):
         # GPT 요약
         prompt= "아래 내용에서 이상한 문자는 제외하고 5줄로 요약해줘" + str_contents
         chatGPT = ChatGPT()
+        print("URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
         response = chatGPT.get_completion(content=prompt)
 
         # Insert Mongodb
