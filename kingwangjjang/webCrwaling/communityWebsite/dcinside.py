@@ -119,8 +119,8 @@ class Dcinside(AbstractCommunityWebsite):
                     img_txt = super().img_to_text(self.save_img(image_url))
                     content_list.append({'type': 'image', 'url': image_url, 
                                         'content': img_txt})
-                except Exception:
-                    print(f'Dcinside Error {Exception}')
+                except Exception as e:
+                    print(f'Dcinside Error {e}')
 
             video_tags = element.find_all('video')
             for video_tag in video_tags:
@@ -140,9 +140,9 @@ class Dcinside(AbstractCommunityWebsite):
         chrome_options = Options()
         prefs = {"download.default_directory": self.download_path}
         chrome_options.add_experimental_option("prefs", prefs)
-        chrome_options.add_argument('headless')
+        # chrome_options.add_argument('headless')
         chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--incognito')
+        # chrome_options.add_argument('--incognito')
         chrome_options.add_argument('--disable-setuid-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_experimental_option('excludeSwitches',['enable-logging'])
@@ -157,8 +157,8 @@ class Dcinside(AbstractCommunityWebsite):
             WebDriverWait(self.driver, 5).until(
                 EC.presence_of_element_located((By.XPATH, '//body'))
             )
-        except Exception:
-            print('Dcinside Error', Exception)
+        except Exception as e:
+            print('Dcinside Error', e)
         finally:
             return True
     

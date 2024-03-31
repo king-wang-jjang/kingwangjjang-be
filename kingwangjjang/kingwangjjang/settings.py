@@ -51,7 +51,7 @@ if os.path.isfile('secrets.json'):
     CHATGPT_API_KEY = get_secret("CHATGPT_API_KEY")
     
     # ALLOWED_HOSTS
-    _ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+    _ALLOWED_HOSTS = ['*']
     
     # Flow Check Log
     print("setting : Local setting, localhost")
@@ -77,9 +77,23 @@ else:
 
 FTP_SERVER = "14.35.104.153"
 ALLOWED_HOSTS = _ALLOWED_HOSTS
+# CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://local.kwjj.com",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -87,6 +101,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+     "corsheaders",
+
     # Graph QL
     'graphene_django',
     'graphene_mongo',
@@ -100,6 +116,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',

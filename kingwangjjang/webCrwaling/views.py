@@ -57,6 +57,8 @@ def CommunitySiteCrawler(request):
         dcincideCrwaller = Dcinside()
         dcincideCrwaller.get_real_time_best()
 
+        return JsonResponse({'response': "성공하는 루트 추가해야함"}) 
+
 def DBInsertTest():
     db_controller = DBController()
     collection_name = "realtimebest"

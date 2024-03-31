@@ -20,7 +20,7 @@ class FTPClient(object):
         try:
             self.ftp.connect(self.server_address)
             self.ftp.login(self.username, self.password)
-            print("Successfully connected")
+            print("Successfully FTP connected")
         except Exception as e:
             print(f'FTP Error: {e}')
 
@@ -108,7 +108,7 @@ class FTPClient(object):
         try:
             self.ftp.cwd(self.root)
             self.ftp.cwd(yyyymmdd)
-            print(f"Directory already exists: {yyyymmdd}")
+            # print(f"Directory already exists: {yyyymmdd}")
         except Exception as e:
             try:
                 self.ftp.mkd(yyyymmdd)
