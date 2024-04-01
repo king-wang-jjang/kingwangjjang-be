@@ -29,3 +29,6 @@ pyftpdlib
 
 # chatGPT
 openai==0.28
+
+# instagrapi: instagram post feature
+instagrapi==2.1.1
