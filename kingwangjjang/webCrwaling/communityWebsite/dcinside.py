@@ -128,6 +128,8 @@ class Dcinside(AbstractCommunityWebsite):
                 for source_tag in source_tags:
                     video_url = source_tag['src']
                     content_list.append({'type': 'video', 'url': video_url})
+        
+        self.ftp_client.ftp_upload_folder(local_directory=self.download_path, remote_directory=self.download_path)
 
         return content_list
 
