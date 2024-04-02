@@ -30,7 +30,8 @@ ENV PYTHONUNBUFFERED 1
 #############################################################################################################################################################
 
 # Img To Text
-RUN sudo apt install tesseract-ocr
+RUN apt-get update && apt-get install -y \
+    tesseract-ocr
 
 # 작업디렉토리 설정
 WORKDIR /web
