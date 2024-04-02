@@ -4,6 +4,7 @@ FROM python:3
 
 ENV PYTHONUNBUFFERED 1
 
+#############################################################################################################################################################
 # # EC2 에서는 리소스가 부족해서 실행하기가 어려워서 주석 처리
 # # dcinside에서 이미지 다운로드가 어려운 점 때문에 이용했기 때문에 다른 커뮤니티는 Chromedriver가 필요가 없음.
 # # Chromedriver 다운로드 및 설치
@@ -26,6 +27,10 @@ ENV PYTHONUNBUFFERED 1
 #     && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
 #     && rm /tmp/chromedriver.zip
 # RUN chmod +x /usr/local/bin/chromedriver
+#############################################################################################################################################################
+
+# Img To Text
+RUN apt install tesseract-ocr
 
 # 작업디렉토리 설정
 WORKDIR /web
