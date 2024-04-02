@@ -24,6 +24,7 @@ class InstaPost:
             else:
                 print("로그인에 문제가 있습니다:", e)
 
+
     # 사용자 프로필 사진 가져오기(url로 get)
     def get_profile_image(self):
         if self.isLogined:
@@ -42,7 +43,21 @@ class InstaPost:
                 print("게시물 업로드 중 문제가 생겼습니다.", e)
         else:
             message = "로그인 먼저 해주세요."
-            return message      
+            return message    
+          
+        
+    # 비디오 한 개 업로드
+    def video_upload_one(self, media_path, caption):
+        if self.isLogined:
+            try:
+                self.client.video_upload(media_path, caption)
+                message = "게시물 업로드를 완료했습니다."
+                return message
+            except Exception as e:
+                print("게시물 업로드 중 문제가 생겼습니다.", e)
+        else:
+            message = "로그인 먼저 해주세요."
+            return message
         
 
     # 여러 개의 미디어 업로드(이미지 여러 장, 비디오 여러 개, 사진 + 비디오 등...)
