@@ -4,26 +4,27 @@ FROM python:3
 
 ENV PYTHONUNBUFFERED 1
 
-# Chromedriver 다운로드 및 설치
-RUN apt-get update && apt-get install -y \
-    wget \
-    unzip \
-    gnupg \
-    && rm -rf /var/lib/apt/lists/*
+# # EC2 에서는 리소스가 부족해서 실행하기가 어려워서 주석 처리
+# # dcinside에서 이미지 다운로드가 어려운 점 때문에 이용했기 때문에 다른 커뮤니티는 Chromedriver가 필요가 없음.
+# # Chromedriver 다운로드 및 설치
+# RUN apt-get update && apt-get install -y \
+#     wget \
+#     unzip \
+#     gnupg \
+#     && rm -rf /var/lib/apt/lists/*
 
-# Chrome 브라우저 설치
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable
+# # Chrome 브라우저 설치
+# RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+#     && echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list \
+#     && apt-get update \
+#     && apt-get install -y google-chrome-stable
 
-# Chromedriver 설치
-# https://storage.googleapis.com/chrome-for-testing-public/123.0.6312.86/linux64/chrome-linux64.zip 
-# https://chromedriver.storage.googleapis.com/123.0.6312.86/chromedriver_linux64.zip
-RUN wget -q -O /tmp/chromedriver.zip https://storage.googleapis.com/chrome-for-testing-public/123.0.6312.86/linux64/chromedriver-linux64.zip \
-    && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
-    && rm /tmp/chromedriver.zip
-
+# # Chromedriver 설치
+# # https://storage.googleapis.com/chrome-for-testing-public/123.0.6312.86/linux64/chrome-linux64.zip 
+# # https://chromedriver.storage.googleapis.com/123.0.6312.86/chromedriver_linux64.zip
+# RUN wget -q -O /tmp/chromedriver.zip https://storage.googleapis.com/chrome-for-testing-public/123.0.6312.86/linux64/chromedriver-linux64.zip \
+#     && unzip /tmp/chromedriver.zip -d /usr/local/bin/ \
+#     && rm /tmp/chromedriver.zip
 # RUN chmod +x /usr/local/bin/chromedriver
 
 # 작업디렉토리 설정
