@@ -23,7 +23,7 @@ class ChatGPT:
         )
 
         # gpt로부터 응답을 받습니다.
-        assistance_content = completion.choices[0].message['content'].strip()
+        assistance_content:str = completion.choices[0].message['content'].strip()
 
         # assistance에 이전 대화 답변을 저장합니다.
         # cls.messages.append({"role": "assistant", "content": f"{assistance_content}"})
