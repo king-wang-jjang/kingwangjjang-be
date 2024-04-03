@@ -1,5 +1,6 @@
 from datetime import datetime
 import os
+import shutil
 from sqlite3 import IntegrityError
 from bs4 import BeautifulSoup
 from django.conf import settings
@@ -128,6 +129,11 @@ class Dcinside(AbstractCommunityWebsite):
                 for source_tag in source_tags:
                     video_url = source_tag['src']
                     content_list.append({'type': 'video', 'url': video_url})
+        # 업로드
+        self.ftp_client.ftp_upload_folder(local_directory=self.download_path, remote_directory=self.download_path)
+
+        # 업로드 후 삭제
+        shutil.rmtree(self.download_path)
 
         return content_list
 

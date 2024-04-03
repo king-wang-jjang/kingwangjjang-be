@@ -79,7 +79,7 @@ FTP_SERVER = "14.35.104.153"
 ALLOWED_HOSTS = _ALLOWED_HOSTS
 # CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = [
-    "http://local.kwjj.com",
+    "http://local.kwjj.com:3000",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
 ]
