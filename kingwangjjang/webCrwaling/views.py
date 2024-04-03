@@ -1,16 +1,11 @@
 import json
 from django.shortcuts import get_object_or_404
-import requests 
-from bs4 import BeautifulSoup 
 from django.http import JsonResponse
-from selenium import webdriver
-from urllib import request as urllib_request
 
 from chatGPT.chatGPT import ChatGPT
 from constants import DEFAILT_GPT_ANSWER
 
 from .communityWebsite.models import RealTime
-from mongo import DBController  
 from django.views.decorators.csrf import csrf_exempt
 from webCrwaling.communityWebsite.dcinside import Dcinside 
 
@@ -22,7 +17,7 @@ def board_summary(board_id):
     realtime_object = get_object_or_404(RealTime, _id=board_id)
      
     if (realtime_object.GPTAnswer != DEFAILT_GPT_ANSWER):
-        return JsonResponse({'response': realtime_object.GPTAnswer}) 
+        return realtime_object.GPTAnswer
         return True # 이미 요약이 완료된 상태
         
     dcincideCrwaller = Dcinside()
@@ -42,7 +37,7 @@ def board_summary(board_id):
     realtime_object.GPTAnswer = response
     realtime_object.save()
     
-    return JsonResponse({'response': response}) 
+    return response
 
 @csrf_exempt
 def board_summary_rest(request):

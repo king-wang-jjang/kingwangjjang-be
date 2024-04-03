@@ -1,9 +1,8 @@
-# schema.py
-
 import graphene
 from graphene_django.types import DjangoObjectType
+from graphene import Mutation
 
-from mongo import DBController
+from .views import board_summary
 from .communityWebsite.models import RealTime, Daily
 
 class RealTimeType(DjangoObjectType):
@@ -24,4 +23,18 @@ class Query(graphene.ObjectType):
     def resolve_all_daily(self, info, **kwargs):
         return Daily.objects.all()
 
-schema = graphene.Schema(query=Query)
+class SummaryBoardMutation(Mutation):
+    class Arguments:
+        board_id = graphene.String(required=True)
+
+    response = graphene.String()
+
+    def mutate(self, info, board_id):
+        # 요약 보드 함수 호출
+        response = board_summary(board_id)
+        return SummaryBoardMutation(response=response)
+
+class Mutation(graphene.ObjectType):
+    summary_board = SummaryBoardMutation.Field()
+
+schema = graphene.Schema(query=Query, mutation=Mutation)
