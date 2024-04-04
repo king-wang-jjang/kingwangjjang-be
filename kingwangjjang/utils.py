@@ -3,6 +3,14 @@ import ftplib
 import os
 
 class FTPClient(object):
+    _instance = None  
+    def __new__(cls, *args, **kwargs):
+        if cls._instance is None:  
+            cls._instance = super().__new__(cls)
+            return cls._instance
+        else:
+            return cls._instance
+
     def __init__(self, server_address, username, password):
         """
         FTP client 설정
@@ -12,17 +20,22 @@ class FTPClient(object):
             username: username
             password: password
         """
-        self.root = "/home"
-        self.server_address = server_address
-        self.username = username
-        self.password = password
-        self.ftp = FTP()
-        try:
-            self.ftp.connect(self.server_address)
-            self.ftp.login(self.username, self.password)
-            print("Successfully FTP connected")
-        except Exception as e:
-            print(f'FTP Error: {e}')
+        if not hasattr(self, 'initialized'):  
+            self.root = "/home"
+            self.server_address = server_address
+            self.username = username
+            self.password = password
+            self.ftp = FTP()
+
+            try:
+                self.ftp.connect(self.server_address)
+                self.ftp.login(self.username, self.password)
+                print("Successfully FTP connected")
+            except Exception as e:
+                print(f'FTP Error: {e}')
+                raise  # 예외 발생
+            else:
+                self.initialized = True
 
     def list_files(self, directory):
         try:
