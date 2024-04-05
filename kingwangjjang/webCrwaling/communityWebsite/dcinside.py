@@ -6,9 +6,9 @@ from django.conf import settings
 import requests
 
 from constants import DEFAILT_GPT_ANSWER
-from utils import FTPClient
 from .models import RealTime
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
+from utils import FTPClient
 
 # selenium
 from selenium import webdriver
@@ -16,7 +16,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.service import Service
 
 class Dcinside(AbstractCommunityWebsite):
     g_headers = [
