@@ -47,11 +47,13 @@ class FTPClient(object):
             print(f'FTP Error: {e}')
             return []
         
-    def ftp_upload_file(self, local_file_path, remote_file_path):
+    def ftp_upload_file(self, local_file_path):
+        file_name = os.path.basename(local_file_path)  
+        full_remote_path = f'{self.ftp.pwd()}/{file_name}'
         try:
             with open(local_file_path, 'rb') as file:
-                self.ftp.storbinary(f'STOR {remote_file_path}', file)
-            print(f'File uploaded successfully to {remote_file_path}')
+                self.ftp.storbinary(f'STOR {full_remote_path}', file)
+            print(f'File uploaded successfully to {full_remote_path}')
 
         except Exception as e:
             print(f'FTP Error: {e}')
@@ -59,7 +61,7 @@ class FTPClient(object):
     def ftp_download_file(self, remote_file_path, local_file_path):
         try:
             with open(local_file_path, 'wb') as file:
-                self.ftp.retrbinary(f'RETR {remote_file_path}', file.write)
+                self.ftp.retrbinary(f'RETR {remote_file_path[1:]}', file.write)
 
             print(f'File downloaded successfully to {local_file_path}')
 
@@ -75,20 +77,19 @@ class FTPClient(object):
                 remote_directory: Path to the remote directory on the FTP server.
             """
             try:
-                self.ftp.mkd(remote_directory)
-                print(f"Directory created: {remote_directory}")
+                self.ftp.mkd(remote_directory) # pwd 설정
+                print(f"FTP Server Directory created: {remote_directory}")
             except ftplib.error_perm as e: 
-                print(f"Directory already exists or error occurred: {e}")
-            
+                print(f"FTP Server directory already exists or error occurred: {e}")
             for filename in os.listdir(local_directory):
                 local_path = os.path.join(local_directory, filename).replace('\\', '/')  # windows에서 \\로 표시되는데 linux에서는 어떨지 봐야함
                 remote_path = os.path.join(remote_directory, filename).replace('\\', '/')
                 if os.path.isfile(local_path):
-                    self.ftp_upload_file(local_path, remote_path)
+                    self.ftp_upload_file(local_path)
                 else:
                     self.ftp_upload_folder(local_path, remote_path)  
 
-            print(f'Folder uploaded successfully to {remote_directory}')
+            print(f'FTP Server Folder uploaded successfully to {remote_directory}')
 
     def create_directory(self, directory):
         """

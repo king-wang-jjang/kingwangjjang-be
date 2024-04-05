@@ -5,7 +5,6 @@ from django.conf import settings
 import pytesseract
 
 from utils import FTPClient
-pytesseract.pytesseract.tesseract_cmd = r'C:\Users\nori\AppData\Local\tesseract.exe'
 from PIL import Image
 
 
@@ -39,5 +38,5 @@ class AbstractCommunityWebsite():
         custom_config = r'--oem 3 --psm 6 -l kor+eng' 
 
         text = pytesseract.image_to_string(img, config=custom_config)
-
+        print(text)
         return text
