@@ -19,11 +19,10 @@ from django.urls import path, include
 from django.views.decorators.csrf import csrf_exempt
 from graphene_django.views import GraphQLView
 from webCrwaling.schema import schema
-from webCrwaling.views import CommunitySiteCrawler
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/CommunitySiteCrawler/', CommunitySiteCrawler, name='CommunitySiteCrawler'),
+    path('v1/webCrawling/', include('webCrwaling.urls')),
     # path("graphql", csrf_exempt(GraphQLView.as_view(graphiql=True)), name="graphql-query")
     path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True, schema=schema))),
     path('chatgpt/', include('chatGPT.urls')), # chatGPT 앱의 urls.py를 이 곳에 불러옵니다.
