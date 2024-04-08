@@ -26,7 +26,6 @@ class FTPClient(object):
             self.username = username
             self.password = password
             self.ftp = FTP()
-
             try:
                 self.ftp.connect(self.server_address)
                 self.ftp.login(self.username, self.password)
@@ -50,6 +49,7 @@ class FTPClient(object):
     def ftp_upload_file(self, local_file_path):
         file_name = os.path.basename(local_file_path)  
         full_remote_path = f'{self.ftp.pwd()}/{file_name}'
+        print('full_remote_path', full_remote_path)
         try:
             with open(local_file_path, 'rb') as file:
                 self.ftp.storbinary(f'STOR {full_remote_path}', file)
@@ -77,7 +77,8 @@ class FTPClient(object):
                 remote_directory: Path to the remote directory on the FTP server.
             """
             try:
-                self.ftp.mkd(remote_directory) # pwd 설정
+                self.ftp.mkd(remote_directory)
+                self.ftp.cwd(remote_directory)
                 print(f"FTP Server Directory created: {remote_directory}")
             except ftplib.error_perm as e: 
                 print(f"FTP Server directory already exists or error occurred: {e}")
