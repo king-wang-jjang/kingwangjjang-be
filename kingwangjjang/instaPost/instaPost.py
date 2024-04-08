@@ -10,19 +10,21 @@ class InstaPost:
 
 
     # 인스타그램 로그인
-    def instaLogin(self, username, password):
+    def insta_login(self, username, password):
         try:
             self.client.login(username, password)
             self.isLogined = True
             message = "로그인에 성공했습니다."
             print(message)
-            return "로그인에 성공했습니다."
+            return True
         
         except Exception as e:
             if "We couldn't find an account with the username" in str(e):
                 print("아이디 혹은 비밀번호를 확인하세요.")
+                return False
             else:
                 print("로그인에 문제가 있습니다:", e)
+                return False
 
 
     # 사용자 프로필 사진 가져오기(url로 get)
@@ -75,7 +77,7 @@ class InstaPost:
 
 
     # 사용자 로그아웃
-    def instaLogout(self):
+    def insta_logout(self):
         try:
             self.client.logout()
             return True
