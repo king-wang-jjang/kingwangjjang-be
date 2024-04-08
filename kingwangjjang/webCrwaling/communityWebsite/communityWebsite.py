@@ -34,9 +34,14 @@ class AbstractCommunityWebsite():
         return {} 
     
     def img_to_text(self, img_path):
-        img = Image.open(img_path)
-        custom_config = r'--oem 3 --psm 6 -l kor+eng' 
+        import numpy as np
+        import cv2
 
-        text = pytesseract.image_to_string(img, config=custom_config)
-        print(text)
+        image = cv2.imread(img_path)
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        threshold_image = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+        custom_config = r'--oem 3 --psm 6 -l kor'
+
+        text = pytesseract.image_to_string(threshold_image, config=custom_config)
+
         return text
