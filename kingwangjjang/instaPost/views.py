@@ -25,7 +25,7 @@ def instaPost(request):
 
             # Instagram 로그인을 시도
             client = InstaPost()
-            login_result = client.instaLogin(username, password)
+            login_result = client.insta_login(username, password)
 
             if login_result:
                 # 로그인 성공 시
@@ -88,7 +88,7 @@ def logoutView(request):
     # 로그아웃 처리
     if request.session.get('insta_login'):
         client = InstaPost()
-        client.instaLogout()
+        client.insta_logout()
         del request.session['insta_login']
         messages.info(request, "You have been logged out successfully.")
     
