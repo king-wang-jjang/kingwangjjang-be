@@ -34,14 +34,16 @@ class AbstractCommunityWebsite():
         return {} 
     
     def img_to_text(self, img_path):
-        import numpy as np
         import cv2
+        # pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'   
+        try:            
+            image = cv2.imread(img_path)
+            gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            threshold_image = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+            custom_config = r'--oem 3 --psm 6 -l kor'
 
-        image = cv2.imread(img_path)
-        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        threshold_image = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-        custom_config = r'--oem 3 --psm 6 -l kor'
-
-        text = pytesseract.image_to_string(threshold_image, config=custom_config)
+            text = pytesseract.image_to_string(threshold_image, config=custom_config)
+        except Exception as e:
+            text = pytesseract.image_to_string(img_path, config=custom_config)
 
         return text
