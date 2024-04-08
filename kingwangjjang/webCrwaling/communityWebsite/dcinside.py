@@ -89,7 +89,8 @@ class Dcinside(AbstractCommunityWebsite):
         print("already exists post", already_exists_post)
 
     def get_board_contents(self, board_id):
-        self.download_path = os.path.abspath(f'./{self.yyyymmdd}/{board_id}') 
+        abs_path = f'./{self.yyyymmdd}/{board_id}'
+        self.download_path = os.path.abspath(abs_path) 
         self.set_driver_options()
 
         _url = "https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id
@@ -129,8 +130,10 @@ class Dcinside(AbstractCommunityWebsite):
                     video_url = source_tag['src']
                     content_list.append({'type': 'video', 'url': video_url})
         # 업로드
-        self.ftp_client.ftp_upload_folder(local_directory=self.download_path, remote_directory=self.download_path)
-
+        print('before self.ftp_client.ftp.pwd()', self.ftp_client.ftp.pwd())
+        self.ftp_client.ftp_upload_folder(local_directory=self.download_path, remote_directory=f'{board_id}')
+        self.ftp_client.ftp.cwd(f'{self.ftp_client.root}/{self.yyyymmdd}')
+        print('after self.ftp_client.ftp.pwd()', self.ftp_client.ftp.pwd())
         # 업로드 후 삭제
         shutil.rmtree(self.download_path)
 
