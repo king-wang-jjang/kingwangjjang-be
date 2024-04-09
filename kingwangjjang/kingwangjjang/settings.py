@@ -109,7 +109,8 @@ INSTALLED_APPS = [
     
     'webCrwaling',
     'kingwangjjang',
-    'chatGPT'
+    'chatGPT',
+    'instaPost'
 ]
 
 MIDDLEWARE = [
