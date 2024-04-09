@@ -26,9 +26,8 @@ def board_summary(board_id):
 
     try:
         realtime_object = get_object_or_404(RealTime, _id=board_id)
-        if realtime_object.GPTAnswer != DEFAILT_GPT_ANSWER:
+        if realtime_object.GPTAnswer != DEFAILT_GPT_ANSWER: # 이미 요약이 완료된 상태
             return realtime_object.GPTAnswer
-            # 이미 요약이 완료된 상태
         
         dcincideCrawler = Dcinside()
         json_contents = dcincideCrawler.get_board_contents(board_id)
@@ -37,14 +36,15 @@ def board_summary(board_id):
             if 'content' in content:
                 str_contents += content['content']
 
-        # GPT 요약
-        prompt= "아래 내용에서 이상한 문자는 제외하고 5줄로 요약해줘" + str_contents
-        chatGPT = ChatGPT()
-        print("URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
-        response = chatGPT.get_completion(content=prompt)
+        # # GPT 요약
+        # prompt= "아래 내용에서 이상한 문자는 제외하고 5줄로 요약해줘" + str_contents
+        # chatGPT = ChatGPT()
+        # print("URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
+        # response = chatGPT.get_completion(content=prompt)
 
         # Mongodb에 삽입
-        realtime_object.GPTAnswer = response
+        # realtime_object.GPTAnswer = response
+        realtime_object.GPTAnswer = str_contents
         realtime_object.save()
         
         return str_contents
