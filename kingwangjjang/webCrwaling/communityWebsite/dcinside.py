@@ -27,9 +27,10 @@ class Dcinside(AbstractCommunityWebsite):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
         
         try:
-            self.ftp_client = FTPClient(server_address=getattr(settings, 'FTP_SERVER', None),
-                              username=getattr(settings, 'FTP_USER', None),
-                              password=getattr(settings, 'FTP_PASSWORD', None))
+            self.ftp_client = FTPClient(
+                                server_address=getattr(settings, 'FTP_SERVER', None),
+                                username=getattr(settings, 'FTP_USER', None),
+                                password=getattr(settings, 'FTP_PASSWORD', None))
             super().__init__(self.yyyymmdd, self.ftp_client)
             print("ready to today directory")
         except Exception as e:
@@ -91,7 +92,7 @@ class Dcinside(AbstractCommunityWebsite):
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
         self.download_path = os.path.abspath(abs_path) 
-        self.set_driver_options()
+        # self.set_driver_options()
 
         _url = "https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id
         req = requests.get(_url, headers=self.g_headers[0])
@@ -113,27 +114,25 @@ class Dcinside(AbstractCommunityWebsite):
         for element in find_all:
             text_content = element.text.strip()
             content_list.append({'type': 'text', 'content': text_content})
-            img_tags = element.find_all('img')
-            for img_tag in img_tags:
-                image_url = img_tag['src']
-                try:
-                    img_txt = super().img_to_text(self.save_img(image_url))
-                    content_list.append({'type': 'image', 'url': image_url, 
-                                        'content': img_txt})
-                except Exception as e:
-                    print(f'Dcinside Error {e}')
+            # img_tags = element.find_all('img')
+            # for img_tag in img_tags:
+            #     image_url = img_tag['src']
+            #     try:
+            #         img_txt = super().img_to_text(self.save_img(image_url))
+            #         content_list.append({'type': 'image', 'url': image_url, 
+            #                             'content': img_txt})
+            #     except Exception as e:
+            #         print(f'Dcinside Error {e}')
 
-            video_tags = element.find_all('video')
-            for video_tag in video_tags:
-                source_tags = video_tag.find_all('source')
-                for source_tag in source_tags:
-                    video_url = source_tag['src']
-                    content_list.append({'type': 'video', 'url': video_url})
+            # video_tags = element.find_all('video')
+            # for video_tag in video_tags:
+            #     source_tags = video_tag.find_all('source')
+            #     for source_tag in source_tags:
+            #         video_url = source_tag['src']
+            #         content_list.append({'type': 'video', 'url': video_url})
         # 업로드
-        print('before self.ftp_client.ftp.pwd()', self.ftp_client.ftp.pwd())
-        self.ftp_client.ftp_upload_folder(local_directory=self.download_path, remote_directory=f'{board_id}')
-        self.ftp_client.ftp.cwd(f'{self.ftp_client.root}/{self.yyyymmdd}')
-        print('after self.ftp_client.ftp.pwd()', self.ftp_client.ftp.pwd())
+        self.ftp_client.ftp_upload_folder(local_directory=self.download_path, remote_directory=board_id)
+        
         # 업로드 후 삭제
         shutil.rmtree(self.download_path)
 

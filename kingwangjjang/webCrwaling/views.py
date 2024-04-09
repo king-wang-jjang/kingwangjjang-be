@@ -26,9 +26,8 @@ def board_summary(board_id):
 
     try:
         realtime_object = get_object_or_404(RealTime, _id=board_id)
-        if realtime_object.GPTAnswer != DEFAILT_GPT_ANSWER:
+        if realtime_object.GPTAnswer != DEFAILT_GPT_ANSWER: # 이미 요약이 완료된 상태
             return realtime_object.GPTAnswer
-            # 이미 요약이 완료된 상태
         
         dcincideCrawler = Dcinside()
         json_contents = dcincideCrawler.get_board_contents(board_id)
@@ -45,6 +44,7 @@ def board_summary(board_id):
 
         # Mongodb에 삽입
         # realtime_object.GPTAnswer = response
+        realtime_object.GPTAnswer = str_contents
         realtime_object.save()
         
         return str_contents
