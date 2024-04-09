@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import os
 from django.conf import settings
 
 # img to text
@@ -36,14 +37,16 @@ class AbstractCommunityWebsite():
     def img_to_text(self, img_path):
         import cv2
         # pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'   
-        try:            
+        custom_config = r'--oem 3 --psm 6 -l kor'
+        allowed_extensions = ['jpg', 'png', 'jpeg']
+
+        if any(str in img_path for str in allowed_extensions):
             image = cv2.imread(img_path)
             gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             threshold_image = cv2.threshold(gray_image, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-            custom_config = r'--oem 3 --psm 6 -l kor'
 
             text = pytesseract.image_to_string(threshold_image, config=custom_config)
-        except Exception as e:
+        else:
             text = pytesseract.image_to_string(img_path, config=custom_config)
 
         return text
