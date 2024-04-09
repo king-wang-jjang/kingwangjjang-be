@@ -4,7 +4,7 @@ from . import views
 
 urlpatterns = [ 
     
-	path('post/', views.instaPost, name='instaPost'), 
-    path('upload/', views.uploadPhoto, name='upload_photo'),
-	path('logout/', views.logoutView, name='logout'),
+	path('post/', views.insta_post, name='instaPost'), 
+    path('upload/', views.upload_photo, name='upload_photo'),
+	path('logout/', views.logout_view, name='logout'),
 ] 
