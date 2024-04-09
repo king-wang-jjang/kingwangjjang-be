@@ -131,10 +131,10 @@ class Dcinside(AbstractCommunityWebsite):
             #         video_url = source_tag['src']
             #         content_list.append({'type': 'video', 'url': video_url})
         # 업로드
-        self.ftp_client.ftp_upload_folder(local_directory=self.download_path, remote_directory=board_id)
+        # self.ftp_client.ftp_upload_folder(local_directory=self.download_path, remote_directory=board_id)
         
         # 업로드 후 삭제
-        shutil.rmtree(self.download_path)
+        # shutil.rmtree(self.download_path)
 
         return content_list
 
