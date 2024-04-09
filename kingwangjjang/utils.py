@@ -95,22 +95,21 @@ class FTPClient(object):
     def create_directory(self, directory):
         """
         Creates a directory on the FTP server.
-
+        CWD
         Args:
             directory: Path of the directory to be created.
         """
-        try:
-            self.ftp.mkd(directory)
-            print(f"Directory created: {directory}")
-        except ftplib.error_perm as e:
-            parent_dir = os.path.dirname(directory)
-            if parent_dir:
-                self.create_directory(parent_dir)
-                self.create_directory(directory)
-            else:
-                print(f"Error creating directory: {e}")
-        except Exception as e:
-            print(f"Error creating directory: {e}")
+        folders = directory.split("/")
+        print(folders)
+        for folder in folders:
+            try:
+                self.ftp.mkd(folder)
+                self.ftp.cwd(folder)
+            except Exception as e:
+                if "550" in str(e):
+                    pass
+                else:
+                    raise
     
     
     def create_today_directory(self, yyyymmdd):
