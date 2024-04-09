@@ -15,7 +15,7 @@ class PhotoUploadForm(forms.Form):
     media_file = forms.ImageField()
     caption = forms.CharField(max_length=255, required=False, widget=forms.Textarea)    
 
-def instaPost(request):
+def insta_post(request):
     if request.method == 'POST':
         # POST 요청일 때
         form = LoginForm(request.POST)
@@ -42,7 +42,7 @@ def instaPost(request):
     return render(request, 'login.html', {'form': form})
 
 
-def uploadPhoto(request):
+def upload_photo(request):
     if not request.session.get('insta_login'):
         return HttpResponse("Login first!")
 
@@ -84,7 +84,7 @@ def uploadPhoto(request):
 
     return render(request, 'upload_photo.html', {'form': form})
 
-def logoutView(request):
+def logout_view(request):
     # 로그아웃 처리
     if request.session.get('insta_login'):
         client = InstaPost()
