@@ -74,14 +74,20 @@ class FTPClient(object):
 
             Args:
                 local_directory: Path to the local directory.
-                remote_directory: Path to the remote directory on the FTP server.
+                remote_directory: 단일 이여야함 중첩이면 안됨
             """
             try:
                 self.ftp.mkd(remote_directory)
-                self.ftp.cwd(remote_directory)
+                # self.create_directory(remote_directory)
+                self.ftp.cwd(self.root + '/' + remote_directory)
                 print(f"FTP Server Directory created: {remote_directory}")
-            except ftplib.error_perm as e: 
-                print(f"FTP Server directory already exists or error occurred: {e}")
+            except Exception as e:
+                if "550" in str(e):
+                    print('FTP Server directory already exists')
+                    self.ftp.cwd(self.root + '/'  + remote_directory)
+                    pass
+                else:
+                    print(f"error occurred: {e}")
             for filename in os.listdir(local_directory):
                 local_path = os.path.join(local_directory, filename).replace('\\', '/')  # windows에서 \\로 표시되는데 linux에서는 어떨지 봐야함
                 remote_path = os.path.join(remote_directory, filename).replace('\\', '/')
@@ -89,7 +95,7 @@ class FTPClient(object):
                     self.ftp_upload_file(local_path)
                 else:
                     self.ftp_upload_folder(local_path, remote_path)  
-
+            self.ftp.cwd(self.root)
             print(f'FTP Server Folder uploaded successfully to {remote_directory}')
 
     def create_directory(self, directory):
@@ -100,7 +106,6 @@ class FTPClient(object):
             directory: Path of the directory to be created.
         """
         folders = directory.split("/")
-        print(folders)
         for folder in folders:
             try:
                 self.ftp.mkd(folder)
@@ -115,6 +120,7 @@ class FTPClient(object):
     def create_today_directory(self, yyyymmdd):
         """
         CommunityWebsite인 super class만 사용
+        최소 수행
 
         Args:
             yyyymmdd: directory name
@@ -122,11 +128,12 @@ class FTPClient(object):
         try:
             self.ftp.cwd(self.root)
             self.ftp.cwd(yyyymmdd)
-            # print(f"Directory already exists: {yyyymmdd}")
+            self.root = self.root + "/" + yyyymmdd
         except Exception as e:
             try:
                 self.ftp.mkd(yyyymmdd)
                 self.ftp.cwd(yyyymmdd)
+                self.root = self.root + "/" + yyyymmdd
                 print(f"Directory created: {yyyymmdd}")
             except Exception as e:
                 raise ValueError(f"Error creating directory: {e}")
