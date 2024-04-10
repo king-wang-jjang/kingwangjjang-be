@@ -4,6 +4,7 @@ from django.http import JsonResponse
 import threading
 
 from chatGPT.chatGPT import ChatGPT
+from webCrwaling.communityWebsite.ygosu import Ygosu
 from constants import DEFAILT_GPT_ANSWER
 
 from .communityWebsite.models import RealTime
@@ -67,3 +68,8 @@ def board_summary_rest(request):
 def get_real_time_best():
     dcincideCrwaller = Dcinside()
     dcincideCrwaller.get_real_time_best()
+
+def ygosu_test(request):
+    ygosuCrawller = Ygosu()
+    
+    return JsonResponse({'response': ygosuCrawller.get_real_time_best()}) 
