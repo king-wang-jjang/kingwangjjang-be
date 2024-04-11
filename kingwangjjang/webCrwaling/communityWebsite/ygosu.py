@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import requests
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 
-from .models import RealTime
+from .models import Daily, RealTime
 from constants import DEFAILT_GPT_ANSWER
 
 class Ygosu(AbstractCommunityWebsite):
@@ -17,20 +17,47 @@ class Ygosu(AbstractCommunityWebsite):
 
         :return: {rank: { {title: string, url: string}[]} }
         '''
-        req = requests.get('https://ygosu.com/board/real_article')
+        req = requests.get('https://ygosu.com/board/best_article/?type=daily')
         soup = BeautifulSoup(req.text, 'html.parser')
+        already_exists_post = []
 
-        result = []
         for tr in soup.select('tbody tr'):
             tit_element = tr.select_one('.tit a')
+            create_time_element = tr.select_one('.day')
+            rank_element = tr.select_one('.num')
             if tit_element:
                 title = tit_element.get_text(strip=True)
+                rank = rank_element.get_text(strip=True)
+                create_time = create_time_element.get_text(strip=True) 
+                if (create_time == ''): # 광고 및 공지 제외
+                    continue
+                
                 url = tit_element['href']
-                result.append({"title": title, "url": url})
-
-        data = {"rank": {i + 1: item for i, item in enumerate(result)}}
-
-        return data
+                url_parts = url.split('/')
+                year, month, day = map(int, create_time.split('-'))
+                target_datetime = datetime(year, month, day)
+                for board_id in url_parts:
+                    if board_id.isdigit():
+                        break
+                try:
+                    existing_instance = Daily.objects.filter(board_id=board_id, site='ygosu').first() # 이미 있는 Board는 넘기기
+                    if existing_instance:
+                        already_exists_post.append(board_id)
+                        continue
+                    else:
+                        Daily.objects.get_or_create(
+                            board_id=board_id,
+                            rank=rank,
+                            site='ygosu',
+                            title=title,
+                            url=url,
+                            create_time=target_datetime,
+                            GPTAnswer=DEFAILT_GPT_ANSWER
+                        )
+                except Exception as e:
+                    print(e)
+                    
+        print("already exists post", already_exists_post)
 
     def get_real_time_best(self):
         '''

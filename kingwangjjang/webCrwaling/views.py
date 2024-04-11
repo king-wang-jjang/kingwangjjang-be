@@ -67,7 +67,13 @@ def board_summary_rest(request):
     
 def get_real_time_best():
     dcincideCrwaller = Dcinside()
-    dcincideCrwaller.get_real_time_best()
+    ygosuCrawller = Ygosu()
+    # dcincideCrwaller.get_real_time_best()
+    ygosuCrawller.get_real_time_best()
+
+def get_daily_best():
+    ygosuCrawller = Ygosu()
+    ygosuCrawller.get_daily_best()
 
 def ygosu_test(request):
     ygosuCrawller = Ygosu()
