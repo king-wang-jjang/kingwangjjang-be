@@ -73,7 +73,8 @@ def get_real_time_best():
 
 def get_daily_best():
     ygosuCrawller = Ygosu()
-    ygosuCrawller.get_daily_best()
+    ygosuCrawller.get_board_contents('2074642')
+    # ygosuCrawller.get_daily_best()
 
 def ygosu_test(request):
     ygosuCrawller = Ygosu()

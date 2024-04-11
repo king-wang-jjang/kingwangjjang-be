@@ -1,7 +1,10 @@
 
 from datetime import datetime
+import os
 from bs4 import BeautifulSoup
+from django.conf import settings
 import requests
+from utils import FTPClient
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 
 from .models import Daily, RealTime
@@ -9,7 +12,18 @@ from constants import DEFAILT_GPT_ANSWER
 
 class Ygosu(AbstractCommunityWebsite):
     def __init__(self):
-        pass
+        self.yyyymmdd = datetime.today().strftime('%Y%m%d')
+        
+        try:
+            self.ftp_client = FTPClient(
+                                server_address=getattr(settings, 'FTP_SERVER', None),
+                                username=getattr(settings, 'FTP_USER', None),
+                                password=getattr(settings, 'FTP_PASSWORD', None))
+            super().__init__(self.yyyymmdd, self.ftp_client)
+            print("ready to today directory")
+        except Exception as e:
+            print("Dcinside error:", e)
+            return None
     
     def get_daily_best(self):
         '''
@@ -106,3 +120,26 @@ class Ygosu(AbstractCommunityWebsite):
                     print(e)
                     
         print("already exists post", already_exists_post)
+
+    def get_board_contents(self, board_id):
+        abs_path = f'./{self.yyyymmdd}/{board_id}'
+        self.download_path = os.path.abspath(abs_path) 
+        daily_instance = Daily.objects.filter(board_id=board_id, site='ygosu').first()
+        if daily_instance:
+            response = requests.get(daily_instance.url)
+
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                board_body = soup.find('div', class_='container')
+                paragraphs = board_body.find_all('p')
+
+
+                for p in paragraphs:
+                    # <p> 태그 안에 <img> 태그가 있는지 확인
+                    if p.find('img'):
+                        print(p)
+                    else:
+                        print(p)
+            else:
+                print("Failed to retrieve the webpage")
+            
