@@ -137,7 +137,15 @@ class Ygosu(AbstractCommunityWebsite):
                 for p in paragraphs:
                     # <p> 태그 안에 <img> 태그가 있는지 확인
                     if p.find('img'):
-                        print(p)
+                        img_tag = p.find('img')
+                        img_url = img_tag['src']
+                        response = requests.get(img_url)
+                        img_name = os.path.basename(img_url)
+                        # 이미지를 파일로 저장
+                        with open(os.path.join( self.download_path, img_name), 'wb') as f:
+                            f.write(response.content)
+
+                        print(f"{img_name} 다운로드 완료")
                     else:
                         print(p)
             else:
