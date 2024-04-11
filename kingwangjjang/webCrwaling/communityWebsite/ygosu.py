@@ -40,17 +40,19 @@ class Ygosu(AbstractCommunityWebsite):
         '''
         req = requests.get('https://ygosu.com/board/real_article')
         soup = BeautifulSoup(req.text, 'html.parser')
+        already_exists_post = []
 
-        result = []
         for tr in soup.select('tbody tr'):
             tit_element = tr.select_one('.tit a')
-            create_time_element = tr.select_one('.date') 
+            create_time_element = tr.select_one('.date')
+            
             if tit_element:
-                # print(tit_element)
+                
                 title = tit_element.get_text(strip=True)
                 create_time = create_time_element.get_text(strip=True) 
-                if (create_time == '' or ':' not in create_time):
+                if (create_time == '' or ':' not in create_time): # 광고 및 공지 제외 및 금일만 추출
                     continue
+                
                 url = tit_element['href']
                 url_parts = url.split('/')
                 now = datetime.now()
@@ -59,18 +61,23 @@ class Ygosu(AbstractCommunityWebsite):
                 for board_id in url_parts:
                     if board_id.isdigit():
                         break
-
-                RealTime.objects.get_or_create(
-                            _id=board_id,
-                            defaults={
-                                'site' : 'ygosu',
-                                'title': title,
-                                'url': url,
-                                'create_time': target_datetime,
-                                'GPTAnswer': DEFAILT_GPT_ANSWER
-                            }
-                        )
-
-        data = {"rank": {i + 1: item for i, item in enumerate(result)}}
-
-        return data
+                try:
+                    existing_instance = RealTime.objects.filter(_id=board_id).first() # 이미 있는 Board는 넘기기
+                    if existing_instance:
+                        already_exists_post.append(board_id)
+                        continue
+                    else:
+                        RealTime.objects.get_or_create(
+                                    _id=board_id,
+                                    defaults={
+                                        'site' : 'ygosu',
+                                        'title': title,
+                                        'url': url,
+                                        'create_time': target_datetime,
+                                        'GPTAnswer': DEFAILT_GPT_ANSWER
+                                    }
+                                )
+                except Exception as e:
+                    print(e)
+                    
+        print("already exists post", already_exists_post)
