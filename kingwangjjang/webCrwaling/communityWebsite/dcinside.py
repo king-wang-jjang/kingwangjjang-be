@@ -1,7 +1,6 @@
 from datetime import datetime
 import os
 import shutil
-from sqlite3 import IntegrityError
 from bs4 import BeautifulSoup
 from django.conf import settings
 import requests
@@ -69,7 +68,7 @@ class Dcinside(AbstractCommunityWebsite):
                 target_datetime = datetime(now.year, now.month, now.day, hour, minute)
 
                 try:
-                    existing_instance = RealTime.objects.filter(_id=no_value).first()
+                    existing_instance = RealTime.objects.filter(_id=no_value, site='dcinside').first()
                     if existing_instance:
                         already_exists_post.append(no_value)
                         continue
@@ -84,8 +83,8 @@ class Dcinside(AbstractCommunityWebsite):
                                 'GPTAnswer': DEFAILT_GPT_ANSWER
                             }
                         )
-                except IntegrityError:
-                    continue
+                except Exception as e:
+                    print(e)
 
         print("already exists post", already_exists_post)
 

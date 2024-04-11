@@ -62,7 +62,7 @@ class Ygosu(AbstractCommunityWebsite):
                     if board_id.isdigit():
                         break
                 try:
-                    existing_instance = RealTime.objects.filter(_id=board_id).first() # 이미 있는 Board는 넘기기
+                    existing_instance = RealTime.objects.filter(_id=board_id, site='ygosu').first() # 이미 있는 Board는 넘기기
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
