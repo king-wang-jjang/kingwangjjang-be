@@ -125,6 +125,7 @@ class Ygosu(AbstractCommunityWebsite):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
         self.download_path = os.path.abspath(abs_path) 
         daily_instance = Daily.objects.filter(board_id=board_id, site='ygosu').first()
+        content_list = []
         if daily_instance:
             response = requests.get(daily_instance.url)
 
@@ -133,21 +134,31 @@ class Ygosu(AbstractCommunityWebsite):
                 board_body = soup.find('div', class_='container')
                 paragraphs = board_body.find_all('p')
 
-
                 for p in paragraphs:
                     # <p> 태그 안에 <img> 태그가 있는지 확인
                     if p.find('img'):
                         img_tag = p.find('img')
                         img_url = img_tag['src']
-                        response = requests.get(img_url)
-                        img_name = os.path.basename(img_url)
-                        # 이미지를 파일로 저장
-                        with open(os.path.join( self.download_path, img_name), 'wb') as f:
-                            f.write(response.content)
-
-                        print(f"{img_name} 다운로드 완료")
+                        try:
+                            img_txt = super().img_to_text(self.save_img(img_url))
+                            content_list.append({'type': 'image', 'url': img_url, 
+                                                'content': img_txt})
+                        except Exception as e:
+                            print(f'Dcinside Error {e}')
                     else:
-                        print(p)
+                        content_list.append({'type': 'text', 'content': p.text.strip()})
             else:
                 print("Failed to retrieve the webpage")
+        return content_list
             
+    def save_img(self, url):
+        if not os.path.exists(self.download_path):
+            os.makedirs(self.download_path)
+
+        response = requests.get(url)
+        img_name = os.path.basename(url)
+        # 이미지를 파일로 저장
+        with open(os.path.join( self.download_path, img_name), 'wb') as f:
+            f.write(response.content)
+
+        return self.download_path + "/" + img_name
