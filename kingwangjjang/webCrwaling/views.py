@@ -14,6 +14,9 @@ from mongo import DBController
 from django.views.decorators.csrf import csrf_exempt
 from webCrwaling.communityWebsite.dcinside import Dcinside 
 
+import sched
+import time
+
 
 import pytesseract
 pytesseract.pytesseract.tesseract_cmd = r'C:\Users\nori\AppData\Local\tesseract.exe'
@@ -116,3 +119,24 @@ def getSesstion():
     driver.quit()
 
     return JsonResponse({'sessionStorage': session_storage_data})
+
+'''  
+def get_real_time_best():
+    dcincideCrwaller = Dcinside()
+    dcincideCrwaller.get_real_time_best()
+'''
+def get_real_time_best(interval: int = 300, repeat: bool = False): # 기본값 300초(5분), 반복x
+    dcinsideCrawler = Dcinside()
+    scheduler = sched.scheduler(time.time, time.sleep)  # 스케줄러 객체 생성
+    
+    def run_crawler():
+        dcinsideCrawler.get_real_time_best()
+        if repeat:
+            scheduler.enter(interval, 1, run_crawler)
+
+    scheduler.enter(interval, 1, run_crawler)  # 초기 실행 예약
+
+    if repeat:
+        scheduler.run()
+    else:
+        run_crawler()
