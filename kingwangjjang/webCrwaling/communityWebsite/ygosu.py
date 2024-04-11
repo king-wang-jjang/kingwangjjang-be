@@ -62,21 +62,19 @@ class Ygosu(AbstractCommunityWebsite):
                     if board_id.isdigit():
                         break
                 try:
-                    existing_instance = RealTime.objects.filter(_id=board_id, site='ygosu').first() # 이미 있는 Board는 넘기기
+                    existing_instance = RealTime.objects.filter(board_id=board_id, site='ygosu').first() # 이미 있는 Board는 넘기기
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
                     else:
                         RealTime.objects.get_or_create(
-                                    _id=board_id,
-                                    defaults={
-                                        'site' : 'ygosu',
-                                        'title': title,
-                                        'url': url,
-                                        'create_time': target_datetime,
-                                        'GPTAnswer': DEFAILT_GPT_ANSWER
-                                    }
-                                )
+                            board_id=board_id,
+                            site='ygosu',
+                            title=title,
+                            url=url,
+                            create_time=target_datetime,
+                            GPTAnswer=DEFAILT_GPT_ANSWER
+                        )
                 except Exception as e:
                     print(e)
                     

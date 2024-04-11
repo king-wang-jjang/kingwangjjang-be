@@ -53,11 +53,10 @@ class Dcinside(AbstractCommunityWebsite):
             time_element = li.select_one('.box.best_info .time')
 
             if p_element and a_element and time_element:
-                p_text = p_element.get_text(strip=True)
-                a_href = a_element['href']
-                no_value = a_href.split('no=')[-1]
+                title = p_element.get_text(strip=True)
+                url = a_element['href']
+                board_id = url.split('no=')[-1]
                 time_text = time_element.get_text(strip=True)
-
                 if(time_text.find('-') > 0): 
                     break  # 오늘 것만 추가 (이전 글은 제외 (DB에서 확인))
 
@@ -68,24 +67,22 @@ class Dcinside(AbstractCommunityWebsite):
                 target_datetime = datetime(now.year, now.month, now.day, hour, minute)
 
                 try:
-                    existing_instance = RealTime.objects.filter(_id=no_value, site='dcinside').first()
+                    existing_instance = RealTime.objects.filter(board_id=board_id, site='dcinside').first()
                     if existing_instance:
-                        already_exists_post.append(no_value)
+                        already_exists_post.append(board_id)
                         continue
                     else:
                         RealTime.objects.get_or_create(
-                            _id=no_value,
-                            defaults={
-                                'site' : 'dcinside',
-                                'title': p_text,
-                                'url': a_href,
-                                'create_time': target_datetime,
-                                'GPTAnswer': DEFAILT_GPT_ANSWER
-                            }
+                            board_id=board_id,
+                            site='dcinside',
+                            title=title,
+                            url=url,
+                            create_time=target_datetime,
+                            GPTAnswer=DEFAILT_GPT_ANSWER
                         )
                 except Exception as e:
-                    print(e)
-
+                    print('error', e)
+                    
         print("already exists post", already_exists_post)
 
     def get_board_contents(self, board_id):

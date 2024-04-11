@@ -18,7 +18,7 @@ class Query(graphene.ObjectType):
     all_daily = graphene.List(DailyType)
 
     def resolve_all_realtime(self, info, **kwargs):
-        # get_real_time_best()
+        print(get_real_time_best())
         return RealTime.objects.all()
 
     def resolve_all_daily(self, info, **kwargs):
