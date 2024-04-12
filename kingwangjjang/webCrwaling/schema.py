@@ -28,11 +28,12 @@ class Query(graphene.ObjectType):
 class SummaryBoardMutation(Mutation):
     class Arguments:
         board_id = graphene.String(required=True)
+        site = graphene.String(required=True)
 
     board_summary = graphene.String()
 
-    def mutate(self, info, board_id):
-        _board_summary = board_summary(board_id)
+    def mutate(self, info, board_id, site):
+        _board_summary = board_summary(board_id, site)
         return SummaryBoardMutation(board_summary=_board_summary)
 
 class Mutation(graphene.ObjectType):

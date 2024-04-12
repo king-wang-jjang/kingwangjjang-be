@@ -23,7 +23,6 @@ from webCrwaling.schema import schema
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('v1/webCrawling/', include('webCrwaling.urls')),
-    # path("graphql", csrf_exempt(GraphQLView.as_view(graphiql=True)), name="graphql-query")
     path('graphql/', csrf_exempt(GraphQLView.as_view(graphiql=True, schema=schema))),
     path('chatgpt/', include('chatGPT.urls')), # chatGPT 앱의 urls.py를 이 곳에 불러옵니다.
     path('instagram/', include('instaPost.urls'))

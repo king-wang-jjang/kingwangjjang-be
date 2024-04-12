@@ -5,7 +5,7 @@ import threading
 
 from chatGPT.chatGPT import ChatGPT
 from webCrwaling.communityWebsite.ygosu import Ygosu
-from constants import DEFAILT_GPT_ANSWER
+from constants import DEFAILT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU
 
 from .communityWebsite.models import RealTime
 from django.views.decorators.csrf import csrf_exempt
@@ -14,24 +14,28 @@ from webCrwaling.communityWebsite.dcinside import Dcinside
 board_semaphores = {}
 
 @csrf_exempt
-def board_summary(board_id):
+def board_summary(board_id, site):
     global board_semaphores
+    semaphore_label = site + board_id
 
     if board_id not in board_semaphores:
-        board_semaphores[board_id] = threading.Semaphore(1)
+        board_semaphores[semaphore_label] = threading.Semaphore(1)
 
-    semaphore = board_semaphores[board_id]
+    semaphore = board_semaphores[semaphore_label]
     acquired = semaphore.acquire(timeout=1)
     if not acquired:
         return '요청을 이미 처리하고 있습니다. 잠시 후 다시 선택해주세요.'
 
     try:
-        realtime_object = get_object_or_404(RealTime, _id=board_id)
+        realtime_object = get_object_or_404(RealTime, site=site, board_id=board_id)
         if realtime_object.GPTAnswer != DEFAILT_GPT_ANSWER: # 이미 요약이 완료된 상태
             return realtime_object.GPTAnswer
         
-        dcincideCrawler = Dcinside()
-        json_contents = dcincideCrawler.get_board_contents(board_id)
+        if (site == SITE_DCINSIDE):
+            crawler_instance = Dcinside()
+        elif (site == SITE_YGOSU):
+            crawler_instance = Ygosu()
+        json_contents = crawler_instance.get_board_contents(board_id)
         str_contents = ''
         for content in json_contents:
             if 'content' in content:
@@ -68,15 +72,9 @@ def board_summary_rest(request):
 def get_real_time_best():
     dcincideCrwaller = Dcinside()
     ygosuCrawller = Ygosu()
-    # dcincideCrwaller.get_real_time_best()
+    dcincideCrwaller.get_real_time_best()
     ygosuCrawller.get_real_time_best()
 
 def get_daily_best():
     ygosuCrawller = Ygosu()
-    ygosuCrawller.get_board_contents('2074642')
-    # ygosuCrawller.get_daily_best()
-
-def ygosu_test(request):
-    ygosuCrawller = Ygosu()
-    
-    return JsonResponse({'response': ygosuCrawller.get_real_time_best()}) 
+    ygosuCrawller.get_daily_best()
