@@ -1,14 +1,14 @@
 from datetime import datetime
 import os
-from sqlite3 import IntegrityError
+import shutil
 from bs4 import BeautifulSoup
 from django.conf import settings
 import requests
 
 from constants import DEFAILT_GPT_ANSWER
-from utils import FTPClient
 from .models import RealTime
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
+from utils import FTPClient
 
 # selenium
 from selenium import webdriver
@@ -24,14 +24,17 @@ class Dcinside(AbstractCommunityWebsite):
     
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
-        self.ftp_client = FTPClient(server_address=getattr(settings, 'FTP_SERVER', None),
-                  username=getattr(settings, 'FTP_USER', None),
-                password=getattr(settings, 'FTP_PASSWORD', None))
+        
         try:
+            self.ftp_client = FTPClient(
+                                server_address=getattr(settings, 'FTP_SERVER', None),
+                                username=getattr(settings, 'FTP_USER', None),
+                                password=getattr(settings, 'FTP_PASSWORD', None))
             super().__init__(self.yyyymmdd, self.ftp_client)
             print("ready to today directory")
         except Exception as e:
-            print("error:", e)
+            print("Dcinside error:", e)
+            return None
             raise  # Directory 생성을 못 하면 일단 멈춤 나중에 Exception 처리 필요
     
     def get_daily_best(self):
@@ -42,18 +45,18 @@ class Dcinside(AbstractCommunityWebsite):
         html_content = req.text
         soup = BeautifulSoup(html_content, 'html.parser')
         li_elements = soup.select('#dcbest_list_date li')
-        
+        already_exists_post = []
+
         for li in li_elements:
             p_element = li.select_one('.box.besttxt p')
             a_element = li.select_one('.main_log')
             time_element = li.select_one('.box.best_info .time')
 
             if p_element and a_element and time_element:
-                p_text = p_element.get_text(strip=True)
-                a_href = a_element['href']
-                no_value = a_href.split('no=')[-1]
+                title = p_element.get_text(strip=True)
+                url = a_element['href']
+                board_id = url.split('no=')[-1]
                 time_text = time_element.get_text(strip=True)
-
                 if(time_text.find('-') > 0): 
                     break  # 오늘 것만 추가 (이전 글은 제외 (DB에서 확인))
 
@@ -64,33 +67,34 @@ class Dcinside(AbstractCommunityWebsite):
                 target_datetime = datetime(now.year, now.month, now.day, hour, minute)
 
                 try:
-                    existing_instance = RealTime.objects.filter(_id=no_value).first()
+                    existing_instance = RealTime.objects.filter(board_id=board_id, site='dcinside').first()
                     if existing_instance:
-                        print("Already exists", no_value)
+                        already_exists_post.append(board_id)
                         continue
                     else:
                         RealTime.objects.get_or_create(
-                            _id=no_value,
-                            defaults={
-                                'site' : 'dcinside',
-                                'title': p_text,
-                                'url': a_href,
-                                'create_time': target_datetime,
-                                'GPTAnswer': DEFAILT_GPT_ANSWER
-                            }
+                            board_id=board_id,
+                            site='dcinside',
+                            title=title,
+                            url=url,
+                            create_time=target_datetime,
+                            GPTAnswer=DEFAILT_GPT_ANSWER
                         )
-                except IntegrityError:
-                    continue
-    
+                except Exception as e:
+                    print('error', e)
+                    
+        print("already exists post", already_exists_post)
+
     def get_board_contents(self, board_id):
-        self.download_path = os.path.abspath(f'./{self.yyyymmdd}/{board_id}') 
-        self.set_driver_options()
+        abs_path = f'./{self.yyyymmdd}/{board_id}'
+        self.download_path = os.path.abspath(abs_path) 
+        # self.set_driver_options()
 
         _url = "https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id
         req = requests.get(_url, headers=self.g_headers[0])
         html_content = req.text
         soup = BeautifulSoup(html_content, 'html.parser')
-        
+
         second_article = soup.find_all('article')[1]
         title = second_article.find('h3').get_text(strip=True)
         content_list = []
@@ -106,22 +110,27 @@ class Dcinside(AbstractCommunityWebsite):
         for element in find_all:
             text_content = element.text.strip()
             content_list.append({'type': 'text', 'content': text_content})
-            img_tags = element.find_all('img')
-            for img_tag in img_tags:
-                image_url = img_tag['src']
-                try:
-                    img_txt = super().img_to_text(self.save_img(image_url))
-                    content_list.append({'type': 'image', 'url': image_url, 
-                                        'content': img_txt})
-                except Exception:
-                    print(f'Error {Exception}')
+            # img_tags = element.find_all('img')
+            # for img_tag in img_tags:
+            #     image_url = img_tag['src']
+            #     try:
+            #         img_txt = super().img_to_text(self.save_img(image_url))
+            #         content_list.append({'type': 'image', 'url': image_url, 
+            #                             'content': img_txt})
+            #     except Exception as e:
+            #         print(f'Dcinside Error {e}')
 
-            video_tags = element.find_all('video')
-            for video_tag in video_tags:
-                source_tags = video_tag.find_all('source')
-                for source_tag in source_tags:
-                    video_url = source_tag['src']
-                    content_list.append({'type': 'video', 'url': video_url})
+            # video_tags = element.find_all('video')
+            # for video_tag in video_tags:
+            #     source_tags = video_tag.find_all('source')
+            #     for source_tag in source_tags:
+            #         video_url = source_tag['src']
+            #         content_list.append({'type': 'video', 'url': video_url})
+        # 업로드
+        # self.ftp_client.ftp_upload_folder(local_directory=self.download_path, remote_directory=board_id)
+        
+        # 업로드 후 삭제
+        # shutil.rmtree(self.download_path)
 
         return content_list
 
@@ -134,6 +143,12 @@ class Dcinside(AbstractCommunityWebsite):
         chrome_options = Options()
         prefs = {"download.default_directory": self.download_path}
         chrome_options.add_experimental_option("prefs", prefs)
+        # chrome_options.add_argument('headless')
+        chrome_options.add_argument('--no-sandbox')
+        # chrome_options.add_argument('--incognito')
+        chrome_options.add_argument('--disable-setuid-sandbox')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_experimental_option('excludeSwitches',['enable-logging'])
 
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
@@ -145,8 +160,8 @@ class Dcinside(AbstractCommunityWebsite):
             WebDriverWait(self.driver, 5).until(
                 EC.presence_of_element_located((By.XPATH, '//body'))
             )
-        except Exception:
-            print('Error', Exception)
+        except Exception as e:
+            print('Dcinside Error', e)
         finally:
             return True
     

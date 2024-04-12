@@ -43,7 +43,6 @@ if os.path.isfile('secrets.json'):
     DEBUG = True
     SECRET_KEY = get_secret('SECRET_KEY')
     DB_HOST = get_secret("DB_HOST")
-    WAS_HOST = get_secret("WAS_HOST")
     DB_USER = get_secret("DB_USER")
     DB_PASSWORD = get_secret("DB_PASSWORD")
     DB_NAME = get_secret("DB_NAME")
@@ -52,7 +51,7 @@ if os.path.isfile('secrets.json'):
     CHATGPT_API_KEY = get_secret("CHATGPT_API_KEY")
     
     # ALLOWED_HOSTS
-    _ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+    _ALLOWED_HOSTS = ['*']
     
     # Flow Check Log
     print("setting : Local setting, localhost")
@@ -63,7 +62,6 @@ else:
     SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
     DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
     DB_HOST = os.environ.get('DB_HOST')
-    WAS_HOST = os.environ.get('WAS_HOST')
     DB_USER = os.environ.get('DB_USER')
     DB_PASSWORD = os.environ.get('DB_PASSWORD')
     DB_NAME = os.environ.get('DB_NAME')
@@ -79,9 +77,23 @@ else:
 
 FTP_SERVER = "14.35.104.153"
 ALLOWED_HOSTS = _ALLOWED_HOSTS
+# CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "http://local.kwjj.com:3000",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -89,19 +101,23 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+     "corsheaders",
+
     # Graph QL
     'graphene_django',
     'graphene_mongo',
     
     'webCrwaling',
     'kingwangjjang',
-    'chatGPT'
+    'chatGPT',
+    'instaPost'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     # 'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -171,7 +187,7 @@ TIME_ZONE = 'Asia/Seoul'
 
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
 
 
 # Static files (CSS, JavaScript, Images)
@@ -187,3 +203,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # GRAPHENE = {
 #     "SCHEMA": "webCrwaling.schema.schema"
 # }
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
