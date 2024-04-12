@@ -144,8 +144,15 @@ class Ygosu(AbstractCommunityWebsite):
                             content_list.append({'type': 'image', 'url': img_url, 
                                                 'content': img_txt})
                         except Exception as e:
-                            print(f'Dcinside Error {e}')
-                    else:
+                            print(f'Ygosu Error {e}')
+                    elif p.find('video'):
+                        video_tag = p.find('video')
+                        video_url = video_tag.find('source')['src']
+                        try:
+                            self.save_img(video_url)
+                        except Exception as e:
+                            print(f'Ygosu Error {e}')
+                    else: 
                         content_list.append({'type': 'text', 'content': p.text.strip()})
             else:
                 print("Failed to retrieve the webpage")
