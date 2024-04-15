@@ -153,8 +153,21 @@ DATABASES = {
         'ENGINE': 'djongo',
         'NAME': DB_NAME,
         'ENFORCE_SCHEMA': True,
+        'LOGGING': {
+            'version': 1,
+            'loggers': {
+                'djongo': {
+                    'level': 'DEBUG',
+                    'propogate': False,                        
+                }
+            },
+         },
         'CLIENT': {
-            'host': DB_URI
+            'host': DB_URI,
+            'username': DB_USER,
+            'password': DB_PASSWORD,
+            'authSource': 'admin',
+            'authMechanism': 'SCRAM-SHA-1'
         }  
     }
 }
