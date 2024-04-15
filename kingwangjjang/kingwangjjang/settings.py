@@ -49,6 +49,7 @@ if os.path.isfile('secrets.json'):
     FTP_USER = get_secret("FTP_USER")
     FTP_PASSWORD = get_secret("FTP_PASSWORD")
     CHATGPT_API_KEY = get_secret("CHATGPT_API_KEY")
+    WAS_HOST = get_secret("WAS_HOST")
     
     # ALLOWED_HOSTS
     _ALLOWED_HOSTS = ['*']
@@ -68,6 +69,7 @@ else:
     FTP_USER = os.environ.get('FTP_USER')
     FTP_PASSWORD = os.environ.get('FTP_PASSWORD')
     CHATGPT_API_KEY = os.environ.get("CHATGPT_API_KEY")
+    WAS_HOST = os.environ.get("WAS_HOST")
 
     # ALLOWED_HOSTS
     _ALLOWED_HOSTS = ['*']
@@ -82,6 +84,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://local.kwjj.com:3000",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+     f'http://{WAS_HOST}:3000',
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
@@ -153,8 +156,21 @@ DATABASES = {
         'ENGINE': 'djongo',
         'NAME': DB_NAME,
         'ENFORCE_SCHEMA': True,
+        'LOGGING': {
+            'version': 1,
+            'loggers': {
+                'djongo': {
+                    'level': 'DEBUG',
+                    'propogate': False,                        
+                }
+            },
+         },
         'CLIENT': {
-            'host': DB_URI
+            'host': DB_URI,
+            'username': DB_USER,
+            'password': DB_PASSWORD,
+            'authSource': 'admin',
+            'authMechanism': 'SCRAM-SHA-1'
         }  
     }
 }
