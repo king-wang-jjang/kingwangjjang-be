@@ -84,7 +84,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://local.kwjj.com:3000",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-     WAS_HOST + ":3000",
+     f'http://{WAS_HOST}:3000',
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
