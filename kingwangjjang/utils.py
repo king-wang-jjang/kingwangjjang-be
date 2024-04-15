@@ -1,5 +1,4 @@
 from ftplib import FTP
-import ftplib
 import os
 
 class FTPClient(object):
