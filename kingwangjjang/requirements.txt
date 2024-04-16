@@ -2,6 +2,7 @@
 django==4.1.13
 django-cors-headers
 pytz
+django-session-timeout==0.1.0
 
 # Crawler
 beautifulsoup4
