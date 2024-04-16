@@ -8,7 +8,7 @@ from utils import FTPClient
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 
 from .models import Daily, RealTime
-from constants import DEFAILT_GPT_ANSWER
+from constants import DEFAULT_GPT_ANSWER
 
 class Ygosu(AbstractCommunityWebsite):
     def __init__(self):
@@ -66,7 +66,7 @@ class Ygosu(AbstractCommunityWebsite):
                             title=title,
                             url=url,
                             create_time=target_datetime,
-                            GPTAnswer=DEFAILT_GPT_ANSWER
+                            GPTAnswer=DEFAULT_GPT_ANSWER
                         )
                 except Exception as e:
                     print(e)
@@ -114,7 +114,7 @@ class Ygosu(AbstractCommunityWebsite):
                             title=title,
                             url=url,
                             create_time=target_datetime,
-                            GPTAnswer=DEFAILT_GPT_ANSWER
+                            GPTAnswer=DEFAULT_GPT_ANSWER
                         )
                 except Exception as e:
                     print(e)

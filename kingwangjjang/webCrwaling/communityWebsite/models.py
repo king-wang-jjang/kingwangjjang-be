@@ -1,6 +1,6 @@
 from djongo import models
 
-from constants import DEFAILT_GPT_ANSWER
+from constants import DEFAULT_GPT_ANSWER
 
 
 class RealTime(models.Model):
@@ -9,7 +9,7 @@ class RealTime(models.Model):
     title = models.CharField(max_length=255)
     url = models.URLField()
     create_time = models.DateTimeField()
-    GPTAnswer = models.TextField(default=DEFAILT_GPT_ANSWER)
+    GPTAnswer = models.TextField(default=DEFAULT_GPT_ANSWER)
     
     class Meta:
         db_table = 'realtimebest'
@@ -22,7 +22,7 @@ class Daily(models.Model):
     title = models.CharField(max_length=255)
     url = models.URLField()
     create_time = models.DateTimeField()
-    GPTAnswer = models.TextField(default=DEFAILT_GPT_ANSWER)
+    GPTAnswer = models.TextField(default=DEFAULT_GPT_ANSWER)
 
     class Meta:
         db_table = 'dailybest'

@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from django.conf import settings
 import requests
 
-from constants import DEFAILT_GPT_ANSWER
+from constants import DEFAULT_GPT_ANSWER
 from .models import RealTime
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 from utils import FTPClient
@@ -78,7 +78,7 @@ class Dcinside(AbstractCommunityWebsite):
                             title=title,
                             url=url,
                             create_time=target_datetime,
-                            GPTAnswer=DEFAILT_GPT_ANSWER
+                            GPTAnswer=DEFAULT_GPT_ANSWER
                         )
                 except Exception as e:
                     print('error', e)
