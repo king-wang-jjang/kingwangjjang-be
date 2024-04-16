@@ -104,7 +104,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-     "corsheaders",
+    "corsheaders",
 
     # Graph QL
     'graphene_django',
@@ -113,7 +113,7 @@ INSTALLED_APPS = [
     'webCrwaling',
     'kingwangjjang',
     'chatGPT',
-    'instaPost'
+    'instaPost',
 ]
 
 MIDDLEWARE = [
@@ -244,12 +244,20 @@ LOGGING = {
         'standard': {
             'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
         },
+        'verbose': {
+            'format' : "[%(asctime)s] %(levelname)s [%(filename)s :%(lineno)s] %(message)s",
+            'datefmt' : "%d/%b/%Y %H:%M:%S"
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
     },
     'handlers': {
         'console': {
-            'level': 'INFO',
+            'level': 'INFO', 
             'filters': ['require_debug_true'],
             'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         },
         'django.server': {
             'level': 'INFO',
@@ -261,14 +269,13 @@ LOGGING = {
             'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler'
         },
-         'file': {
+        'file': {
             'level': 'INFO',
             'filters': ['require_debug_false'],
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR / 'logs/mysite.log',
-            'maxBytes': 1024*1024*5,  # 5 MB
-            'backupCount': 5,
-            'formatter': 'standard',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'when': 'D',
+            'filename': BASE_DIR / 'logs/app.log',
+            'formatter': 'verbose',
         },
     },
     'loggers': {
