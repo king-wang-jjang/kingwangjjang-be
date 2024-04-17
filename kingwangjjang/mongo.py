@@ -1,7 +1,9 @@
 from pymongo import MongoClient
 from django.conf import settings
 import pymongo
+import logging
 
+logger = logging.getLogger("")
 class DBController(object):
 
     def __init__(self):
@@ -29,7 +31,7 @@ class DBController(object):
         collection = dbHandle[collection_name]
 
         if query:
-            print(f"Query: {query}")
+            logger.info(f"Query: {query}")
             result = collection.find(query)
         else:
             result = collection.find()
