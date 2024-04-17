@@ -272,7 +272,7 @@ LOGGING = {
         },
         'file': {
             'level': 'INFO',
-            'filters': ['require_debug_false'],
+            'filters': ['require_debug_true'],
             'class': 'logging.handlers.TimedRotatingFileHandler',
             'when': 'D',
             'filename': BASE_DIR / 'logs/app.log',

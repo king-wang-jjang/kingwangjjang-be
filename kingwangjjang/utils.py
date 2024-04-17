@@ -136,10 +136,11 @@ class FTPClient(object):
                 self.ftp.mkd(yyyymmdd)
                 self.ftp.cwd(yyyymmdd)
                 self.root = self.root + "/" + yyyymmdd
-                logger.info(f"Directory created: {yyyymmdd}")
             except Exception as e:
                 raise ValueError(f"Error creating directory: {e}")
             else:
+                logger.info(f"Directory created: {self.root}")
                 return True
         else:
+            logger.info(f"Directory created: {self.root}")
             return True

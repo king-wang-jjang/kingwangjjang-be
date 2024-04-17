@@ -22,7 +22,7 @@ class Ygosu(AbstractCommunityWebsite):
                                 username=getattr(settings, 'FTP_USER', None),
                                 password=getattr(settings, 'FTP_PASSWORD', None))
             super().__init__(self.yyyymmdd, self.ftp_client)
-            logger.info("ready to today directory")
+
         except Exception as e:
             logger.info("Dcinside error:", e)
             return None
