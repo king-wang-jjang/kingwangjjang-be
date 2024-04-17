@@ -8,8 +8,10 @@ from utils import FTPClient
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 
 from .models import Daily, RealTime
-from constants import DEFAULT_GPT_ANSWER
+from constants import DEFAULT_GPT_ANSWER, SITE_YGOSU
+import logging
 
+logger = logging.getLogger("")
 class Ygosu(AbstractCommunityWebsite):
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
@@ -20,9 +22,9 @@ class Ygosu(AbstractCommunityWebsite):
                                 username=getattr(settings, 'FTP_USER', None),
                                 password=getattr(settings, 'FTP_PASSWORD', None))
             super().__init__(self.yyyymmdd, self.ftp_client)
-            print("ready to today directory")
+            logger.info("ready to today directory")
         except Exception as e:
-            print("Dcinside error:", e)
+            logger.info("Dcinside error:", e)
             return None
     
     def get_daily_best(self):
@@ -62,16 +64,16 @@ class Ygosu(AbstractCommunityWebsite):
                         Daily.objects.get_or_create(
                             board_id=board_id,
                             rank=rank,
-                            site='ygosu',
+                            site=SITE_YGOSU,
                             title=title,
                             url=url,
                             create_time=target_datetime,
                             GPTAnswer=DEFAULT_GPT_ANSWER
                         )
                 except Exception as e:
-                    print(e)
+                    logger.info(e)
                     
-        print("already exists post", already_exists_post)
+        logger.info("already exists post", already_exists_post)
 
     def get_real_time_best(self):
         '''
@@ -117,9 +119,9 @@ class Ygosu(AbstractCommunityWebsite):
                             GPTAnswer=DEFAULT_GPT_ANSWER
                         )
                 except Exception as e:
-                    print(e)
+                    logger.info(e)
                     
-        print("already exists post", already_exists_post)
+        logger.info("already exists post", already_exists_post)
 
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
@@ -144,18 +146,18 @@ class Ygosu(AbstractCommunityWebsite):
                             content_list.append({'type': 'image', 'url': img_url, 
                                                 'content': img_txt})
                         except Exception as e:
-                            print(f'Ygosu Error {e}')
+                            logger.info(f'Ygosu Error {e}')
                     elif p.find('video'):
                         video_tag = p.find('video')
                         video_url = video_tag.find('source')['src']
                         try:
                             self.save_img(video_url)
                         except Exception as e:
-                            print(f'Ygosu Error {e}')
+                            logger.info(f'Ygosu Error {e}')
                     else: 
                         content_list.append({'type': 'text', 'content': p.text.strip()})
             else:
-                print("Failed to retrieve the webpage")
+                logger.info("Failed to retrieve the webpage")
         return content_list
             
     def save_img(self, url):

@@ -224,6 +224,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Logging configuration
+# DEBUG < INFO < WARNING < ERROR < CRITICAL
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -279,7 +280,7 @@ LOGGING = {
         },
     },
     'loggers': {
-        'django': {
+        '': {
             'handlers': ['console', 'mail_admins', 'file'],
             'level': 'INFO',
         },

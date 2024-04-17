@@ -4,7 +4,9 @@ from graphene import Mutation
 
 from .views import board_summary, get_real_time_best, get_daily_best
 from .communityWebsite.models import RealTime, Daily
+import logging
 
+logger = logging.getLogger("")
 class RealTimeType(DjangoObjectType):
     class Meta:
         model = RealTime
@@ -18,7 +20,7 @@ class Query(graphene.ObjectType):
     all_daily = graphene.List(DailyType)
 
     def resolve_all_realtime(self, info, **kwargs):
-        print(get_real_time_best())
+        logger.info(get_real_time_best())
         return RealTime.objects.all()
 
     def resolve_all_daily(self, info, **kwargs):

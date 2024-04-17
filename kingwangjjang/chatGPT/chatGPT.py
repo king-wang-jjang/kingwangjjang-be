@@ -1,6 +1,8 @@
 import openai
 from kingwangjjang.settings import CHATGPT_API_KEY # settings.py에서 API KEY를 가져옵니다.
+import logging
 
+logger = logging.getLogger("")
 
 class ChatGPT:
     def __init__(self):
@@ -28,5 +30,5 @@ class ChatGPT:
         # assistance에 이전 대화 답변을 저장합니다.
         # cls.messages.append({"role": "assistant", "content": f"{assistance_content}"})
 
-        print(f'ChatGPT : {assistance_content}')
+        logger.info(f'ChatGPT : {assistance_content}')
         return assistance_content

@@ -1,5 +1,8 @@
 from ftplib import FTP
 import os
+import logging
+
+logger = logging.getLogger("")
 
 class FTPClient(object):
     _instance = None  
@@ -28,9 +31,9 @@ class FTPClient(object):
             try:
                 self.ftp.connect(self.server_address)
                 self.ftp.login(self.username, self.password)
-                print("Successfully FTP connected")
+                logger.info("Successfully FTP connected")
             except Exception as e:
-                print(f'FTP Error: {e}')
+                logger.info(f'FTP Error: {e}')
                 raise  # 예외 발생
             else:
                 self.initialized = True
@@ -42,30 +45,30 @@ class FTPClient(object):
             self.ftp.dir(files.append)
             return files
         except Exception as e:
-            print(f'FTP Error: {e}')
+            logger.info(f'FTP Error: {e}')
             return []
         
     def ftp_upload_file(self, local_file_path):
         file_name = os.path.basename(local_file_path)  
         full_remote_path = f'{self.ftp.pwd()}/{file_name}'
-        print('full_remote_path', full_remote_path)
+        logger.info('full_remote_path', full_remote_path)
         try:
             with open(local_file_path, 'rb') as file:
                 self.ftp.storbinary(f'STOR {full_remote_path}', file)
-            print(f'File uploaded successfully to {full_remote_path}')
+            logger.info(f'File uploaded successfully to {full_remote_path}')
 
         except Exception as e:
-            print(f'FTP Error: {e}')
+            logger.info(f'FTP Error: {e}')
 
     def ftp_download_file(self, remote_file_path, local_file_path):
         try:
             with open(local_file_path, 'wb') as file:
                 self.ftp.retrbinary(f'RETR {remote_file_path[1:]}', file.write)
 
-            print(f'File downloaded successfully to {local_file_path}')
+            logger.info(f'File downloaded successfully to {local_file_path}')
 
         except Exception as e:
-            print(f'FTP Error: {e}')
+            logger.info(f'FTP Error: {e}')
 
     def ftp_upload_folder(self, local_directory, remote_directory):
             """
@@ -79,14 +82,14 @@ class FTPClient(object):
                 self.ftp.mkd(remote_directory)
                 # self.create_directory(remote_directory)
                 self.ftp.cwd(self.root + '/' + remote_directory)
-                print(f"FTP Server Directory created: {remote_directory}")
+                logger.info(f"FTP Server Directory created: {remote_directory}")
             except Exception as e:
                 if "550" in str(e):
-                    print('FTP Server directory already exists')
+                    logger.info('FTP Server directory already exists')
                     self.ftp.cwd(self.root + '/'  + remote_directory)
                     pass
                 else:
-                    print(f"error occurred: {e}")
+                    logger.info(f"error occurred: {e}")
             for filename in os.listdir(local_directory):
                 local_path = os.path.join(local_directory, filename).replace('\\', '/')  # windows에서 \\로 표시되는데 linux에서는 어떨지 봐야함
                 remote_path = os.path.join(remote_directory, filename).replace('\\', '/')
@@ -95,7 +98,7 @@ class FTPClient(object):
                 else:
                     self.ftp_upload_folder(local_path, remote_path)  
             self.ftp.cwd(self.root)
-            print(f'FTP Server Folder uploaded successfully to {remote_directory}')
+            logger.info(f'FTP Server Folder uploaded successfully to {remote_directory}')
 
     def create_directory(self, directory):
         """
@@ -133,7 +136,7 @@ class FTPClient(object):
                 self.ftp.mkd(yyyymmdd)
                 self.ftp.cwd(yyyymmdd)
                 self.root = self.root + "/" + yyyymmdd
-                print(f"Directory created: {yyyymmdd}")
+                logger.info(f"Directory created: {yyyymmdd}")
             except Exception as e:
                 raise ValueError(f"Error creating directory: {e}")
             else:
