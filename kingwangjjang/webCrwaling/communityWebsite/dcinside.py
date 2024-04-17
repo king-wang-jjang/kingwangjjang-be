@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 from django.conf import settings
 import requests
 
-from constants import DEFAILT_GPT_ANSWER
+from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE
 from .models import RealTime
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 from utils import FTPClient
@@ -16,6 +16,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+import logging
+
+logger = logging.getLogger("")
 
 class Dcinside(AbstractCommunityWebsite):
     g_headers = [
@@ -31,9 +34,9 @@ class Dcinside(AbstractCommunityWebsite):
                                 username=getattr(settings, 'FTP_USER', None),
                                 password=getattr(settings, 'FTP_PASSWORD', None))
             super().__init__(self.yyyymmdd, self.ftp_client)
-            print("ready to today directory")
+            
         except Exception as e:
-            print("Dcinside error:", e)
+            logger.info("Dcinside error:", e)
             return None
             raise  # Directory 생성을 못 하면 일단 멈춤 나중에 Exception 처리 필요
     
@@ -74,16 +77,16 @@ class Dcinside(AbstractCommunityWebsite):
                     else:
                         RealTime.objects.get_or_create(
                             board_id=board_id,
-                            site='dcinside',
+                            site=SITE_DCINSIDE,
                             title=title,
                             url=url,
                             create_time=target_datetime,
-                            GPTAnswer=DEFAILT_GPT_ANSWER
+                            GPTAnswer=DEFAULT_GPT_ANSWER
                         )
                 except Exception as e:
-                    print('error', e)
+                    logger.info('error', e)
                     
-        print("already exists post", already_exists_post)
+        logger.info({"already exists post": already_exists_post})
 
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
@@ -118,7 +121,7 @@ class Dcinside(AbstractCommunityWebsite):
             #         content_list.append({'type': 'image', 'url': image_url, 
             #                             'content': img_txt})
             #     except Exception as e:
-            #         print(f'Dcinside Error {e}')
+            #         logger.info(f'Dcinside Error {e}')
 
             # video_tags = element.find_all('video')
             # for video_tag in video_tags:
@@ -161,7 +164,7 @@ class Dcinside(AbstractCommunityWebsite):
                 EC.presence_of_element_located((By.XPATH, '//body'))
             )
         except Exception as e:
-            print('Dcinside Error', e)
+            logger.info('Dcinside Error', e)
         finally:
             return True
     

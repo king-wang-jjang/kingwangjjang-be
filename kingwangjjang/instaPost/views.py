@@ -5,7 +5,9 @@ from django.http import HttpResponse
 from .instaPost import InstaPost
 from django import forms
 from django.contrib import messages
+import logging
 
+logger = logging.getLogger("")
 
 class LoginForm(forms.Form):
     username = forms.CharField(label='Username', max_length=100)
@@ -48,24 +50,24 @@ def upload_photo(request):
 
     if request.method == 'POST':
         # POST 요청일 때
-        print(request.POST)
+        logger.info(request.POST)
 
         form = PhotoUploadForm(request.POST, request.FILES)
         if form.is_valid():
             try:
                 media_file = form.cleaned_data['media_file']
                 caption = form.cleaned_data['caption']
-                print("media_file: ", media_file)
-                print("caption: ", caption)
+                logger.info("media_file: ", media_file)
+                logger.info("caption: ", caption)
 
                 # 이미지를 프로젝트의 image 폴더에 저장
                 image_path = os.path.join(settings.BASE_DIR, 'image', media_file.name)
-                print("image_path: ", image_path)
+                logger.info("image_path: ", image_path)
                 with open(image_path, 'wb') as f:
                     for chunk in media_file.chunks():
                         f.write(chunk)
             except Exception as e:
-                print("specify image path error: ", e)
+                logger.info("specify image path error: ", e)
                 return HttpResponse(e)
 
             else:

@@ -5,12 +5,14 @@ import threading
 
 from chatGPT.chatGPT import ChatGPT
 from webCrwaling.communityWebsite.ygosu import Ygosu
-from constants import DEFAILT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU
+from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU
 
 from .communityWebsite.models import RealTime
 from django.views.decorators.csrf import csrf_exempt
 from webCrwaling.communityWebsite.dcinside import Dcinside 
+import logging
 
+logger = logging.getLogger("")
 board_semaphores = {}
 
 @csrf_exempt
@@ -28,7 +30,7 @@ def board_summary(board_id, site):
 
     try:
         realtime_object = get_object_or_404(RealTime, site=site, board_id=board_id)
-        if realtime_object.GPTAnswer != DEFAILT_GPT_ANSWER: # 이미 요약이 완료된 상태
+        if realtime_object.GPTAnswer != DEFAULT_GPT_ANSWER: # 이미 요약이 완료된 상태
             return realtime_object.GPTAnswer
         
         if (site == SITE_DCINSIDE):
@@ -44,7 +46,7 @@ def board_summary(board_id, site):
         # # GPT 요약
         # prompt= "아래 내용에서 이상한 문자는 제외하고 5줄로 요약해줘" + str_contents
         # chatGPT = ChatGPT()
-        # print("URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
+        # logger.info("URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
         # response = chatGPT.get_completion(content=prompt)
 
         # Mongodb에 삽입

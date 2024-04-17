@@ -20,13 +20,13 @@ class Ppompu(AbstractCommunityWebsite):
         result = []
         for tr in soup.select('tr.line'):
             title_element = tr.select_one('a.title')
-            print(title_element)
+            logger.info(title_element)
             if title_element:
                 title = title_element.get_text(strip=True)
                 url = title_element['href']
                 result.append({"title": title, "url": url})
 
-        print(result)
+        logger.info(result)
         data = {"rank": {i + 1: item for i, item in enumerate(result)}}
 
         return data

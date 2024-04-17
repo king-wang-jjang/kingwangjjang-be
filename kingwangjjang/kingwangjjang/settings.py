@@ -49,6 +49,7 @@ if os.path.isfile('secrets.json'):
     FTP_USER = get_secret("FTP_USER")
     FTP_PASSWORD = get_secret("FTP_PASSWORD")
     CHATGPT_API_KEY = get_secret("CHATGPT_API_KEY")
+    WAS_HOST = get_secret("WAS_HOST")
     
     # ALLOWED_HOSTS
     _ALLOWED_HOSTS = ['*']
@@ -68,6 +69,7 @@ else:
     FTP_USER = os.environ.get('FTP_USER')
     FTP_PASSWORD = os.environ.get('FTP_PASSWORD')
     CHATGPT_API_KEY = os.environ.get("CHATGPT_API_KEY")
+    WAS_HOST = os.environ.get("WAS_HOST")
 
     # ALLOWED_HOSTS
     _ALLOWED_HOSTS = ['*']
@@ -82,6 +84,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://local.kwjj.com:3000",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+     f'http://{WAS_HOST}:3000',
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
@@ -101,7 +104,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-     "corsheaders",
+    "corsheaders",
 
     # Graph QL
     'graphene_django',
@@ -110,7 +113,7 @@ INSTALLED_APPS = [
     'webCrwaling',
     'kingwangjjang',
     'chatGPT',
-    'instaPost'
+    'instaPost',
 ]
 
 MIDDLEWARE = [
@@ -153,8 +156,21 @@ DATABASES = {
         'ENGINE': 'djongo',
         'NAME': DB_NAME,
         'ENFORCE_SCHEMA': True,
+        'LOGGING': {
+            'version': 1,
+            'loggers': {
+                'djongo': {
+                    'level': 'DEBUG',
+                    'propogate': False,                        
+                }
+            },
+         },
         'CLIENT': {
-            'host': DB_URI
+            'host': DB_URI,
+            'username': DB_USER,
+            'password': DB_PASSWORD,
+            'authSource': 'admin',
+            'authMechanism': 'SCRAM-SHA-1'
         }  
     }
 }
@@ -206,3 +222,72 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Logging configuration
+# DEBUG < INFO < WARNING < ERROR < CRITICAL
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'formatters': {
+        'django.server': {
+            '()': 'django.utils.log.ServerFormatter',
+            'format': '[{server_time}] {message}',
+            'style': '{',
+        },
+        'standard': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+        },
+        'verbose': {
+            'format' : "[%(asctime)s] %(levelname)s [%(filename)s :%(lineno)s] %(message)s",
+            'datefmt' : "%d/%b/%Y %H:%M:%S"
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO', 
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+        'django.server': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'django.server',
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler'
+        },
+        'file': {
+            'level': 'INFO',
+            'filters': ['require_debug_true'],
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'when': 'D',
+            'filename': BASE_DIR / 'logs/app.log',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console', 'mail_admins', 'file'],
+            'level': 'DEBUG',
+        },
+        'django.server': {
+            'handlers': ['django.server'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    }
+}

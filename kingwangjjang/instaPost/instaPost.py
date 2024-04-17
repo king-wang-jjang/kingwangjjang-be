@@ -1,6 +1,8 @@
 from django.shortcuts import render
 from instagrapi import Client
+import logging
 
+logger = logging.getLogger("")
 
 class InstaPost:
     # instagrapi 클라이언트를 생성합니다.
@@ -15,15 +17,15 @@ class InstaPost:
             self.client.login(username, password)
             self.isLogined = True
             message = "로그인에 성공했습니다."
-            print(message)
+            logger.info(message)
             return True
         
         except Exception as e:
             if "We couldn't find an account with the username" in str(e):
-                print("아이디 혹은 비밀번호를 확인하세요.")
+                logger.info("아이디 혹은 비밀번호를 확인하세요.")
                 return False
             else:
-                print("로그인에 문제가 있습니다:", e)
+                logger.info("로그인에 문제가 있습니다:", e)
                 return False
 
 
@@ -42,7 +44,7 @@ class InstaPost:
                 message = "게시물 업로드를 완료했습니다."
                 return message
             except Exception as e:
-                print("게시물 업로드 중 문제가 생겼습니다.", e)
+                logger.info("게시물 업로드 중 문제가 생겼습니다.", e)
         else:
             message = "로그인 먼저 해주세요."
             return message    
@@ -56,7 +58,7 @@ class InstaPost:
                 message = "게시물 업로드를 완료했습니다."
                 return message
             except Exception as e:
-                print("게시물 업로드 중 문제가 생겼습니다.", e)
+                logger.info("게시물 업로드 중 문제가 생겼습니다.", e)
         else:
             message = "로그인 먼저 해주세요."
             return message
@@ -70,7 +72,7 @@ class InstaPost:
                 message = "게시물 업로드를 완료했습니다."
                 return message
             except Exception as e:
-                print("게시물 업로드 중 문제가 생겼습니다.", e)
+                logger.info("게시물 업로드 중 문제가 생겼습니다.", e)
         else:
             message = "로그인 먼저 해주세요."
             return message        
@@ -82,5 +84,5 @@ class InstaPost:
             self.client.logout()
             return True
         except Exception as e:
-            print(f"Logout failed: {e}")
+            logger.info(f"Logout failed: {e}")
             return False
