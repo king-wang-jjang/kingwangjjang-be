@@ -73,7 +73,7 @@ class Ygosu(AbstractCommunityWebsite):
                 except Exception as e:
                     logger.info(e)
                     
-        logger.info("already exists post", already_exists_post)
+        logger.info({"already exists post": already_exists_post})
 
     def get_real_time_best(self):
         '''
@@ -121,7 +121,7 @@ class Ygosu(AbstractCommunityWebsite):
                 except Exception as e:
                     logger.info(e)
                     
-        logger.info("already exists post", already_exists_post)
+        logger.info({"already exists post": already_exists_post})
 
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
