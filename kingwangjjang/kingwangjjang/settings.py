@@ -161,27 +161,27 @@ WSGI_APPLICATION = 'kingwangjjang.wsgi.application'
 # MongoDB settings
 DB_URI = 'mongodb://'+ DB_HOST + '/' + DB_USER + ':' + DB_PASSWORD
 DATABASES = {
-    'default': {
-        'ENGINE': 'djongo',
-        'NAME': DB_NAME,
-        'ENFORCE_SCHEMA': True,
-        'LOGGING': {
-            'version': 1,
-            'loggers': {
-                'djongo': {
-                    'level': 'DEBUG',
-                    'propogate': False,                        
-                }
-            },
-         },
-        'CLIENT': {
-            'host': DB_URI,
-            'username': DB_USER,
-            'password': DB_PASSWORD,
-            'authSource': 'admin',
-            'authMechanism': 'SCRAM-SHA-1'
-        }  
-    }
+    # 'default': {
+    #     'ENGINE': 'djongo',
+    #     'NAME': DB_NAME,
+    #     'ENFORCE_SCHEMA': True,
+    #     'LOGGING': {
+    #         'version': 1,
+    #         'loggers': {
+    #             'djongo': {
+    #                 'level': 'DEBUG',
+    #                 'propogate': False,                        
+    #             }
+    #         },
+    #      },
+    #     'CLIENT': {
+    #         'host': DB_URI,
+    #         'username': DB_USER,
+    #         'password': DB_PASSWORD,
+    #         'authSource': 'admin',
+    #         'authMechanism': 'SCRAM-SHA-1'
+    #     }  
+    # }
 }
 
 # Password validation
