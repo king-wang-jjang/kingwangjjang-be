@@ -1,19 +1,32 @@
 import graphene
-from graphene_django.types import DjangoObjectType
 from graphene import Mutation
-
+from graphene_django.types import DjangoObjectType
 from .views import board_summary, get_real_time_best, get_daily_best
-from .communityWebsite.models import RealTime, Daily
+from mongo import DBController
 import logging
 
 logger = logging.getLogger("")
-class RealTimeType(DjangoObjectType):
-    class Meta:
-        model = RealTime
 
-class DailyType(DjangoObjectType):
-    class Meta:
-        model = Daily
+class RealTimeType(graphene.ObjectType):
+    board_id = graphene.String()
+    site = graphene.String()
+    title = graphene.String()
+    url = graphene.String()
+    create_time = graphene.DateTime()
+    GPTAnswer = graphene.String()
+    
+    def __init__(self, **kwargs):
+        kwargs.pop('_id', None)  # '_id' 필드 제거
+        super().__init__(**kwargs)
+
+class DailyType(graphene.ObjectType):
+    board_id = graphene.String()
+    rank = graphene.String()
+    site = graphene.String()
+    title = graphene.String()
+    url = graphene.String()
+    create_time = graphene.DateTime()
+    GPTAnswer = graphene.String()
 
 class Query(graphene.ObjectType):
     all_realtime = graphene.List(RealTimeType)
@@ -21,11 +34,15 @@ class Query(graphene.ObjectType):
 
     def resolve_all_realtime(self, info, **kwargs):
         get_real_time_best()
-        return RealTime.objects.all()
+        db_controller = DBController()
+        realtime_data = db_controller.select('RealTime')
+        return [RealTimeType(**data) for data in realtime_data]
 
     def resolve_all_daily(self, info, **kwargs):
         get_daily_best()
-        return Daily.objects.all()
+        db_controller = DBController()
+        daily_data = db_controller.select('Daily')
+        return [DailyType(**data) for data in daily_data]
 
 class SummaryBoardMutation(Mutation):
     class Arguments:

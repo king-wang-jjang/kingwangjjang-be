@@ -159,7 +159,8 @@ WSGI_APPLICATION = 'kingwangjjang.wsgi.application'
 
 # Database
 # MongoDB settings
-DB_URI = 'mongodb://'+ DB_HOST + '/' + DB_USER + ':' + DB_PASSWORD
+# DB_URI = 'mongodb://'+ DB_HOST + '/' + DB_USER + ':' + DB_PASSWORD
+DB_URI = f'mongodb://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
 DATABASES = {
     # 'default': {
     #     'ENGINE': 'djongo',

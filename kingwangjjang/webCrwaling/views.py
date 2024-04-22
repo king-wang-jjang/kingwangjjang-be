@@ -7,7 +7,6 @@ from chatGPT.chatGPT import ChatGPT
 from webCrwaling.communityWebsite.ygosu import Ygosu
 from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU
 
-from .communityWebsite.models import RealTime
 from django.views.decorators.csrf import csrf_exempt
 from webCrwaling.communityWebsite.dcinside import Dcinside 
 import logging
@@ -72,9 +71,9 @@ def board_summary_rest(request):
         return JsonResponse({'response': "성공하는 루트 추가해야함"}) 
     
 def get_real_time_best():
-    dcincideCrwaller = Dcinside()
+    # dcincideCrwaller = Dcinside()
     ygosuCrawller = Ygosu()
-    dcincideCrwaller.get_real_time_best()
+    # dcincideCrwaller.get_real_time_best()
     ygosuCrawller.get_real_time_best()
 
 def get_daily_best():
