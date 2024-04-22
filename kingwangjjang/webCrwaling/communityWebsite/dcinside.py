@@ -81,7 +81,7 @@ class Dcinside(AbstractCommunityWebsite):
                             'title': title,
                             'url': url,
                             'create_time': target_datetime,
-                            'GPTAnswer': 'DEFAULT_GPT_ANSWER'
+                            'GPTAnswer': DEFAULT_GPT_ANSWER
                         })
                 except Exception as e:
                     logger.info('error', e)

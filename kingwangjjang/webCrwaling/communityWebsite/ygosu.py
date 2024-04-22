@@ -64,15 +64,14 @@ class Ygosu(AbstractCommunityWebsite):
                         self.db_controller.insert('Daily', {
                             'board_id': board_id,
                             'rank': rank,
-                            'site': 'ygosu',
+                            'site': SITE_YGOSU,
                             'title': title,
                             'url': url,
                             'create_time': target_datetime,
-                            'GPTAnswer': 'DEFAULT_GPT_ANSWER'
+                            'GPTAnswer': DEFAULT_GPT_ANSWER
                         })
                 except Exception as e:
-                    # logger.info(e)
-                    print(e)
+                    logger.info(e)
                     
         logger.info({"already exists post": already_exists_post})
 
@@ -113,15 +112,14 @@ class Ygosu(AbstractCommunityWebsite):
                     else:
                         self.db_controller.insert('RealTime', {
                             'board_id': board_id,
-                            'site': 'ygosu',
+                            'site': SITE_YGOSU,
                             'title': title,
                             'url': url,
                             'create_time': target_datetime,
-                            'GPTAnswer': 'DEFAULT_GPT_ANSWER'
+                            'GPTAnswer': DEFAULT_GPT_ANSWER
                         })
                 except Exception as e:
-                    # logger.info(e)
-                    print(e)
+                    logger.info(e)
                     
         logger.info({"already exists post": already_exists_post})
 
