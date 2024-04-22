@@ -73,7 +73,7 @@ def get_board_summaries_by_date(date):
         board_summaries = list(real_time_summaries) + list(daily_summaries)
 
         # 결과를 반환합니다.
-        return board_summaries
+        return [DailyType(**data) for data in board_summaries]
 
 class SummaryBoardByDateMutation(Mutation):
     class Arguments:
