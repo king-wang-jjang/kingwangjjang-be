@@ -28,6 +28,9 @@ class DailyType(graphene.ObjectType):
     create_time = graphene.DateTime()
     GPTAnswer = graphene.String()
 
+    def __init__(self, **kwargs):
+        kwargs.pop('_id', None)  # '_id' 필드 제거
+        super().__init__(**kwargs)
 class Query(graphene.ObjectType):
     all_realtime = graphene.List(RealTimeType)
     all_daily = graphene.List(DailyType)
