@@ -11,17 +11,9 @@ class DBController(object):
         self.db_password = getattr(settings, 'DB_PASSWORD', None)
         escaped_user = quote_plus(self.db_user)
         escaped_password = quote_plus(self.db_password)
+        self.dbUri = f'mongodb://{escaped_user}:{escaped_password}@{self.db_host}/{self.db_name}?authMechanism=SCRAM-SHA-256'
 
-        self.dbUri = f'mongodb://{escaped_user}:{escaped_password}@{self.db_host}/admin?authMechanism=SCRAM-SHA-256'
-
-        # self.dbUri = f'mongodb://{self.db_host}/{self.db_name}?authMechanism=SCRAM-SHA-256'
-        # self.dbUri = f'mongodb://{self.db_user}:{self.db_password}@{self.db_host}/{self.db_name}?authMechanism=SCRAM-SHA-256'
     def GetDBHandle(self):
-        # client = pymongo.MongoClient(self.db_host,
-        #              username=self.db_user,
-        #              password=self.db_password,
-        #              authSource='admin',
-        #              authMechanism='SCRAM-SHA-256')
         client = pymongo.MongoClient(self.dbUri)
         dbHandle = client.get_default_database()  # 기본 데이터베이스 가져오기
         return dbHandle, client

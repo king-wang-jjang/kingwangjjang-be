@@ -71,9 +71,9 @@ def board_summary_rest(request):
         return JsonResponse({'response': "성공하는 루트 추가해야함"}) 
     
 def get_real_time_best():
-    # dcincideCrwaller = Dcinside()
+    dcincideCrwaller = Dcinside()
     ygosuCrawller = Ygosu()
-    # dcincideCrwaller.get_real_time_best()
+    dcincideCrwaller.get_real_time_best()
     ygosuCrawller.get_real_time_best()
 
 def get_daily_best():
