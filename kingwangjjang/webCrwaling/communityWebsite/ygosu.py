@@ -5,9 +5,9 @@ from bs4 import BeautifulSoup
 from django.conf import settings
 import requests
 from utils import FTPClient
+from mongo import DBController
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 
-from .models import Daily, RealTime
 from constants import DEFAULT_GPT_ANSWER, SITE_YGOSU
 import logging
 
@@ -15,7 +15,7 @@ logger = logging.getLogger("")
 class Ygosu(AbstractCommunityWebsite):
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
-        
+        self.db_controller = DBController()
         try:
             self.ftp_client = FTPClient(
                                 server_address=getattr(settings, 'FTP_SERVER', None),
@@ -56,20 +56,20 @@ class Ygosu(AbstractCommunityWebsite):
                     if board_id.isdigit():
                         break
                 try:
-                    existing_instance = Daily.objects.filter(board_id=board_id, site='ygosu').first() # 이미 있는 Board는 넘기기
+                    existing_instance = self.db_controller.select('Daily', {'board_id': board_id, 'site': 'ygosu'}) # 이미 있는 Board는 넘기기
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
                     else:
-                        Daily.objects.get_or_create(
-                            board_id=board_id,
-                            rank=rank,
-                            site=SITE_YGOSU,
-                            title=title,
-                            url=url,
-                            create_time=target_datetime,
-                            GPTAnswer=DEFAULT_GPT_ANSWER
-                        )
+                        self.db_controller.insert('Daily', {
+                            'board_id': board_id,
+                            'rank': rank,
+                            'site': SITE_YGOSU,
+                            'title': title,
+                            'url': url,
+                            'create_time': target_datetime,
+                            'GPTAnswer': DEFAULT_GPT_ANSWER
+                        })
                 except Exception as e:
                     logger.info(e)
                     
@@ -105,19 +105,19 @@ class Ygosu(AbstractCommunityWebsite):
                     if board_id.isdigit():
                         break
                 try:
-                    existing_instance = RealTime.objects.filter(board_id=board_id, site='ygosu').first() # 이미 있는 Board는 넘기기
+                    existing_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': 'ygosu'})
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
                     else:
-                        RealTime.objects.get_or_create(
-                            board_id=board_id,
-                            site='ygosu',
-                            title=title,
-                            url=url,
-                            create_time=target_datetime,
-                            GPTAnswer=DEFAULT_GPT_ANSWER
-                        )
+                        self.db_controller.insert('RealTime', {
+                            'board_id': board_id,
+                            'site': SITE_YGOSU,
+                            'title': title,
+                            'url': url,
+                            'create_time': target_datetime,
+                            'GPTAnswer': DEFAULT_GPT_ANSWER
+                        })
                 except Exception as e:
                     logger.info(e)
                     
@@ -126,7 +126,7 @@ class Ygosu(AbstractCommunityWebsite):
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
         self.download_path = os.path.abspath(abs_path) 
-        daily_instance = Daily.objects.filter(board_id=board_id, site='ygosu').first()
+        daily_instance = self.db_controller.select('Daily', {'board_id': board_id, 'site': 'ygosu'})
         content_list = []
         if daily_instance:
             response = requests.get(daily_instance.url)

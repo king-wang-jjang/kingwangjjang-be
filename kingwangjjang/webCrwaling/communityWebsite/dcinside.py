@@ -6,7 +6,7 @@ from django.conf import settings
 import requests
 
 from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE
-from .models import RealTime
+from mongo import DBController
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 from utils import FTPClient
 
@@ -27,7 +27,7 @@ class Dcinside(AbstractCommunityWebsite):
     
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
-        
+        self.db_controller = DBController()
         try:
             self.ftp_client = FTPClient(
                                 server_address=getattr(settings, 'FTP_SERVER', None),
@@ -70,19 +70,19 @@ class Dcinside(AbstractCommunityWebsite):
                 target_datetime = datetime(now.year, now.month, now.day, hour, minute)
 
                 try:
-                    existing_instance = RealTime.objects.filter(board_id=board_id, site='dcinside').first()
+                    existing_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': SITE_DCINSIDE}) # 이미 있는 Board는 넘기기
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
                     else:
-                        RealTime.objects.get_or_create(
-                            board_id=board_id,
-                            site=SITE_DCINSIDE,
-                            title=title,
-                            url=url,
-                            create_time=target_datetime,
-                            GPTAnswer=DEFAULT_GPT_ANSWER
-                        )
+                        self.db_controller.insert('RealTime', {
+                            'board_id': board_id,
+                            'site': SITE_DCINSIDE,
+                            'title': title,
+                            'url': url,
+                            'create_time': target_datetime,
+                            'GPTAnswer': DEFAULT_GPT_ANSWER
+                        })
                 except Exception as e:
                     logger.info('error', e)
                     

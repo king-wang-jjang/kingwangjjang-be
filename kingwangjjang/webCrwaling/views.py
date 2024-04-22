@@ -7,7 +7,6 @@ from chatGPT.chatGPT import ChatGPT
 from webCrwaling.communityWebsite.ygosu import Ygosu
 from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU
 
-from .communityWebsite.models import RealTime
 from django.views.decorators.csrf import csrf_exempt
 from webCrwaling.communityWebsite.dcinside import Dcinside 
 import logging

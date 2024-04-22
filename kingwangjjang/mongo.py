@@ -1,22 +1,21 @@
-from pymongo import MongoClient
+from urllib.parse import quote_plus
 from django.conf import settings
 import pymongo
-import logging
 
-logger = logging.getLogger("")
 class DBController(object):
 
     def __init__(self):
-        self.host = getattr(settings, 'DB_HOST', None)
-        self.userName = getattr(settings, 'DB_USER', None)
-        self.passWord = getattr(settings, 'DB_PASSWORD', None)
-        self.dbName = getattr(settings, 'DB_NAME', None)
-        self.dbUri = getattr(settings, 'DB_URI', None)
+        self.db_host = getattr(settings, 'DB_HOST', 'localhost')
+        self.db_name = getattr(settings, 'DB_NAME', None)
+        self.db_user = getattr(settings, 'DB_USER', None)
+        self.db_password = getattr(settings, 'DB_PASSWORD', None)
+        escaped_user = quote_plus(self.db_user)
+        escaped_password = quote_plus(self.db_password)
+        self.dbUri = f'mongodb://{escaped_user}:{escaped_password}@{self.db_host}/{self.db_name}?authMechanism=SCRAM-SHA-256'
 
     def GetDBHandle(self):
         client = pymongo.MongoClient(self.dbUri)
-        dbHandle = client[self.dbName]
-
+        dbHandle = client.get_default_database()  # 기본 데이터베이스 가져오기
         return dbHandle, client
     
     def insert(self, collection_name, data):
@@ -31,7 +30,7 @@ class DBController(object):
         collection = dbHandle[collection_name]
 
         if query:
-            logger.info(f"Query: {query}")
+            print(f"Query: {query}")
             result = collection.find(query)
         else:
             result = collection.find()
