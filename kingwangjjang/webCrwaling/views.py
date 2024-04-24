@@ -1,9 +1,9 @@
 import json
-from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 import threading
 
 from chatGPT.chatGPT import ChatGPT
+from mongo import DBController
 from webCrwaling.communityWebsite.ygosu import Ygosu
 from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU
 
@@ -13,6 +13,7 @@ import logging
 
 logger = logging.getLogger("")
 board_semaphores = {}
+db_controller = DBController()
 
 @csrf_exempt
 def board_summary(board_id, site):
@@ -28,9 +29,11 @@ def board_summary(board_id, site):
         return '요청을 이미 처리하고 있습니다. 잠시 후 다시 선택해주세요.'
 
     try:
-        realtime_object = get_object_or_404(RealTime, site=site, board_id=board_id)
-        if realtime_object.GPTAnswer != DEFAULT_GPT_ANSWER: # 이미 요약이 완료된 상태
-            return realtime_object.GPTAnswer
+        realtime_object = db_controller.select('RealTime', {'board_id': board_id, 'site': site})
+
+        if realtime_object[0]['GPTAnswer'] != 'DEFAULT_GPT_ANSWER': # 이미 요약이 완료된 상태
+            return realtime_object[0]['GPTAnswer']
+        logger.info({'realtime_object': realtime_object[0]['GPTAnswer']})
         
         if (site == SITE_DCINSIDE):
             crawler_instance = Dcinside()
@@ -47,13 +50,21 @@ def board_summary(board_id, site):
         # chatGPT = ChatGPT()
         # logger.info("URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
         # response = chatGPT.get_completion(content=prompt)
+        response = str_contents
 
         # Mongodb에 삽입
-        # realtime_object.GPTAnswer = response
-        realtime_object.GPTAnswer = str_contents
-        realtime_object.save()
+        db_controller.insert('GPT', {
+                            'board_id': board_id,
+                            'site': site,
+                            'answer': response 
+                           })
         
-        return str_contents
+        # 기존 Document에 GPTAnswer 삽입
+        # realtime_object.GPTAnswer = response
+        # realtime_object.GPTAnswer = str_contents
+        # realtime_object.save()
+        
+        return response
     finally:
         semaphore.release()
 
@@ -79,3 +90,6 @@ def get_real_time_best():
 def get_daily_best():
     ygosuCrawller = Ygosu()
     ygosuCrawller.get_daily_best()
+
+# make function a + b 
+
