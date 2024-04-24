@@ -47,3 +47,14 @@ class DBController(object):
         dbHandle, client = self.GetDBHandle()
         collection = dbHandle[collection_name]
         return collection
+        
+    def update_one(self, collection_name, filter, update):
+        dbHandle, client = self.GetDBHandle()
+        collection = dbHandle[collection_name]
+
+        # update_one() 메서드를 사용하여 단일 문서를 업데이트합니다.
+        result = collection.update_one(filter, update)
+
+        # 업데이트 결과를 반환합니다.
+        client.close()
+        return result
