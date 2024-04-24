@@ -1,7 +1,8 @@
+import logging
 from urllib.parse import quote_plus
 from django.conf import settings
 import pymongo
-
+logger = logging.getLogger("")
 class DBController(object):
 
     def __init__(self):
@@ -22,6 +23,7 @@ class DBController(object):
         dbHandle, client = self.GetDBHandle()
         collection = dbHandle[collection_name]
         result = collection.insert_one(data)
+        logging.info(f"{collection_name}, Data: {data}")
         client.close()
         return result
 
@@ -30,8 +32,9 @@ class DBController(object):
         collection = dbHandle[collection_name]
 
         if query:
-            print(f"Query: {query}")
+            logging.debug(f"Query: {query}")
             result = collection.find(query)
+            
         else:
             result = collection.find()
 
@@ -39,3 +42,8 @@ class DBController(object):
 
         client.close()
         return result_list
+
+    def get_collection(self, collection_name):
+        dbHandle, client = self.GetDBHandle()
+        collection = dbHandle[collection_name]
+        return collection
