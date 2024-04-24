@@ -68,7 +68,7 @@ class Ygosu(AbstractCommunityWebsite):
                             'title': title,
                             'url': url,
                             'create_time': target_datetime,
-                            'GPTAnswer': DEFAULT_GPT_ANSWER
+                            # 'GPTAnswer': DEFAULT_GPT_ANSWER
                         })
                 except Exception as e:
                     logger.info(e)
@@ -116,7 +116,7 @@ class Ygosu(AbstractCommunityWebsite):
                             'title': title,
                             'url': url,
                             'create_time': target_datetime,
-                            'GPTAnswer': DEFAULT_GPT_ANSWER
+                            # 'GPTAnswer': DEFAULT_GPT_ANSWER
                         })
                 except Exception as e:
                     logger.info(e)
@@ -126,10 +126,10 @@ class Ygosu(AbstractCommunityWebsite):
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
         self.download_path = os.path.abspath(abs_path) 
-        daily_instance = self.db_controller.select('Daily', {'board_id': board_id, 'site': 'ygosu'})
+        daily_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': 'ygosu'})
         content_list = []
         if daily_instance:
-            response = requests.get(daily_instance.url)
+            response = requests.get(daily_instance[0]['url'])
 
             if response.status_code == 200:
                 soup = BeautifulSoup(response.content, 'html.parser')
