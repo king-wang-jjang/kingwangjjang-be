@@ -61,14 +61,24 @@ class Ygosu(AbstractCommunityWebsite):
                         already_exists_post.append(board_id)
                         continue
                     else:
+                        gpt_exists = self.db_controller.select('GPT', {'board_id': board_id, 'site': SITE_YGOSU})
+                        if gpt_exists:
+                            gpt_obj_id = gpt_exists[0]['_id']
+                        else :
+                            gpt_obj = self.db_controller.insert('GPT', {
+                                'board_id': board_id,
+                                'site': SITE_YGOSU,
+                                'answer': DEFAULT_GPT_ANSWER
+                            })
+                            gpt_obj_id = gpt_obj.inserted_id
+                            
                         self.db_controller.insert('Daily', {
                             'board_id': board_id,
-                            'rank': rank,
                             'site': SITE_YGOSU,
                             'title': title,
                             'url': url,
                             'create_time': target_datetime,
-                            # 'GPTAnswer': DEFAULT_GPT_ANSWER
+                            'GPTAnswer': gpt_obj_id
                         })
                 except Exception as e:
                     logger.info(e)
@@ -110,13 +120,24 @@ class Ygosu(AbstractCommunityWebsite):
                         already_exists_post.append(board_id)
                         continue
                     else:
+                        gpt_exists = self.db_controller.select('GPT', {'board_id': board_id, 'site': SITE_YGOSU})
+                        if gpt_exists:
+                            gpt_obj_id = gpt_exists[0]['_id']
+                        else :
+                            gpt_obj = self.db_controller.insert('GPT', {
+                                'board_id': board_id,
+                                'site': SITE_YGOSU,
+                                'answer': DEFAULT_GPT_ANSWER
+                            })
+                            gpt_obj_id = gpt_obj.inserted_id
+                            
                         self.db_controller.insert('RealTime', {
                             'board_id': board_id,
                             'site': SITE_YGOSU,
                             'title': title,
                             'url': url,
                             'create_time': target_datetime,
-                            # 'GPTAnswer': DEFAULT_GPT_ANSWER
+                            'GPTAnswer': gpt_obj_id
                         })
                 except Exception as e:
                     logger.info(e)
