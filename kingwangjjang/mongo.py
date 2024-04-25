@@ -58,3 +58,16 @@ class DBController(object):
         # 업데이트 결과를 반환합니다.
         client.close()
         return result
+
+    def get_gpt(self, _id) -> str: 
+        gpt_collection_name = 'GPT'
+        dbHandle, client = self.GetDBHandle()
+        collection = dbHandle[gpt_collection_name]
+        result = collection.find_one({'_id': _id})
+        if(result is None):
+            msg = f"\"{_id}\": ID 형식이 이상하거나 값을 찾을 수 없습니다."
+            logger.error(msg)
+            return msg
+        answer_value = result['answer']
+        
+        return answer_value

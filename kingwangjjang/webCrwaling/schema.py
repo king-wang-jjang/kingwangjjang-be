@@ -39,7 +39,15 @@ class Query(graphene.ObjectType):
         get_real_time_best()
         db_controller = DBController()
         realtime_data = db_controller.select('RealTime')
-        return [RealTimeType(**data) for data in realtime_data]
+        for realtime in realtime_data:
+            if realtime_data is None:
+                logger.exception(f"GPTAnswer is None")
+                continue
+            gpt_answer = db_controller.get_gpt(realtime['GPTAnswer'])
+            
+            realtime['GPTAnswer'] = gpt_answer
+
+        return realtime_data
 
     def resolve_all_daily(self, info, **kwargs):
         get_daily_best()
