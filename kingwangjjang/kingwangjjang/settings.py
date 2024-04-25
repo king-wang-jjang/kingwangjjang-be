@@ -207,7 +207,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
 APSCHEDULER_RUN_NOW_TIMEOUT = 25  # Seconds
-SCHEDULER_DEFAULT = True # apps.py 참고
+# SCHEDULER_DEFAULT = True # apps.py 참고
 
 # Logging configuration
 # DEBUG < INFO < WARNING < ERROR < CRITICAL
