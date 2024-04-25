@@ -116,7 +116,7 @@ class Ygosu(AbstractCommunityWebsite):
                     if board_id.isdigit():
                         break
                 try:
-                    existing_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': 'ygosu'})
+                    existing_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': SITE_YGOSU})
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
