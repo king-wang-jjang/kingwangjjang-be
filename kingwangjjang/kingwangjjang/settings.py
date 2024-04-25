@@ -105,7 +105,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "corsheaders",
-
+    "django_apscheduler",
     # Graph QL
     'graphene_django',
     'graphene_mongo',
@@ -158,31 +158,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'kingwangjjang.wsgi.application'
 
 # Database
-# MongoDB settings
-# DB_URI = 'mongodb://'+ DB_HOST + '/' + DB_USER + ':' + DB_PASSWORD
-DB_URI = f'mongodb://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'djongo',
-    #     'NAME': DB_NAME,
-    #     'ENFORCE_SCHEMA': True,
-    #     'LOGGING': {
-    #         'version': 1,
-    #         'loggers': {
-    #             'djongo': {
-    #                 'level': 'DEBUG',
-    #                 'propogate': False,                        
-    #             }
-    #         },
-    #      },
-    #     'CLIENT': {
-    #         'host': DB_URI,
-    #         'username': DB_USER,
-    #         'password': DB_PASSWORD,
-    #         'authSource': 'admin',
-    #         'authMechanism': 'SCRAM-SHA-1'
-    #     }  
-    # }
 }
 
 # Password validation
@@ -208,13 +184,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
 LANGUAGE_CODE = 'ko-kr'
-
 TIME_ZONE = 'Asia/Seoul'
-
 USE_I18N = True
-
 USE_TZ = False
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
@@ -232,6 +204,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+APSCHEDULER_DATETIME_FORMAT = "N j, Y, f:s a"
+APSCHEDULER_RUN_NOW_TIMEOUT = 25  # Seconds
+SCHEDULER_DEFAULT = True # apps.py 참고
 
 # Logging configuration
 # DEBUG < INFO < WARNING < ERROR < CRITICAL
