@@ -1,7 +1,7 @@
 import graphene
 from graphene import Mutation
 
-from .pagination import paging
+from .pagination import BoardSummaryType, paging
 from .views import board_summary, get_real_time_best, get_daily_best
 from mongo import DBController
 from datetime import datetime, timedelta
@@ -77,28 +77,23 @@ class SummaryBoardMutation(Mutation):
         _board_summary = board_summary(board_id, site)
         return SummaryBoardMutation(board_summary=_board_summary)
 
-### 추가 ###
-
 class SummaryBoardByDateMutation(Mutation):
     class Arguments:
-        # date = graphene.String(required=True)  # 날짜(형식: 'YYYY-MM-DD')
         index = graphene.String(required=True)
 
-    board_summaries = graphene.List(graphene.String)
+    board_summaries = graphene.List(BoardSummaryType)
 
-    def mutate(self, info, index): # info는 무조건 있어야하는 변수임 -> info가 뭔지 print 해보기
+    def mutate(self, info, index):
         try:
-            board_summaries = paging(index) 
+            _board_summaries = paging(index) 
         except ValueError:
             raise ValueError("Invalid date format. Please use 'YYYY-MM-DD' format.")
 
-        return SummaryBoardByDateMutation(board_summaries=board_summaries)
+        return SummaryBoardByDateMutation(board_summaries=_board_summaries)
 
-### 추가 ###
 
 class Mutation(graphene.ObjectType):
     summary_board = SummaryBoardMutation.Field()
-    ## 추가
     summary_board_by_date = SummaryBoardByDateMutation.Field()
 
 schema = graphene.Schema(query=Query, mutation=Mutation)

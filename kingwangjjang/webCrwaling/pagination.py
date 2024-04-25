@@ -8,7 +8,6 @@ from mongo import DBController
 db_controller = DBController()
 
 class BoardSummaryType(graphene.ObjectType):
-    _id = graphene.String()
     board_id = graphene.String()
     site = graphene.String()
     rank = graphene.String()
@@ -16,7 +15,10 @@ class BoardSummaryType(graphene.ObjectType):
     url = graphene.String()
     create_time = graphene.DateTime()
     GPTAnswer = graphene.String()
-    
+    def __init__(self, **kwargs):
+        kwargs.pop('_id', None)  # '_id' 필드 제거
+        super().__init__(**kwargs)
+
 def paging(index: str):
     index = int(index)
     # RealTime 모델에서 해당 날짜의 데이터를 필터링합니다.
@@ -31,11 +33,7 @@ def paging(index: str):
         }
     }
     real_time_summaries = db_controller.select('RealTime', filter)
-
-    # Daily 모델에서 해당 날짜의 데이터를 필터링합니다.
-    daily_summaries = db_controller.select('Daily', filter) # 이미 있는 Board는 넘기기
-
-    # 필터링된 결과를 하나의 리스트로 결합합니다.
+    daily_summaries = db_controller.select('Daily', filter)
     board_summaries = list(real_time_summaries) + list(daily_summaries)
 
-    return [BoardSummaryType(**summary) for summary in board_summaries]
+    return [BoardSummaryType(**{**summary, 'GPTAnswer': db_controller.get_gpt(summary['GPTAnswer'])}) for summary in board_summaries]
