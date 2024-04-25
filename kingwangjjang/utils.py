@@ -128,11 +128,12 @@ class FTPClient(object):
             yyyymmdd: directory name
         """
         try:
-            self.ftp.cwd(self.root)
-            self.ftp.cwd(yyyymmdd)
-            self.root = self.root + "/" + yyyymmdd
+            self.ftp.cwd('/home') # 고정 루트
+            self.ftp.cwd(yyyymmdd)  # 실패는 여기서만 함 (/home은 고정이여서)
+            self.root = self.root + "/" + yyyymmdd # 변환 루트
         except Exception as e:
             try:
+                # yyyymmdd 폴더가 없을 때
                 self.ftp.mkd(yyyymmdd)
                 self.ftp.cwd(yyyymmdd)
                 self.root = self.root + "/" + yyyymmdd

@@ -1,19 +1,19 @@
 import json
-from django.shortcuts import get_object_or_404
 from django.http import JsonResponse
 import threading
 
 from chatGPT.chatGPT import ChatGPT
+from mongo import DBController
 from webCrwaling.communityWebsite.ygosu import Ygosu
 from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU
 
-from .communityWebsite.models import RealTime
 from django.views.decorators.csrf import csrf_exempt
 from webCrwaling.communityWebsite.dcinside import Dcinside 
 import logging
 
 logger = logging.getLogger("")
 board_semaphores = {}
+db_controller = DBController()
 
 @csrf_exempt
 def board_summary(board_id, site):
@@ -29,9 +29,12 @@ def board_summary(board_id, site):
         return '요청을 이미 처리하고 있습니다. 잠시 후 다시 선택해주세요.'
 
     try:
-        realtime_object = get_object_or_404(RealTime, site=site, board_id=board_id)
-        if realtime_object.GPTAnswer != DEFAULT_GPT_ANSWER: # 이미 요약이 완료된 상태
-            return realtime_object.GPTAnswer
+        realtime_object = db_controller.select('RealTime', {'board_id': board_id, 'site': site})[0]
+        GPT_Object_id = realtime_object['GPTAnswer']
+        GPT_object = db_controller.select('GPT', {'_id':GPT_Object_id})[0]
+        
+        if GPT_object['answer'] != DEFAULT_GPT_ANSWER:
+            return GPT_object['answer']
         
         if (site == SITE_DCINSIDE):
             crawler_instance = Dcinside()
@@ -42,19 +45,25 @@ def board_summary(board_id, site):
         for content in json_contents:
             if 'content' in content:
                 str_contents += content['content']
+        response = str_contents
 
-        # # GPT 요약
-        # prompt= "아래 내용에서 이상한 문자는 제외하고 5줄로 요약해줘" + str_contents
-        # chatGPT = ChatGPT()
-        # logger.info("URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
-        # response = chatGPT.get_completion(content=prompt)
+        # GPT 요약
+        prompt= "아래 내용에서 이상한 문자는 제외하고 5줄로 요약해줘" + str_contents
+        chatGPT = ChatGPT()
+        logger.info("URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
+        response = chatGPT.get_completion(content=prompt)
 
-        # Mongodb에 삽입
-        # realtime_object.GPTAnswer = response
-        realtime_object.GPTAnswer = str_contents
-        realtime_object.save()
-        
-        return str_contents
+        # Update answer 
+        if GPT_object:
+            db_controller.update_one('GPT', 
+                                    {'_id': GPT_Object_id}, 
+                                    {'$set': {'answer': response}})
+            logger.info(f"{GPT_Object_id} site: {site} board_id: {board_id}문서 업데이트 완료")
+        else:
+            logger.error(f"{GPT_Object_id} site: {site} board_id: {board_id}해당 ObjectId로 문서를 찾을 수 없습니다.")
+            return False
+
+        return response
     finally:
         semaphore.release()
 
@@ -74,9 +83,12 @@ def board_summary_rest(request):
 def get_real_time_best():
     dcincideCrwaller = Dcinside()
     ygosuCrawller = Ygosu()
-    dcincideCrwaller.get_real_time_best()
+    # dcincideCrwaller.get_real_time_best()
     ygosuCrawller.get_real_time_best()
 
 def get_daily_best():
     ygosuCrawller = Ygosu()
     ygosuCrawller.get_daily_best()
+
+# make function a + b 
+
