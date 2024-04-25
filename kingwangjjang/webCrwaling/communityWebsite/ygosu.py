@@ -75,6 +75,7 @@ class Ygosu(AbstractCommunityWebsite):
                         self.db_controller.insert('Daily', {
                             'board_id': board_id,
                             'site': SITE_YGOSU,
+                            'rank': rank,
                             'title': title,
                             'url': url,
                             'create_time': target_datetime,
