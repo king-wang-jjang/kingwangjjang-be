@@ -1,7 +1,8 @@
+import logging
 from urllib.parse import quote_plus
 from django.conf import settings
 import pymongo
-
+logger = logging.getLogger("")
 class DBController(object):
 
     def __init__(self):
@@ -22,6 +23,7 @@ class DBController(object):
         dbHandle, client = self.GetDBHandle()
         collection = dbHandle[collection_name]
         result = collection.insert_one(data)
+        logging.info(f"{collection_name}, Data: {data}")
         client.close()
         return result
 
@@ -30,8 +32,9 @@ class DBController(object):
         collection = dbHandle[collection_name]
 
         if query:
-            print(f"Query: {query}")
+            logging.debug(f"Query: {query}")
             result = collection.find(query)
+            
         else:
             result = collection.find()
 
@@ -39,3 +42,32 @@ class DBController(object):
 
         client.close()
         return result_list
+
+    def get_collection(self, collection_name):
+        dbHandle, client = self.GetDBHandle()
+        collection = dbHandle[collection_name]
+        return collection
+        
+    def update_one(self, collection_name, filter, update):
+        dbHandle, client = self.GetDBHandle()
+        collection = dbHandle[collection_name]
+
+        # update_one() 메서드를 사용하여 단일 문서를 업데이트합니다.
+        result = collection.update_one(filter, update)
+
+        # 업데이트 결과를 반환합니다.
+        client.close()
+        return result
+
+    def get_gpt(self, _id) -> str: 
+        gpt_collection_name = 'GPT'
+        dbHandle, client = self.GetDBHandle()
+        collection = dbHandle[gpt_collection_name]
+        result = collection.find_one({'_id': _id})
+        if(result is None):
+            msg = f"\"{_id}\": ID 형식이 이상하거나 값을 찾을 수 없습니다."
+            logger.error(msg)
+            return msg
+        answer_value = result['answer']
+        
+        return answer_value

@@ -1,6 +1,5 @@
 import graphene
 from graphene import Mutation
-from graphene_django.types import DjangoObjectType
 from .views import board_summary, get_real_time_best, get_daily_best
 from mongo import DBController
 from datetime import datetime, timedelta
@@ -40,13 +39,29 @@ class Query(graphene.ObjectType):
         get_real_time_best()
         db_controller = DBController()
         realtime_data = db_controller.select('RealTime')
-        return [RealTimeType(**data) for data in realtime_data]
+        # realtime에 gpt answer을 추가 (확장)
+        for realtime in realtime_data:
+            if realtime_data is None:
+                logger.exception(f"GPTAnswer is None")
+                continue
+            gpt_answer = db_controller.get_gpt(realtime['GPTAnswer'])
+            realtime['GPTAnswer'] = gpt_answer
+
+        return realtime_data
 
     def resolve_all_daily(self, info, **kwargs):
+        # insert to Daily
         get_daily_best()
         db_controller = DBController()
         daily_data = db_controller.select('Daily')
-        return [DailyType(**data) for data in daily_data]
+        for realtime in daily_data:
+            if daily_data is None:
+                logger.exception(f"GPTAnswer is None")
+                continue
+            gpt_answer = db_controller.get_gpt(realtime['GPTAnswer'])
+            realtime['GPTAnswer'] = gpt_answer
+
+        return daily_data
 
 class SummaryBoardMutation(Mutation):
     class Arguments:
