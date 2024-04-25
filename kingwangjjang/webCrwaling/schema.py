@@ -3,6 +3,7 @@ from graphene import Mutation
 from graphene_django.types import DjangoObjectType
 from .views import board_summary, get_real_time_best, get_daily_best
 from mongo import DBController
+from datetime import datetime, timedelta
 import logging
 
 logger = logging.getLogger("")
@@ -59,7 +60,6 @@ class SummaryBoardMutation(Mutation):
         return SummaryBoardMutation(board_summary=_board_summary)
 
 ### 추가 ###
-from datetime import datetime, timedelta
 
 db_controller = DBController()
 
