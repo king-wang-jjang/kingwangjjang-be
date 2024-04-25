@@ -70,19 +70,25 @@ class Dcinside(AbstractCommunityWebsite):
                 target_datetime = datetime(now.year, now.month, now.day, hour, minute)
 
                 try:
-                    existing_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': SITE_DCINSIDE}) # 이미 있는 Board는 넘기기
-                    if existing_instance:
-                        already_exists_post.append(board_id)
-                        continue
-                    else:
-                        self.db_controller.insert('RealTime', {
+                    gpt_exists = self.db_controller.select('GPT', {'board_id': board_id, 'site': SITE_DCINSIDE})
+                    if gpt_exists:
+                        gpt_obj_id = gpt_exists[0]['_id']
+                    else :
+                        gpt_obj = self.db_controller.insert('GPT', {
                             'board_id': board_id,
                             'site': SITE_DCINSIDE,
-                            'title': title,
-                            'url': url,
-                            'create_time': target_datetime,
-                            'GPTAnswer': DEFAULT_GPT_ANSWER
+                            'answer': DEFAULT_GPT_ANSWER
                         })
+                        gpt_obj_id = gpt_obj.inserted_id
+                        
+                    self.db_controller.insert('RealTime', {
+                        'board_id': board_id,
+                        'site': SITE_DCINSIDE,
+                        'title': title,
+                        'url': url,
+                        'create_time': target_datetime,
+                        'GPTAnswer': gpt_obj_id
+                    })
                 except Exception as e:
                     logger.info('error', e)
                     

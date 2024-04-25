@@ -36,6 +36,9 @@ RUN apt-get update && apt-get install -y \
 # 작업디렉토리 설정
 WORKDIR /web
 
+# logs 
+RUN mkdir logs
+
 # 소스코드 복사
 COPY . .
 
