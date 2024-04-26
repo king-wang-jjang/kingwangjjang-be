@@ -37,12 +37,12 @@ class DailyType(graphene.ObjectType):
 class Query(graphene.ObjectType):
     all_realtime = graphene.List(RealTimeType)
     all_daily = graphene.List(DailyType)
+    summary_board_by_date = graphene.List(BoardSummaryType, index=graphene.String(required=True))
 
     def resolve_all_realtime(self, info, **kwargs):
-        get_real_time_best()
         db_controller = DBController()
         realtime_data = db_controller.select('RealTime')
-        # realtime에 gpt answer을 추가 (확장)
+        # realtime(에 gpt answer을 추가 (확장)
         for realtime in realtime_data:
             if realtime_data is None:
                 logger.exception(f"GPTAnswer is None")
@@ -53,8 +53,6 @@ class Query(graphene.ObjectType):
         return realtime_data
 
     def resolve_all_daily(self, info, **kwargs):
-        # insert to Daily
-        get_daily_best()
         db_controller = DBController()
         daily_data = db_controller.select('Daily')
         for realtime in daily_data:
@@ -65,6 +63,11 @@ class Query(graphene.ObjectType):
             realtime['GPTAnswer'] = gpt_answer
 
         return daily_data
+
+    def resolve_summary_board_by_date(self, info, index):
+        board_summaries = get_page_data_by_index(index) 
+
+        return board_summaries
 
 class SummaryBoardMutation(Mutation):
     class Arguments:
@@ -77,23 +80,7 @@ class SummaryBoardMutation(Mutation):
         _board_summary = board_summary(board_id, site)
         return SummaryBoardMutation(board_summary=_board_summary)
 
-class SummaryBoardByDateMutation(Mutation):
-    class Arguments:
-        index = graphene.String(required=True)
-
-    board_summaries = graphene.List(BoardSummaryType)
-
-    def mutate(self, info, index):
-        try:
-            _board_summaries = get_page_data_by_index(index) 
-        except ValueError:
-            raise ValueError("Invalid date format. Please use 'YYYY-MM-DD' format.")
-
-        return SummaryBoardByDateMutation(board_summaries=_board_summaries)
-
-
 class Mutation(graphene.ObjectType):
     summary_board = SummaryBoardMutation.Field()
-    summary_board_by_date = SummaryBoardByDateMutation.Field()
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
