@@ -37,7 +37,7 @@ class DailyType(graphene.ObjectType):
 class Query(graphene.ObjectType):
     all_realtime = graphene.List(RealTimeType)
     all_daily = graphene.List(DailyType)
-    summary_board_by_date = graphene.List(BoardSummaryType, index=graphene.String(required=True))
+    board_contents_by_date = graphene.List(BoardSummaryType, index=graphene.String(required=True))
 
     def resolve_all_realtime(self, info, **kwargs):
         db_controller = DBController()
@@ -64,7 +64,7 @@ class Query(graphene.ObjectType):
 
         return daily_data
 
-    def resolve_summary_board_by_date(self, info, index):
+    def resolve_board_contents_by_date(self, info, index):
         board_summaries = get_page_data_by_index(index) 
 
         return board_summaries
