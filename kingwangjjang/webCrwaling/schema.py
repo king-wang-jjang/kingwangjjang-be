@@ -1,7 +1,10 @@
 import graphene
 from graphene import Mutation
+
+from .pagination import BoardSummaryType, get_page_data_by_index
 from .views import board_summary, get_real_time_best, get_daily_best
 from mongo import DBController
+from datetime import datetime, timedelta
 import logging
 
 logger = logging.getLogger("")
@@ -30,15 +33,16 @@ class DailyType(graphene.ObjectType):
     def __init__(self, **kwargs):
         kwargs.pop('_id', None)  # '_id' 필드 제거
         super().__init__(**kwargs)
+
 class Query(graphene.ObjectType):
     all_realtime = graphene.List(RealTimeType)
     all_daily = graphene.List(DailyType)
+    board_contents_by_date = graphene.List(BoardSummaryType, index=graphene.String(required=True))
 
     def resolve_all_realtime(self, info, **kwargs):
-        get_real_time_best()
         db_controller = DBController()
         realtime_data = db_controller.select('RealTime')
-        # realtime에 gpt answer을 추가 (확장)
+        # realtime(에 gpt answer을 추가 (확장)
         for realtime in realtime_data:
             if realtime_data is None:
                 logger.exception(f"GPTAnswer is None")
@@ -49,8 +53,6 @@ class Query(graphene.ObjectType):
         return realtime_data
 
     def resolve_all_daily(self, info, **kwargs):
-        # insert to Daily
-        get_daily_best()
         db_controller = DBController()
         daily_data = db_controller.select('Daily')
         for realtime in daily_data:
@@ -61,6 +63,11 @@ class Query(graphene.ObjectType):
             realtime['GPTAnswer'] = gpt_answer
 
         return daily_data
+
+    def resolve_board_contents_by_date(self, info, index):
+        board_summaries = get_page_data_by_index(index) 
+
+        return board_summaries
 
 class SummaryBoardMutation(Mutation):
     class Arguments:
