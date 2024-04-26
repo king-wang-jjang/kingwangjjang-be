@@ -1,7 +1,7 @@
 import graphene
 from graphene import Mutation
 
-from .pagination import BoardSummaryType, paging
+from .pagination import BoardSummaryType, get_page_data_by_index
 from .views import board_summary, get_real_time_best, get_daily_best
 from mongo import DBController
 from datetime import datetime, timedelta
@@ -85,7 +85,7 @@ class SummaryBoardByDateMutation(Mutation):
 
     def mutate(self, info, index):
         try:
-            _board_summaries = paging(index) 
+            _board_summaries = get_page_data_by_index(index) 
         except ValueError:
             raise ValueError("Invalid date format. Please use 'YYYY-MM-DD' format.")
 
