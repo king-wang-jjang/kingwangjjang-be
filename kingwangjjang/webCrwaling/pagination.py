@@ -23,7 +23,7 @@ class BoardSummaryType(graphene.ObjectType):
 # 페이지 번호를 받아, create_time이 (오늘 날짜 - 페이지 번호)에 해당하는 데이터 파싱
 def get_page_data_by_index(index: str):
     index = int(index)
-
+    board_summaries = []
     current_time = datetime.now()
     start_date = current_time.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=index) 
     end_date = current_time.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=index - 1) 
@@ -36,6 +36,57 @@ def get_page_data_by_index(index: str):
     }
     real_time_summaries = db_controller.select('RealTime', filter)
     daily_summaries = db_controller.select('Daily', filter)
-    board_summaries = list(real_time_summaries) + list(daily_summaries)
+    board_summaries =  list(real_time_summaries) + list(daily_summaries)
 
-    return [BoardSummaryType(**{**summary, 'GPTAnswer': db_controller.get_gpt(summary['GPTAnswer'])}) for summary in board_summaries]
+    realtime_joined_data = db_controller.get_collection('RealTime').aggregate([
+        {
+            '$match': filter
+        },
+        {
+            '$lookup': {
+                'from': 'GPT',
+                'localField': 'GPTAnswer',
+                'foreignField': '_id', 
+                'as': 'GPT'
+            }
+        }
+    ])
+
+    daily_joined_data = db_controller.get_collection('RealTime').aggregate([
+        {
+            '$match': filter
+        },
+        {
+            '$lookup': {
+                'from': 'GPT',
+                'localField': 'GPTAnswer',
+                'foreignField': '_id', 
+                'as': 'GPT'
+            }
+        }
+    ])
+    for summary in realtime_joined_data:
+        answer = summary['GPT'][0]['answer'] if summary['GPT'] else None  
+        board_summary = {
+            'board_id': summary['board_id'],
+            'site': summary['site'],
+            'title': summary['title'],
+            'url': summary['url'],
+            'create_time': summary['create_time'],
+            'GPTAnswer': answer
+        }
+        board_summaries.append(board_summary)
+
+    for summary in daily_joined_data:
+        answer = summary['GPT'][0]['answer'] if summary['GPT'] else None  
+        board_summary = {
+            'board_id': summary['board_id'],
+            'site': summary['site'],
+            'title': summary['title'],
+            'url': summary['url'],
+            'create_time': summary['create_time'],
+            'GPTAnswer': answer
+        }
+        board_summaries.append(board_summary)
+
+    return [BoardSummaryType(**summary) for summary in board_summaries]
