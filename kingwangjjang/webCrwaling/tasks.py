@@ -19,6 +19,8 @@ if now.minute % 5 == 0:
     start_minute = now.minute
 else:
     start_minute = (now.minute // 5 + 1) * 5
+    if (start_minute >= 60):
+        start_minute = 0
 
 next_date = now.replace(hour=now.hour, minute=start_minute, second=30, microsecond=0)
 
