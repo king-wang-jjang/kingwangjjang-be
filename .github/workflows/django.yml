@@ -92,6 +92,7 @@ jobs:
           -e FTP_USER="${{ secrets.FTP_USER }}" \
           -e FTP_PASSWORD="${{ secrets.FTP_PASSWORD }}" \
           -e WAS_HOST="${{ secrets.WAS_HOST }}" \
+          -e CHATGPT_API_KEY="${{ secrets.CHATGPT_API_KEY }}"
           -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
 
 
