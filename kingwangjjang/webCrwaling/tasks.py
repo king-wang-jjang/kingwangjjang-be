@@ -26,5 +26,5 @@ if next_date < now:
     next_date += datetime.timedelta(hours=1)
     
 # Schedule 등록하고 app.py에서 실행
-scheduler.add_job(real_time_scheduler, 'interval', minutes=1, start_date=next_date)
+scheduler.add_job(real_time_scheduler, 'interval', minutes=5, start_date=next_date)
 
