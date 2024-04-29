@@ -82,7 +82,7 @@ class Ygosu(AbstractCommunityWebsite):
                             'GPTAnswer': gpt_obj_id
                         })
                 except Exception as e:
-                    logger.info(e)
+                    logger.error(e)
                     
         logger.info({"already exists post": already_exists_post})
 
@@ -141,7 +141,7 @@ class Ygosu(AbstractCommunityWebsite):
                             'GPTAnswer': gpt_obj_id
                         })
                 except Exception as e:
-                    logger.info(e)
+                    logger.error(e)
                     
         logger.info({"already exists post": already_exists_post})
 
