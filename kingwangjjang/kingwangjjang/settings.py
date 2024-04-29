@@ -85,9 +85,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     f'http://{WAS_HOST}:3000',
-    "http://13.125.152.57:3000"
 ]
-print(CORS_ALLOWED_ORIGINS)
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
     'DELETE',
