@@ -49,7 +49,7 @@ def get_page_data_by_index(index: str):
         }
     ])
 
-    daily_joined_data = db_controller.get_collection('RealTime').aggregate([
+    daily_joined_data = db_controller.get_collection('Daily').aggregate([
         {
             '$match': filter
         },
@@ -78,6 +78,7 @@ def get_page_data_by_index(index: str):
         answer = summary['GPT'][0]['answer'] if summary['GPT'] else None  
         board_summary = {
             'board_id': summary['board_id'],
+            'rank': summary['rank'],
             'site': summary['site'],
             'title': summary['title'],
             'url': summary['url'],
