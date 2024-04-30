@@ -34,9 +34,6 @@ def get_page_data_by_index(index: str):
         '$lt': end_date
         }
     }
-    real_time_summaries = db_controller.select('RealTime', filter)
-    daily_summaries = db_controller.select('Daily', filter)
-    board_summaries =  list(real_time_summaries) + list(daily_summaries)
 
     realtime_joined_data = db_controller.get_collection('RealTime').aggregate([
         {
