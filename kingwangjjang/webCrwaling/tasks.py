@@ -2,15 +2,19 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import datetime
 
 from webCrwaling.communityWebsite.dcinside import Dcinside
+from webCrwaling.communityWebsite.ppomppu import Ppomppu
 from webCrwaling.communityWebsite.ygosu import Ygosu
 
 scheduler = BackgroundScheduler()
 
 def real_time_scheduler():
-    dcincideCrwaller = Dcinside()
-    ygosuCrawller = Ygosu()
-    dcincideCrwaller.get_real_time_best()
-    ygosuCrawller.get_real_time_best()
+    dcincide_crwaller = Dcinside()
+    ygosu_crawller = Ygosu()
+    ppomppu_crawller = Ppomppu()
+
+    dcincide_crwaller.get_real_time_best()
+    ygosu_crawller.get_real_time_best()
+    ppomppu_crawller.get_real_time_best()
 
 now = datetime.datetime.now()
 start_minute = 0
