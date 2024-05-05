@@ -8,6 +8,7 @@ from utils import FTPClient
 import logging
 from django.conf import settings
 from constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU
+import os
 
 logger = logging.getLogger("")
 class Ppomppu(AbstractCommunityWebsite):
@@ -28,30 +29,6 @@ class Ppomppu(AbstractCommunityWebsite):
     def get_daily_best(self):
         pass        
 
-    # def get_real_time_best(self):
-    #     '''
-    #     ppomppu daily post 
-
-    #     :return: {rank: { {title: string, url: string}[]} }
-    #     '''
-    #     req = requests.get('https://www.ppomppu.co.kr/hot.php?category=2')
-    #     soup = BeautifulSoup(req.text, 'html.parser')
-    #     result = []
-    #     for tr in soup.select('tr.line'):
-    #         title_element = tr.select_one('a.title')
-    #         # logger.info(title_element)
-    #         print(title_element)
-    #         if title_element:
-    #             title = title_element.get_text(strip=True)
-    #             url = title_element['href']
-    #             result.append({"title": title, "url": url})
-
-    #     # logger.info(result)
-    #     print(result)
-    #     data = {"rank": {i + 1: item for i, item in enumerate(result)}}
-
-    #     return data
-
     def get_real_time_best(self):
         '''
         ppomppu daily post 
@@ -59,8 +36,8 @@ class Ppomppu(AbstractCommunityWebsite):
         :return: {rank: { {title: string, url: string}[]} }
         '''
         num = 1
-        url = f"https://www.ppomppu.co.kr/hot.php?id=&page={num}&category=999&search_type=&keyword=&page_num=&del_flag=&bbs_list_category=0"
-        response = requests.get(url)
+        _url = f"https://www.ppomppu.co.kr/hot.php?id=&page={num}&category=999&search_type=&keyword=&page_num=&del_flag=&bbs_list_category=0"
+        response = requests.get(_url)
         soup = BeautifulSoup(response.text, 'html.parser')
         now = datetime.now()
         already_exists_post = []
@@ -77,12 +54,13 @@ class Ppomppu(AbstractCommunityWebsite):
             if title_element:
                 # title = title_element.text.strip()  
                 title = title_element.get_text(strip=True)
-                
-                url = title_element['href']  
+                domain = domain + "https://ppomppu.co.kr"
+                url = title_element['href']
                 # url_parts = url.split("/")
                 board_id = self.extract_id_and_no_from_url(url)
                 hour, minute, second = map(int, create_time.split(":"))
                 target_datetime = datetime(now.year, now.month, now.day, hour, minute)
+                # contents_url = domain + url
 
                 if ("/" in create_time): 
                     break
@@ -130,3 +108,4 @@ class Ppomppu(AbstractCommunityWebsite):
             return id_value + no_value
         else:
             return None
+        
