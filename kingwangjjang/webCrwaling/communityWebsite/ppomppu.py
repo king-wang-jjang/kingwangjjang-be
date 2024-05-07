@@ -54,13 +54,14 @@ class Ppomppu(AbstractCommunityWebsite):
             if title_element:
                 # title = title_element.text.strip()  
                 title = title_element.get_text(strip=True)
-                domain = domain + "https://ppomppu.co.kr"
+                domain = "https://ppomppu.co.kr"
                 url = title_element['href']
                 # url_parts = url.split("/")
                 board_id = self.extract_id_and_no_from_url(url)
                 hour, minute, second = map(int, create_time.split(":"))
                 target_datetime = datetime(now.year, now.month, now.day, hour, minute)
                 # contents_url = domain + url
+                contents_url = domain + url
 
                 if ("/" in create_time): 
                     break
@@ -86,7 +87,7 @@ class Ppomppu(AbstractCommunityWebsite):
                             'board_id': board_id,
                             'site': SITE_PPOMPPU,
                             'title': title,
-                            'url': url,
+                            'url': contents_url,
                             'create_time': target_datetime,
                             'GPTAnswer': gpt_obj_id
                         })
