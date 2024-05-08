@@ -110,3 +110,53 @@ class Ppomppu(AbstractCommunityWebsite):
         else:
             return None
         
+
+    def get_board_contents(self, board_id):
+        abs_path = f'./{self.yyyymmdd}/{board_id}'
+        self.download_path = os.path.abspath(abs_path) 
+        daily_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': 'ppomppu'})
+        content_list = []
+        if daily_instance:
+            response = requests.get(daily_instance[0]['url'])
+
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.content, 'html.parser')
+                board_body = soup.find('div', class_='board-contents')
+                paragraphs = board_body.find_all('p')
+
+                for p in paragraphs:
+                    # <p> 태그 안에 <img> 태그가 있는지 확인
+                    if p.find('img'):
+                        img_tag = p.find('img')
+                        img_url = "https:" + img_tag['src']
+                        try:
+                            img_txt = super().img_to_text(self.save_img(img_url))
+                            content_list.append({'type': 'image', 'url': img_url, 
+                                                'content': img_txt})
+                        except Exception as e:
+                            logger.info(f'Ppomppu Error {e}')
+                    elif p.find('video'):
+                        video_tag = p.find('video')
+                        video_url = "https:" + video_tag.find('source')['src']
+                        try:
+                            self.save_img(video_url)
+                        except Exception as e:
+                            logger.info(f'Ppomppu Error {e}')
+                    else: 
+                        content_list.append({'type': 'text', 'content': p.text.strip()})
+            else:
+                logger.info("Failed to retrieve the webpage")
+        return content_list
+    
+            
+    def save_img(self, url):
+        if not os.path.exists(self.download_path):
+            os.makedirs(self.download_path)
+
+        response = requests.get(url)
+        img_name = os.path.basename(url)
+        # 이미지를 파일로 저장
+        with open(os.path.join( self.download_path, img_name), 'wb') as f:
+            f.write(response.content)
+
+        return self.download_path + "/" + img_name

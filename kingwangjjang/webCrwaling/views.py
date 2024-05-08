@@ -5,7 +5,8 @@ import threading
 from chatGPT.chatGPT import ChatGPT
 from mongo import DBController
 from webCrwaling.communityWebsite.ygosu import Ygosu
-from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU
+from webCrwaling.communityWebsite.ppomppu import Ppomppu
+from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU, SITE_PPOMPPU
 
 from django.views.decorators.csrf import csrf_exempt
 from webCrwaling.communityWebsite.dcinside import Dcinside 
@@ -40,6 +41,8 @@ def board_summary(board_id, site):
             crawler_instance = Dcinside()
         elif (site == SITE_YGOSU):
             crawler_instance = Ygosu()
+        elif (site == SITE_PPOMPPU):
+            crawler_instance = Ppomppu()
         json_contents = crawler_instance.get_board_contents(board_id)
         str_contents = ''
         for content in json_contents:

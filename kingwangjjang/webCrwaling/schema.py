@@ -1,3 +1,8 @@
+import os
+from bs4 import BeautifulSoup
+import requests
+from constants import SITE_DCINSIDE, SITE_PPOMPPU, SITE_YGOSU
+
 import graphene
 from graphene import Mutation
 
@@ -9,17 +14,18 @@ import logging
 
 logger = logging.getLogger("")
 
-class RealTimeType(graphene.ObjectType):
-    board_id = graphene.String()
-    site = graphene.String()
-    title = graphene.String()
-    url = graphene.String()
-    create_time = graphene.DateTime()
-    GPTAnswer = graphene.String()
+# class RealTimeType(graphene.ObjectType):
+#     board_id = graphene.String()
+#     site = graphene.String()
+#     title = graphene.String()
+#     url = graphene.String()
+#     create_time = graphene.DateTime()
+#     GPTAnswer = graphene.String()
     
-    def __init__(self, **kwargs):
-        kwargs.pop('_id', None)  # '_id' 필드 제거
-        super().__init__(**kwargs)
+#     def __init__(self, **kwargs):
+#         kwargs.pop('_id', None)  # '_id' 필드 제거
+#         super().__init__(**kwargs)
+
 
 class DailyType(graphene.ObjectType):
     board_id = graphene.String()
@@ -35,7 +41,7 @@ class DailyType(graphene.ObjectType):
         super().__init__(**kwargs)
 
 class Query(graphene.ObjectType):
-    all_realtime = graphene.List(RealTimeType)
+    # all_realtime = graphene.List(RealTimeType)
     all_daily = graphene.List(DailyType)
     board_contents_by_date = graphene.List(BoardSummaryType, index=graphene.String(required=True))
 
@@ -80,7 +86,18 @@ class SummaryBoardMutation(Mutation):
         _board_summary = board_summary(board_id, site)
         return SummaryBoardMutation(board_summary=_board_summary)
 
+
 class Mutation(graphene.ObjectType):
     summary_board = SummaryBoardMutation.Field()
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
+
+
+class BoardContent(graphene.ObjectType):
+    title = graphene.String()
+    content = graphene.String()  # Added content field
+    create_time = graphene.DateTime()
+    url = graphene.String()
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
