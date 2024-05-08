@@ -114,14 +114,16 @@ class Ppomppu(AbstractCommunityWebsite):
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
         self.download_path = os.path.abspath(abs_path) 
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+        }
         daily_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': 'ppomppu'})
         content_list = []
         if daily_instance:
-            response = requests.get(daily_instance[0]['url'])
-
+            response = requests.get(daily_instance[0]['url'], headers=headers)
             if response.status_code == 200:
-                soup = BeautifulSoup(response.content, 'html.parser')
-                board_body = soup.find('div', class_='board-contents')
+                soup = BeautifulSoup(response.text, 'lxml')
+                board_body = soup.find('td', class_='board-contents')
                 paragraphs = board_body.find_all('p')
 
                 for p in paragraphs:
