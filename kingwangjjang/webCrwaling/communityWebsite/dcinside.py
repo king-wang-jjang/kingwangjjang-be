@@ -95,7 +95,7 @@ class Dcinside(AbstractCommunityWebsite):
                             'GPTAnswer': gpt_obj_id
                         })
                 except Exception as e:
-                    logger.info('error', e)
+                    logger.error('error', e)
                     
         logger.info({"already exists post": already_exists_post})
 
