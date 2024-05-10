@@ -11,6 +11,7 @@ from .views import board_summary, get_real_time_best, get_daily_best
 from mongo import DBController
 from datetime import datetime, timedelta
 import logging
+from .tasks import task_add
 
 logger = logging.getLogger("")
 
@@ -59,16 +60,18 @@ class Query(graphene.ObjectType):
         return realtime_data
 
     def resolve_all_daily(self, info, **kwargs):
-        db_controller = DBController()
-        daily_data = db_controller.select('Daily')
-        for realtime in daily_data:
-            if daily_data is None:
-                logger.exception(f"GPTAnswer is None")
-                continue
-            gpt_answer = db_controller.get_gpt(realtime['GPTAnswer'])
-            realtime['GPTAnswer'] = gpt_answer
+        print(task_add.delay(1, 2))
 
-        return daily_data
+        # db_controller = DBController()
+        # daily_data = db_controller.select('Daily')
+        # for realtime in daily_data:
+        #     if daily_data is None:
+        #         logger.exception(f"GPTAnswer is None")
+        #         continue
+        #     gpt_answer = db_controller.get_gpt(realtime['GPTAnswer'])
+        #     realtime['GPTAnswer'] = gpt_answer
+
+        # return daily_data
 
     def resolve_board_contents_by_date(self, info, index):
         board_summaries = get_page_data_by_index(index) 

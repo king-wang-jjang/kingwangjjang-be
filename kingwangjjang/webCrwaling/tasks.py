@@ -35,3 +35,13 @@ def real_time_scheduler():
 # scheduler.add_job(real_time_scheduler, 'interval', minutes=5, start_date=next_date)
 
 
+# tasks.py
+from kingwangjjang.celery import app
+
+# app = Celery('tasks', backend='redis://localhost:6379', broker='redis://localhost:6379')
+ 
+@app.task()
+def task_add(x, y):
+    real_time_scheduler()
+
+    return {'add': x + y}
