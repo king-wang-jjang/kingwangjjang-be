@@ -95,12 +95,3 @@ class Mutation(graphene.ObjectType):
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
 
-
-class BoardContent(graphene.ObjectType):
-    title = graphene.String()
-    content = graphene.String()  # Added content field
-    create_time = graphene.DateTime()
-    url = graphene.String()
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
