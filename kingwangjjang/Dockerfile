@@ -45,5 +45,4 @@ COPY . .
 RUN pip install -r requirements.txt
 
 # Django 애플리케이션 실행 "0.0.0.0:8000" 식으로 ip,port 설정가능
-CMD [ "python", "manage.py", "runserver" , "0.0.0.0:8000"]
-# ip:port 를 설정하지 않으면 localhost로 동작한다.
+CMD python manage.py runserver 0.0.0.0:8000 & celery -A webCrawling worker --loglevel=info
