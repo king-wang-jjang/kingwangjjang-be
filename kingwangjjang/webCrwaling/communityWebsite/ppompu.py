@@ -2,6 +2,10 @@ from bs4 import BeautifulSoup
 import requests
 from webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 
+import logging
+
+logger = logging.getLogger("")
+
 class Ppompu(AbstractCommunityWebsite):
     def __init__(self):
         pass
