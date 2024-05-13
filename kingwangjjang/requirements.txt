@@ -34,3 +34,4 @@ instagrapi==2.1.1
 
 # Scheduler
 celery
+redis

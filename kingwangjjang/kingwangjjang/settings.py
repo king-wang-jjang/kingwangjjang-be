@@ -105,7 +105,6 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     "corsheaders",
-    "django_apscheduler",
     # Graph QL
     'graphene_django',
     'graphene_mongo',
