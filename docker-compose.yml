@@ -7,7 +7,6 @@ services:
       - "6379:6379"  # Redis 포트
 
   django:
-
     ports:
       - "8000:8000"  # Django 포트
     depends_on:
