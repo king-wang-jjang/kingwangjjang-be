@@ -52,14 +52,14 @@ jobs:
 
       - name: Run Docker containers
         run: |
-          DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} \
-          DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }} \
-          DB_HOST=${{ secrets.DB_HOST }} \
-          DB_USER=${{ secrets.DB_USER }} \
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-          DB_NAME=${{ secrets.DB_NAME }} \
-          FTP_USER=${{ secrets.FTP_USER }} \
-          FTP_PASSWORD=${{ secrets.FTP_PASSWORD }} \
-          WAS_HOST=${{ secrets.WAS_HOST }} \
-          CHATGPT_API_KEY=${{ secrets.CHATGPT_API_KEY }} \
-          docker-compose up -d
+            docker-compose up -d \
+            --env DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} \
+            --env DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }} \
+            --env DB_HOST=${{ secrets.DB_HOST }} \
+            --env DB_USER=${{ secrets.DB_USER }} \
+            --env DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+            --env DB_NAME=${{ secrets.DB_NAME }} \
+            --env FTP_USER=${{ secrets.FTP_USER }} \
+            --env FTP_PASSWORD=${{ secrets.FTP_PASSWORD }} \
+            --env WAS_HOST=${{ secrets.WAS_HOST }} \
+            --env CHATGPT_API_KEY=${{ secrets.CHATGPT_API_KEY }}
