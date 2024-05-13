@@ -28,9 +28,14 @@ jobs:
       - name: Build Docker images
         run: docker-compose build
 
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Push Docker images
-        run: |
-          docker-compose push
+        run: docker-compose push
 
   run:
     needs: build
