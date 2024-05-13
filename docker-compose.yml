@@ -26,5 +26,3 @@ services:
     build:
       context: ./kingwangjjang
       dockerfile: Dockerfile
-    # 이미지 푸시
-    image: ${DOCKERHUB_USERNAME_JS}/kingwangjjang-be:${BE_DEV_VERSION}
