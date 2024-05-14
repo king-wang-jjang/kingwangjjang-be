@@ -40,10 +40,10 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build Docker images
-        run: ./kingwangjjang/docker-compose build
+        run: docker-compose -f ./kingwangjjang/docker-compose.yml build
 
       - name: Push Docker images
-        run: ./kingwangjjang/docker-compose push
+        run: docker-compose -f ./kingwangjjang/docker-compose.yml push
 
   run:
     needs: build
@@ -82,8 +82,5 @@ jobs:
             sudo docker version
             sudo docker rm -f kingwangjjang-be || true
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
-            ./kingwangjjang/docker-compose -f ./kingwangjjang/docker-compose.yml down
-            ./kingwangjjang/docker-compose -f ./kingwangjjang/docker-compose.yml up -d
-
-      - name: Run Docker containers
-        run: ./kingwangjjang/docker-compose up -d
+            docker-compose -f ./kingwangjjang/docker-compose.yml down
+            docker-compose -f ./kingwangjjang/docker-compose.yml up -d
