@@ -10,20 +10,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env: 
-      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
-      DJANGO_DEBUG: ${{ secrets.DJANGO_DEBUG }}
-      DB_HOST: ${{ secrets.DB_HOST }}
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_NAME: ${{ secrets.DB_NAME }}
-      FTP_USER: ${{ secrets.FTP_USER }}
-      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-      WAS_HOST: ${{ secrets.WAS_HOST }}
-      CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      GITHUB_REPOSITORY: ${{ github.repository }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -39,7 +25,20 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-         
+      - name: Create .env file
+        run: |
+          echo DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} >> .env
+          echo DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }} >> .env
+          echo DB_HOST=${{ secrets.DB_HOST }} >> .env
+          echo DB_USER=${{ secrets.DB_USER }} >> .env
+          echo DB_PASSWORD=${{ secrets.DB_PASSWORD }} >> .env
+          echo DB_NAME=${{ secrets.DB_NAME }} >> .env
+          echo FTP_USER=${{ secrets.FTP_USER }} >> .env
+          echo FTP_PASSWORD=${{ secrets.FTP_PASSWORD }} >> .env
+          echo WAS_HOST=${{ secrets.WAS_HOST }} >> .env
+          echo CHATGPT_API_KEY=${{ secrets.CHATGPT_API_KEY }} >> .env
+          echo DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }} >> .env 
+            
       - name: Build Docker images
         run: docker-compose -f ./kingwangjjang/docker-compose.yml build
 
@@ -49,20 +48,6 @@ jobs:
   run:
     needs: build
     runs-on: ubuntu-latest
-
-    env:
-      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
-      DJANGO_DEBUG: ${{ secrets.DJANGO_DEBUG }}
-      DB_HOST: ${{ secrets.DB_HOST }}
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_NAME: ${{ secrets.DB_NAME }}
-      FTP_USER: ${{ secrets.FTP_USER }}
-      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-      WAS_HOST: ${{ secrets.WAS_HOST }}
-      CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      GITHUB_REPOSITORY: ${{ github.repository }}
 
     steps:
       - name: Checkout code
