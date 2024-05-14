@@ -81,7 +81,7 @@ jobs:
           echo "docker compose cat:"
           cat ./kingwangjjang/docker-compose.yml
       - name: Copy docker-compose.yml to WAS
-        run: scp -i ${{ secrets.SSH_KEY }} -P ${{ secrets.WAS_SSH_PORT }} ./kingwangjjang/docker-compose.yml ${{ secrets.WAS_USERNAME }}@${{ secrets.WAS_HOST }}:/home/ubuntu/kingwangjjang/be/
+        run: scp -i ${{ secrets.SSH_KEY }} -P ${{ secrets.WAS_SSH_PORT }} ./kingwangjjang/docker-compose.yml ${{ secrets.WAS_USERNAME }}@${{ secrets.WAS_HOST }}:/home/ubuntu/kingwangjjang/be/docker-compose.yml
         
       - name: Connect to WAS & Execute Application
         uses: appleboy/ssh-action@master
