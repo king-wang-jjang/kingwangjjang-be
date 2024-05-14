@@ -43,9 +43,9 @@ jobs:
           echo "Current directory:"
           ls -al
           echo "ls ~:"
-          ls ~
+          ls ./kingwangjjang
           echo "docker compose cat:"
-          cat docker-compose.yml
+          cat ./kingwangjjang/docker-compose.yml
          
       - name: Build Docker images
         run: docker-compose -f ./kingwangjjang/docker-compose.yml build
