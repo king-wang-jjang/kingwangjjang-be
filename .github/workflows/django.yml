@@ -82,5 +82,5 @@ jobs:
             sudo docker version
             sudo docker rm -f kingwangjjang-be || true
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
-            docker-compose -f ./kingwangjjang/docker-compose.yml down
-            docker-compose -f ./kingwangjjang/docker-compose.yml up -d
+            docker-compose -f ./docker-compose.yml down
+            docker-compose -f ./docker-compose.yml up -d
