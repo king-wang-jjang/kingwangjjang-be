@@ -71,6 +71,19 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
+      - name: Connect to WAS & Execute Application
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.WAS_HOST }}
+          username: ${{ secrets.WAS_USERNAME }}
+          key: ${{secrets.SSH_KEY}}
+          port: ${{ secrets.WAS_SSH_PORT }}
+          script: | 
+            sudo docker version
+            sudo docker rm -f kingwangjjang-be || true
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
+            docker-compose -f docker-compose.yml down
+            docker-compose -f docker-compose.yml up -d
 
       - name: Run Docker containers
         run: docker-compose up -d
