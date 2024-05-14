@@ -23,6 +23,6 @@ services:
       - WAS_HOST=${WAS_HOST}
       - CHATGPT_API_KEY=${CHATGPT_API_KEY}
     build:
-      context: ./kingwangjjang
+      context: .
       dockerfile: Dockerfile
     image: ${DOCKERHUB_USERNAME}/kingwangjjang-be:0.0.1
