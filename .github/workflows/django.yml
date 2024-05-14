@@ -1,34 +1,28 @@
-# GitHub Actions workflow 이름
 name: Django CI
 
-# Workflow 실행조건
 on:
   push:
     branches: [ "develop" ]
-    # push 발생할 시 -> main 브랜치에서 실행 
   pull_request: 
-    branches: [ "main", "develop" ] 
-    # PR 발생할 시 -> main 및 develop 브랜치에서 실행
+    branches: [ "main", "develop" ]
 
-
-# django.yml (Django CI)workflow 에서 실행할 Job(작업) 정의 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     env: 
-      DJANGO_SECRET_KEY: "${{ secrets.DJANGO_SECRET_KEY }}"
-      DJANGO_DEBUG: "${{ secrets.DJANGO_DEBUG }}"
-      DB_HOST: "${{ secrets.DB_HOST }}"
-      DB_USER: "${{ secrets.DB_USER }}"
-      DB_PASSWORD: "${{ secrets.DB_PASSWORD }}"
-      DB_NAME: "${{ secrets.DB_NAME }}"
-      FTP_USER: "${{ secrets.FTP_USER }}"
-      FTP_PASSWORD: "${{ secrets.FTP_PASSWORD }}"
-      WAS_HOST: "${{ secrets.WAS_HOST }}"
-      CHATGPT_API_KEY: "${{ secrets.CHATGPT_API_KEY }}"
-      DOCKERHUB_USERNAME: "${{secrets.DOCKERHUB_USERNAME }}"
-      GITHUB_REPOSITORY: ${{github.repository}}
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      DJANGO_DEBUG: ${{ secrets.DJANGO_DEBUG }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      FTP_USER: ${{ secrets.FTP_USER }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      WAS_HOST: ${{ secrets.WAS_HOST }}
+      CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
 
     steps:
       - name: Checkout code
@@ -39,20 +33,14 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Set environment variables and build Docker images
-        run: docker-compose build
-
       - name: Log in to Docker Hub
-        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v1
-        with:
-          images: ${{secrets.DOCKERHUB_USERNAME}}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION}}
+      - name: Build Docker images
+        run: docker-compose build
 
       - name: Push Docker images
         run: docker-compose push
@@ -60,6 +48,20 @@ jobs:
   run:
     needs: build
     runs-on: ubuntu-latest
+
+    env:
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+      DJANGO_DEBUG: ${{ secrets.DJANGO_DEBUG }}
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      FTP_USER: ${{ secrets.FTP_USER }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      WAS_HOST: ${{ secrets.WAS_HOST }}
+      CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
 
     steps:
       - name: Checkout code
@@ -70,16 +72,5 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Set environment variables and run Docker containers
-        run: |
-          export DJANGO_SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}"
-          export DJANGO_DEBUG="test"
-          export DB_HOST="${{ secrets.DB_HOST }}"
-          export DB_USER="${{ secrets.DB_USER }}"
-          export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
-          export DB_NAME="${{ secrets.DB_NAME }}"
-          export FTP_USER="${{ secrets.FTP_USER }}"
-          export FTP_PASSWORD="${{ secrets.FTP_PASSWORD }}"
-          export WAS_HOST="${{ secrets.WAS_HOST }}"
-          export CHATGPT_API_KEY="${{ secrets.CHATGPT_API_KEY }}"
-          docker-compose up -d 
+      - name: Run Docker containers
+        run: docker-compose up -d
