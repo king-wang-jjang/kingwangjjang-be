@@ -41,7 +41,11 @@ jobs:
       - name: Display current directory and list files
         run: |
           echo "Current directory:"
+          ls -al
+          echo "docker compose cat:"
           cat docker-compose.yml
+          echo "ls ./kingwangjjang:"
+          ls ./kingwangjjang
       - name: Build Docker images
         run: docker-compose -f ./kingwangjjang/docker-compose.yml build
 
