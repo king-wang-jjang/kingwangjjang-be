@@ -38,14 +38,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Display current directory and list files
-        run: |
-          echo "Current directory:"
-          ls -al
-          echo "ls ~:"
-          ls ./kingwangjjang
-          echo "docker compose cat:"
-          cat ./kingwangjjang/docker-compose.yml
+
          
       - name: Build Docker images
         run: docker-compose -f ./kingwangjjang/docker-compose.yml build
@@ -79,7 +72,14 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
-
+      - name: Display current directory and list files
+        run: |
+          echo "Current directory:"
+          ls -al
+          echo "ls ~:"
+          ls ./kingwangjjang
+          echo "docker compose cat:"
+          cat ./kingwangjjang/docker-compose.yml
       - name: Copy docker-compose.yml to WAS
         run: scp -i ${{ secrets.SSH_KEY }} -P ${{ secrets.WAS_SSH_PORT }} ./kingwangjjang/docker-compose.yml ${{ secrets.WAS_USERNAME }}@${{ secrets.WAS_HOST }}:/home/ubuntu/kingwangjjang/be/
         
