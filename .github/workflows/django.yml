@@ -81,7 +81,7 @@ jobs:
           python-version: 3.9
 
       - name: Copy docker-compose.yml to WAS
-        run: scp -i ${{ secrets.SSH_KEY }} -P ${{ secrets.WAS_SSH_PORT }} ./docker-compose.yml ${{ secrets.WAS_USERNAME }}@${{ secrets.WAS_HOST }}:/home/ubuntu/kingwangjjang/be/
+        run: scp -i ${{ secrets.SSH_KEY }} -P ${{ secrets.WAS_SSH_PORT }} ./kingwangjjang/docker-compose.yml ${{ secrets.WAS_USERNAME }}@${{ secrets.WAS_HOST }}:/home/ubuntu/kingwangjjang/be/
         
       - name: Connect to WAS & Execute Application
         uses: appleboy/ssh-action@master
