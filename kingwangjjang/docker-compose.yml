@@ -11,17 +11,6 @@ services:
       - "8000:8000"  # Django 포트
     depends_on:
       - redis  # Django 서비스가 Redis에 의존함
-    environment:
-      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
-      - DJANGO_DEBUG=${DJANGO_DEBUG}
-      - DB_HOST=${DB_HOST}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - FTP_USER=${FTP_USER}
-      - FTP_PASSWORD=${FTP_PASSWORD}
-      - WAS_HOST=${WAS_HOST}
-      - CHATGPT_API_KEY=${CHATGPT_API_KEY}
     build:
       context: .
       dockerfile: Dockerfile
