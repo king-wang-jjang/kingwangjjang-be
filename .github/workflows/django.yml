@@ -52,7 +52,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v1
         with:
-          images: ${{secrets.DOCKERHUB_USERNAME}}/${{github.repository}}:${{ secrets.BE_DEV_VERSION}}
+          images: ${{secrets.DOCKERHUB_USERNAME}}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION}}
 
       - name: Push Docker images
         run: docker-compose push

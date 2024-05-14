@@ -25,4 +25,4 @@ services:
     build:
       context: ./kingwangjjang
       dockerfile: Dockerfile
-    image: ${DOCKERHUB_USERNAME}/${GITHUB_REPOSITORY}:0.0.1
+    image: ${DOCKERHUB_USERNAME}/kingwangjjang-be:0.0.1
