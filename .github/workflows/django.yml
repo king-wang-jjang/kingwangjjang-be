@@ -38,7 +38,12 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
+      - name: Display current directory and list files
+        run: |
+          echo "Current directory:"
+          pwd
+          echo "Files in current directory:"
+          ls -al        
       - name: Build Docker images
         run: docker-compose -f ./kingwangjjang/docker-compose.yml build
 
