@@ -44,6 +44,8 @@ def board_summary(board_id, site):
             crawler_instance = Dcinside()
         elif (site == SITE_YGOSU):
             crawler_instance = Ygosu()
+        elif (site == SITE_PPOMPPU):
+            crawler_instance = Ppomppu()
         json_contents = crawler_instance.get_board_contents(board_id)
 
         str_contents = ''
