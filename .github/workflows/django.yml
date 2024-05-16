@@ -84,6 +84,13 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
+      - name: Check if .env file exists
+        run: |
+          if [ -f "kingwangjjang/.env" ]; then
+            echo ".env file exists."
+          else
+            echo ".env file does not exist."
+          fi
       - name: Copy docker-compose.yml and .env to WAS
         uses: appleboy/scp-action@master
         with:
