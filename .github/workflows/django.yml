@@ -50,13 +50,6 @@ jobs:
           echo "WAS_HOST=${{ secrets.WAS_HOST }}" >> .env
           echo "CHATGPT_API_KEY=${{ secrets.CHATGPT_API_KEY }}" >> .env
           echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" >> .env
-      - name: Print working directory
-        run: pwd
-
-      - name: Print ls
-        run: ls -a /home/runner/work/kingwangjjang-be/
-             ls -a /home/runner/work/kingwangjjang-be/kingwangjjang-be/
-             ls -a
       - name: Build Docker images
         run: docker-compose -f ./docker-compose.yml build
 
@@ -88,6 +81,8 @@ jobs:
           python-version: 3.9
       - name: Check if .env file exists
         run: |
+          ls -a
+          ls -a /home/runner/work/kingwangjjang-be/kingwangjjang-be/
           if [ -f ".env" ]; then
             echo ".env file exists."
           else
