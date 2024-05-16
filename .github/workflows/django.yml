@@ -86,7 +86,7 @@ jobs:
           python-version: 3.9
       - name: Check if .env file exists
         run: |
-          if [ -f "kingwangjjang/.env" ]; then
+          if [ -f ".env" ]; then
             echo ".env file exists."
           else
             echo ".env file does not exist."
