@@ -39,11 +39,11 @@ jobs:
 # Create .env file은 docker-compose up -d 를 위해 존재함
       - name: Create .env file
         run: |
-          echo "DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" > /home/runner/work/kingwangjjang-be/kingwangjjang-be/.env
-          echo "DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }}" >> /home/runner/work/kingwangjjang-be/kingwangjjang-be/.env
-          echo "DB_HOST=${{ secrets.DB_HOST }}" >> /home/runner/work/kingwangjjang-be/kingwangjjang-be/.env
-          echo "DB_USER=${{ secrets.DB_USER }}" >> /home/runner/work/kingwangjjang-be/kingwangjjang-be/.env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> /home/runner/work/kingwangjjang-be/kingwangjjang-be/.env
+          echo "DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" > .env
+          echo "DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }}" >> .env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "FTP_USER=${{ secrets.FTP_USER }}" >> .env
           echo "FTP_PASSWORD=${{ secrets.FTP_PASSWORD }}" >> .env
