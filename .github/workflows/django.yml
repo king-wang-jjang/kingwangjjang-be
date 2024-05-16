@@ -54,7 +54,8 @@ jobs:
         run: pwd
 
       - name: Print ls
-        run: ls /home/runner/work/
+        run: ls /home/runner/work/kingwangjjang-be/
+             ls /home/runner/work/kingwangjjang-be/kingwangjjang-be/
       - name: Build Docker images
         run: docker-compose -f ./docker-compose.yml build
 
