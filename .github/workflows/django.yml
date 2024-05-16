@@ -99,9 +99,9 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.WAS_SSH_PORT }}
           source: |
-            ./kingwangjjang/docker-compose.yml
-            ./kingwangjjang/.env
-          target: "/home/ubuntu/"
+            ./docker-compose.yml
+            ./.env
+          target: "/home/ubuntu/kingwangjjang/"
       - name: Connect to WAS & Execute Application
         uses: appleboy/ssh-action@master
         with:
