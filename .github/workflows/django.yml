@@ -55,6 +55,18 @@ jobs:
 
       - name: Push Docker images
         run: docker-compose -f ./docker-compose.yml push
+    
+      - name: Copy docker-compose.yml and .env to WAS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.WAS_HOST }}
+          username: ${{ secrets.WAS_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.WAS_SSH_PORT }}
+          source: |
+            ./docker-compose.yml
+            ./.env
+          target: "/home/ubuntu/kingwangjjang/"
 
   run:
     needs: build
@@ -88,17 +100,7 @@ jobs:
           else
             echo ".env file does not exist."
           fi
-      - name: Copy docker-compose.yml and .env to WAS
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ secrets.WAS_HOST }}
-          username: ${{ secrets.WAS_USERNAME }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.WAS_SSH_PORT }}
-          source: |
-            ./docker-compose.yml
-            ./.env
-          target: "/home/ubuntu/kingwangjjang/"
+
       - name: Connect to WAS & Execute Application
         uses: appleboy/ssh-action@master
         with:
