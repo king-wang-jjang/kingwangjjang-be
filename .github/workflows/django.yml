@@ -65,8 +65,8 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.WAS_SSH_PORT }}
           source: |
-            ./docker-compose.yml
-            ./.env
+            docker-compose.yml
+            .env
           target: "/home/ubuntu/kingwangjjang/"
 
   run:
