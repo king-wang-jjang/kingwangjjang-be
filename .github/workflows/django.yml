@@ -50,7 +50,11 @@ jobs:
           echo "WAS_HOST=${{ secrets.WAS_HOST }}" >> .env
           echo "CHATGPT_API_KEY=${{ secrets.CHATGPT_API_KEY }}" >> .env
           echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" >> .env
-            
+      - name: Print working directory
+        run: pwd
+
+      - name: Print ls
+        run: ls
       - name: Build Docker images
         run: docker-compose -f ./kingwangjjang/docker-compose.yml build
 
