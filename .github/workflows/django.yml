@@ -3,30 +3,18 @@ name: Django CI
 on:
   push:
     branches: [ "develop" ]
-  pull_request: 
+  pull_request:
     branches: [ "main", "develop" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     strategy:
       max-parallel: 4 # 동시 실행될 최대 Job 수
       matrix: # 각 Job에 전달될 매트릭스 변수 설정
         python-version: [3.9]
 
-    env: 
-      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
-      DJANGO_DEBUG: ${{ secrets.DJANGO_DEBUG }}
-      DB_HOST: ${{ secrets.DB_HOST }}
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_NAME: ${{ secrets.DB_NAME }}
-      FTP_USER: ${{ secrets.FTP_USER }}
-      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-      WAS_HOST: ${{ secrets.WAS_HOST }}
-      CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,10 +33,10 @@ jobs:
       - name: Build docker image
         run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }} ./kingwangjjang
 
-      - name: Publish to docker hub 
+      - name: Publish to docker hub
         run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
 
-      - name: Copy docker-compose.yml and .env to WAS
+      - name: Copy docker-compose.yml to WAS
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.WAS_HOST }}
@@ -75,33 +63,36 @@ jobs:
       max-parallel: 4
       matrix:
         python-version: [3.9]
-    env: 
-      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
-      DJANGO_DEBUG: ${{ secrets.DJANGO_DEBUG }}
-      DB_HOST: ${{ secrets.DB_HOST }}
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_NAME: ${{ secrets.DB_NAME }}
-      FTP_USER: ${{ secrets.FTP_USER }}
-      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
-      WAS_HOST: ${{ secrets.WAS_HOST }}
-      CHATGPT_API_KEY: ${{ secrets.CHATGPT_API_KEY }}
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
+
+      - name: Create .env file
+        run: |
+          echo DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} >> .env
+          echo DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }} >> .env
+          echo DB_HOST=${{ secrets.DB_HOST }} >> .env
+          echo DB_USER=${{ secrets.DB_USER }} >> .env
+          echo DB_PASSWORD=${{ secrets.DB_PASSWORD }} >> .env
+          echo DB_NAME=${{ secrets.DB_NAME }} >> .env
+          echo FTP_USER=${{ secrets.FTP_USER }} >> .env
+          echo FTP_PASSWORD=${{ secrets.FTP_PASSWORD }} >> .env
+          echo WAS_HOST=${{ secrets.WAS_HOST }} >> .env
+          echo CHATGPT_API_KEY=${{ secrets.CHATGPT_API_KEY }} >> .env
+
       - name: Connect to WAS & Execute Application
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.WAS_HOST }}
           username: ${{ secrets.WAS_USERNAME }}
-          key: ${{secrets.SSH_KEY}}
+          key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.WAS_SSH_PORT }}
-          script: | 
+          script: |
             sudo docker rm -f kingwangjjang-be || true
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
-            sudo docker run -d --name kingwangjjang-be -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
+            sudo docker run -d --name kingwangjjang-be --env-file .env -p 8000:8000 $DOCKERHUB_USERNAME/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
