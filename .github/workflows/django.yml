@@ -72,19 +72,6 @@ jobs:
         with:
           python-version: 3.9
 
-      - name: Create .env file
-        run: |
-          echo DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} >> .env
-          echo DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }} >> .env
-          echo DB_HOST=${{ secrets.DB_HOST }} >> .env
-          echo DB_USER=${{ secrets.DB_USER }} >> .env
-          echo DB_PASSWORD=${{ secrets.DB_PASSWORD }} >> .env
-          echo DB_NAME=${{ secrets.DB_NAME }} >> .env
-          echo FTP_USER=${{ secrets.FTP_USER }} >> .env
-          echo FTP_PASSWORD=${{ secrets.FTP_PASSWORD }} >> .env
-          echo WAS_HOST=${{ secrets.WAS_HOST }} >> .env
-          echo CHATGPT_API_KEY=${{ secrets.CHATGPT_API_KEY }} >> .env
-
       - name: Connect to WAS & Execute Application
         uses: appleboy/ssh-action@master
         with:
@@ -95,4 +82,15 @@ jobs:
           script: |
             sudo docker rm -f kingwangjjang-be || true
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
-            sudo docker run -d --name kingwangjjang-be --env-file .env -p 8000:8000 $DOCKERHUB_USERNAME/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
+            sudo docker run -d --name kingwangjjang-be \
+            -e DJANGO_SECRET_KEY="${{ secrets.DJANGO_SECRET_KEY }}" \
+            -e DJANGO_DEBUG="${{ secrets.DJANGO_DEBUG }}" \
+            -e DB_HOST="${{ secrets.DB_HOST }}" \
+            -e DB_USER="${{ secrets.DB_USER }}" \
+            -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
+            -e DB_NAME="${{ secrets.DB_NAME }}" \
+            -e FTP_USER="${{ secrets.FTP_USER }}" \
+            -e FTP_PASSWORD="${{ secrets.FTP_PASSWORD }}" \
+            -e WAS_HOST="${{ secrets.WAS_HOST }}" \
+            -e CHATGPT_API_KEY="${{ secrets.CHATGPT_API_KEY }}" \
+            -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
