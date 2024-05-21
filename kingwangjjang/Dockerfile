@@ -40,7 +40,8 @@ ENV PYTHONUNBUFFERED 1\
 
 # Img To Text
 RUN apt-get update && apt-get install -y \
-    tesseract-ocr
+    tesseract-ocr \ 
+    redis-server
 
 # 작업디렉토리 설정
 WORKDIR /web
@@ -54,4 +55,4 @@ COPY . .
 RUN pip install -r requirements.txt
 
 # Django 애플리케이션 실행 "0.0.0.0:8000" 식으로 ip,port 설정가능
-CMD python manage.py runserver 0.0.0.0:8000 & celery -A kingwangjjang worker --loglevel=info
+CMD service redis-server start && python manage.py runserver 0.0.0.0:8000 & celery -A kingwangjjang worker --loglevel=info
