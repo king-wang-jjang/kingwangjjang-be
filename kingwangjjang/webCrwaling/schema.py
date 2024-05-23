@@ -11,7 +11,6 @@ from .views import board_summary, get_real_time_best, get_daily_best
 from mongo import DBController
 from datetime import datetime, timedelta
 import logging
-from .tasks import task_add
 
 logger = logging.getLogger("")
 
@@ -59,8 +58,8 @@ class Query(graphene.ObjectType):
 
         return realtime_data
 
-    def resolve_all_daily(self, info, **kwargs):
-        print(task_add.delay(1, 2))
+    # def resolve_all_daily(self, info, **kwargs):
+    #     print(task_add.delay(1, 2))
 
         # db_controller = DBController()
         # daily_data = db_controller.select('Daily')

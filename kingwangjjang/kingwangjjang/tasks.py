@@ -1,20 +1,19 @@
 # from apscheduler.schedulers.background import BackgroundScheduler
 # import datetime
 
-from webCrwaling.communityWebsite.dcinside import Dcinside
-from webCrwaling.communityWebsite.ppomppu import Ppomppu
-from webCrwaling.communityWebsite.ygosu import Ygosu
-
 # scheduler = BackgroundScheduler()
+
+from webCrwaling.communityWebsite.dcinside import Dcinside
+
 
 def real_time_scheduler():
     dcincide_crwaller = Dcinside()
-    ygosu_crawller = Ygosu()
-    ppomppu_crawller = Ppomppu()
+    # ygosu_crawller = Ygosu()
+    # ppomppu_crawller = Ppomppu()
 
     dcincide_crwaller.get_real_time_best()
-    ygosu_crawller.get_real_time_best()
-    ppomppu_crawller.get_real_time_best()
+    # ygosu_crawller.get_real_time_best()
+    # ppomppu_crawller.get_real_time_best()
 
 # now = datetime.datetime.now()
 # start_minute = 0
@@ -33,15 +32,3 @@ def real_time_scheduler():
     
 # # Schedule 등록하고 app.py에서 실행
 # scheduler.add_job(real_time_scheduler, 'interval', minutes=5, start_date=next_date)
-
-
-# tasks.py
-from kingwangjjang.celery import app
-
-# app = Celery('tasks', backend='redis://localhost:6379', broker='redis://localhost:6379')
- 
-@app.task()
-def task_add(x, y):
-    real_time_scheduler()
-
-    return {'add': x + y}
