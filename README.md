@@ -1,7 +1,7 @@
 # KingWangJJang Backend
 
 ## 기술 스택
-* Django
+* FastAPI
 * AWS EC2
 * Python 3.11
 * MongoDB
