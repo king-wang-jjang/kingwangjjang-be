@@ -43,3 +43,4 @@ alembic
 apscheduler
 langchain
 ollama
+poetry
