@@ -8,6 +8,7 @@ from utils import lifespan
 from routes.auth import auth_controller
 from routes.page import page_controller
 from routes.user import user_controller
+from routes.api import api
 
 from middlewares import cors_middleware
 # from middlewares import static_middleware
@@ -20,3 +21,4 @@ cors_middleware.add(app)
 app.include_router(auth_controller.router)
 app.include_router(page_controller.router)
 app.include_router(user_controller.router)
+app.include_router(api.router)

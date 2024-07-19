@@ -53,6 +53,8 @@ apscheduler = "^3.10.4"
 langchain = "^0.2.9"
 ollama = "^0.3.0"
 poetry = "^1.8.3"
+strawberry-graphql = "^0.236.0"
+mongotic = "^0.2.0"
 
 
 [build-system]
