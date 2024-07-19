@@ -4,7 +4,9 @@ from langchain.prompts.chat import (
     HumanMessagePromptTemplate,
 )
 from langchain.chains import LLMChain
-from langchain_community.llms import Ollama
+from langchain_community.chat_models import ChatOllama
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 class LLM:
     def __init__(self):
 
@@ -19,7 +21,7 @@ class LLM:
 
         chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
 
-        llm = Ollama(
+        llm = ChatOllama(
             model="gemma2"
         )  # assuming you have Ollama installed and have llama3 model pulled with `ollama pull llama3 `
         self.chain = chat_prompt | llm
