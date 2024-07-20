@@ -1,25 +1,25 @@
-from django.shortcuts import render
+from fastapi import FastAPI, APIRouter, HTTPException
+from pydantic import BaseModel
 from instagrapi import Client
 import logging
 
 logger = logging.getLogger("")
 
+app = FastAPI()
+router = APIRouter()
+
 class InstaPost:
-    # instagrapi 클라이언트를 생성합니다.
     def __init__(self):
         self.client = Client()
         self.isLogined = False
 
-
-    # 인스타그램 로그인
-    def insta_login(self, username, password):
+    def insta_login(self, username: str, password: str):
         try:
             self.client.login(username, password)
             self.isLogined = True
             message = "로그인에 성공했습니다."
             logger.info(message)
             return True
-        
         except Exception as e:
             if "We couldn't find an account with the username" in str(e):
                 logger.info("아이디 혹은 비밀번호를 확인하세요.")
@@ -28,16 +28,12 @@ class InstaPost:
                 logger.info("로그인에 문제가 있습니다:", e)
                 return False
 
-
-    # 사용자 프로필 사진 가져오기(url로 get)
     def get_profile_image(self):
         if self.isLogined:
             profile_img = self.client.user_info_by_username(self.client.username).profile_pic_url
             return profile_img
-                
 
-    # 이미지 한 장 업로드
-    def image_upload_one(self, media_path, caption):
+    def image_upload_one(self, media_path: str, caption: str):
         if self.isLogined:
             try:
                 self.client.photo_upload(media_path, caption)
@@ -47,11 +43,9 @@ class InstaPost:
                 logger.info("게시물 업로드 중 문제가 생겼습니다.", e)
         else:
             message = "로그인 먼저 해주세요."
-            return message    
-          
-        
-    # 비디오 한 개 업로드
-    def video_upload_one(self, media_path, caption):
+            return message
+
+    def video_upload_one(self, media_path: str, caption: str):
         if self.isLogined:
             try:
                 self.client.video_upload(media_path, caption)
@@ -62,10 +56,8 @@ class InstaPost:
         else:
             message = "로그인 먼저 해주세요."
             return message
-        
 
-    # 여러 개의 미디어 업로드(이미지 여러 장, 비디오 여러 개, 사진 + 비디오 등...)
-    def album_upload(self, media_path, caption):
+    def album_upload(self, media_path: list, caption: str):
         if self.isLogined:
             try:
                 self.client.album_upload(media_path, caption)
@@ -75,10 +67,8 @@ class InstaPost:
                 logger.info("게시물 업로드 중 문제가 생겼습니다.", e)
         else:
             message = "로그인 먼저 해주세요."
-            return message        
+            return message
 
-
-    # 사용자 로그아웃
     def insta_logout(self):
         try:
             self.client.logout()
@@ -86,3 +76,59 @@ class InstaPost:
         except Exception as e:
             logger.info(f"Logout failed: {e}")
             return False
+
+# 인스턴스 생성
+insta_post = InstaPost()
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class UploadRequest(BaseModel):
+    media_path: str
+    caption: str
+
+class AlbumUploadRequest(BaseModel):
+    media_paths: list
+    caption: str
+
+@router.post("/login/")
+async def login(request: LoginRequest):
+    success = insta_post.insta_login(request.username, request.password)
+    if success:
+        return {"message": "로그인에 성공했습니다."}
+    else:
+        raise HTTPException(status_code=400, detail="아이디 혹은 비밀번호를 확인하세요.")
+
+@router.get("/profile_image/")
+async def get_profile_image():
+    profile_img = insta_post.get_profile_image()
+    if profile_img:
+        return {"profile_image": profile_img}
+    else:
+        raise HTTPException(status_code=400, detail="로그인 먼저 해주세요.")
+
+@router.post("/upload/image/")
+async def upload_image(request: UploadRequest):
+    message = insta_post.image_upload_one(request.media_path, request.caption)
+    return {"message": message}
+
+@router.post("/upload/video/")
+async def upload_video(request: UploadRequest):
+    message = insta_post.video_upload_one(request.media_path, request.caption)
+    return {"message": message}
+
+@router.post("/upload/album/")
+async def upload_album(request: AlbumUploadRequest):
+    message = insta_post.album_upload(request.media_paths, request.caption)
+    return {"message": message}
+
+@router.post("/logout/")
+async def logout():
+    success = insta_post.insta_logout()
+    if success:
+        return {"message": "로그아웃에 성공했습니다."}
+    else:
+        raise HTTPException(status_code=400, detail="로그아웃에 실패했습니다.")
+
+app.include_router(router)

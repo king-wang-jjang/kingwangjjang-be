@@ -1,97 +1,102 @@
-import os
-from django.conf import settings
-from django.shortcuts import render, redirect
-from django.http import HttpResponse
+from fastapi import FastAPI, Form, Request, Depends, File, UploadFile, HTTPException, APIRouter
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.middleware.sessions import SessionMiddleware, Session
+from pydantic import BaseModel
+from typing import Optional
 from .instaPost import InstaPost
-from django import forms
-from django.contrib import messages
 import logging
+import os
 
 logger = logging.getLogger("")
 
-class LoginForm(forms.Form):
-    username = forms.CharField(label='Username', max_length=100)
-    password = forms.CharField(label='Password', widget=forms.PasswordInput)
+app = FastAPI()
 
-class PhotoUploadForm(forms.Form):
-    media_file = forms.ImageField()
-    caption = forms.CharField(max_length=255, required=False, widget=forms.Textarea)    
+app.add_middleware(SessionMiddleware, secret_key='your-secret-key')
 
-def insta_post(request):
-    if request.method == 'POST':
-        # POST 요청일 때
-        form = LoginForm(request.POST)
-        if form.is_valid():
-            username = form.cleaned_data['username']
-            password = form.cleaned_data['password']
+templates = Jinja2Templates(directory="templates")
 
-            # Instagram 로그인을 시도
-            client = InstaPost()
-            login_result = client.insta_login(username, password)
 
-            if login_result:
-                # 로그인 성공 시
-                request.session['insta_login'] = True
-                return redirect('upload_photo')
-            else:
-                # 로그인 실패 시
-                return HttpResponse("Login failed. Please try again.")
+class LoginForm(BaseModel):
+    username: str
+    password: str
 
+
+class PhotoUploadForm(BaseModel):
+    caption: Optional[str] = None
+
+
+router = APIRouter()
+
+
+def get_session(request: Request):
+    return request.session
+
+
+@router.post("/login", response_class=HTMLResponse)
+async def login(request: Request, username: str = Form(...), password: str = Form(...),
+                session: Session = Depends(get_session)):
+    form = LoginForm(username=username, password=password)
+
+    # Instagram 로그인 시도
+    client = InstaPost()
+    login_result = client.insta_login(form.username, form.password)
+
+    if login_result:
+        # 로그인 성공 시
+        session['insta_login'] = True
+        return RedirectResponse(url='/upload_photo', status_code=303)
     else:
-        # GET 요청일 때
-        form = LoginForm()
-
-    return render(request, 'login.html', {'form': form})
+        # 로그인 실패 시
+        return HTMLResponse("Login failed. Please try again.", status_code=400)
 
 
-def upload_photo(request):
-    if not request.session.get('insta_login'):
-        return HttpResponse("Login first!")
+@router.get("/login", response_class=HTMLResponse)
+async def login_form(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
 
-    if request.method == 'POST':
-        # POST 요청일 때
-        logger.info(request.POST)
 
-        form = PhotoUploadForm(request.POST, request.FILES)
-        if form.is_valid():
-            try:
-                media_file = form.cleaned_data['media_file']
-                caption = form.cleaned_data['caption']
-                logger.info("media_file: ", media_file)
-                logger.info("caption: ", caption)
+@router.post("/upload_photo", response_class=HTMLResponse)
+async def upload_photo(request: Request, media_file: UploadFile = File(...), caption: str = Form(None),
+                       session: Session = Depends(get_session)):
+    if not session.get('insta_login'):
+        return HTMLResponse("Login first!", status_code=403)
 
-                # 이미지를 프로젝트의 image 폴더에 저장
-                image_path = os.path.join(settings.BASE_DIR, 'image', media_file.name)
-                logger.info("image_path: ", image_path)
-                with open(image_path, 'wb') as f:
-                    for chunk in media_file.chunks():
-                        f.write(chunk)
-            except Exception as e:
-                logger.info("specify image path error: ", e)
-                return HttpResponse(e)
+    try:
+        image_path = os.path.join("image", media_file.filename)
+        with open(image_path, "wb") as f:
+            f.write(await media_file.read())
 
-            else:
-                # 이미지의 경로를 media_path에 입력
-                media_path = image_path
+        media_path = image_path
 
-                # 미디어 업로드
-                client = InstaPost()
-                client.image_upload_one(media_path, caption)
+        # 미디어 업로드
+        client = InstaPost()
+        client.image_upload_one(media_path, caption)
 
-                return HttpResponse("Upload success!")
+        return HTMLResponse("Upload success!", status_code=200)
+    except Exception as e:
+        logger.error("Error uploading photo: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
 
-    else:
-        # GET 요청일 때
-        form = PhotoUploadForm()
 
-    return render(request, 'upload_photo.html', {'form': form})
+@router.get("/upload_photo", response_class=HTMLResponse)
+async def upload_photo_form(request: Request, session: Session = Depends(get_session)):
+    if not session.get('insta_login'):
+        return HTMLResponse("Login first!", status_code=403)
 
-def logout_view(request):
-    # 로그아웃 처리
-    if request.session.get('insta_login'):
+    return templates.TemplateResponse("upload_photo.html", {"request": request})
+
+
+@router.get("/logout")
+async def logout(request: Request, session: Session = Depends(get_session)):
+    if session.get('insta_login'):
         client = InstaPost()
         client.insta_logout()
-        del request.session['insta_login']
+        del session['insta_login']
         messages.info(request, "You have been logged out successfully.")
-    
-    return redirect('/') 
+
+    return RedirectResponse(url='/')
+
+
+# 라우터를 애플리케이션에 추가
+app.include_router(router)

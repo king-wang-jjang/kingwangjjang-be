@@ -55,6 +55,7 @@ ollama = "^0.3.0"
 poetry = "^1.8.3"
 strawberry-graphql = "^0.236.0"
 mongotic = "^0.2.0"
+pytesseract = "^0.3.10"
 
 
 [build-system]
