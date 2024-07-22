@@ -1,13 +1,13 @@
 import re
 from bs4 import BeautifulSoup
 import requests
-from app.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
+from app.routes.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 from datetime import datetime
-from mongo import DBController
-from utils import FTPClient
+from app.mongo import DBController
+from app.utils import FTPClient
 import logging
 from dotenv import load_dotenv
-from constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU
+from app.constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU
 import os
 load_dotenv()
 logger = logging.getLogger("")

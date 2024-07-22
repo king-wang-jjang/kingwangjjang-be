@@ -1,7 +1,8 @@
 import strawberry
-from fastapi import FastAPI, APIRouter
-from strawberry.asgi import GraphQL
+from fastapi import APIRouter
+from strawberry.fastapi import GraphQLRouter
 import datetime
+from typing import List
 
 @strawberry.type
 class ID:
@@ -14,13 +15,12 @@ class ID:
 @strawberry.type
 class Post:
     summary: str
-    imgs: list
+    imgs: List[str]
 
 @strawberry.type
 class Query:
     @strawberry.field
     def post(self) -> ID:
-        #예시대이터를 넣어놨으나 실제 대이터로 변경요함.
         return ID(
             site="dcinside",
             title="Example Title",
@@ -29,19 +29,12 @@ class Query:
             GPTAnswer="gpt 응답"
         )
 
-
-# 스키마 정의
+# Define schema
 schema = strawberry.Schema(query=Query)
 
-# FastAPI 앱 생성
-app = FastAPI()
-
-# APIRouter 생성
+# Create APIRouter
 router = APIRouter()
 
-# GraphQL 엔드포인트 설정
-graphql_app = GraphQL(schema)
-router.add_route("/graphql", graphql_app)
-router.add_websocket_route("/graphql", graphql_app)
-
-
+# Create GraphQL router and include it
+graphql_app = GraphQLRouter(schema)
+router.include_router(graphql_app, prefix="/graphql")

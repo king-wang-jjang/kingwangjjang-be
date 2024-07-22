@@ -3,9 +3,9 @@ from pymongo.collection import Collection
 from pydantic import BaseModel, Field
 from bson import ObjectId
 from typing import Optional
-import mongo
+import app.mongo
 
-db_controller = mongo.DBController()
+db_controller = app.mongo.DBController()
 
 class PyObjectId(ObjectId):
     @classmethod

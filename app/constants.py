@@ -1,3 +1,4 @@
+import random
 from datetime import timedelta
 from enum import Enum
 
@@ -7,3 +8,4 @@ SITE_YGOSU = 'ygosu'
 SITE_PPOMPPU = 'ppomppu'
 COOKIES_KEY_NAME = "session_token"
 SESSION_TIME = timedelta(days=30)
+HASH_SALT = random.Random().randint(1, 100)

@@ -2,7 +2,7 @@ from time import time
 from hashlib import sha256
 from random import randint
 
-from constants import HASH_SALT
+from app.constants import HASH_SALT
 
 
 class HashLib:

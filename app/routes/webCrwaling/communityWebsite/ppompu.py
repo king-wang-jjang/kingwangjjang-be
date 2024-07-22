@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
-from app.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
+from app.routes.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 
 import logging
 

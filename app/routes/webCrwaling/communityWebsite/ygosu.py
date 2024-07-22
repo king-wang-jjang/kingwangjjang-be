@@ -2,16 +2,15 @@
 from datetime import datetime
 import os
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
 import requests
-from utils import FTPClient
-from mongo import DBController
-from app.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
-from dotenv import load_dotenv
+from app.utils.FTPClient import FTPClient
+from app.mongo import DBController
+from app.routes.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
+from dotenv import load_dotenv,find_dotenv
 
-from constants import DEFAULT_GPT_ANSWER, SITE_YGOSU
+from app.constants import DEFAULT_GPT_ANSWER, SITE_YGOSU
 import logging
-load_dotenv()
+load_dotenv(find_dotenv())
 logger = logging.getLogger("")
 class Ygosu(AbstractCommunityWebsite):
     def __init__(self):

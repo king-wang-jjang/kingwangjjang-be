@@ -1,9 +1,9 @@
 # from apscheduler.schedulers.background import BackgroundScheduler
 # import datetime
 
-from app.webCrwaling.communityWebsite.dcinside import Dcinside
-from app.webCrwaling.communityWebsite.ppomppu import Ppomppu
-from app.webCrwaling.communityWebsite.ygosu import Ygosu
+from app.routes.webCrwaling.communityWebsite.dcinside import Dcinside
+from app.routes.webCrwaling.communityWebsite.ppomppu import Ppomppu
+from app.routes.webCrwaling.communityWebsite.ygosu import Ygosu
 
 # scheduler = BackgroundScheduler()
 

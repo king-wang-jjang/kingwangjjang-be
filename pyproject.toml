@@ -57,6 +57,9 @@ poetry = "^1.8.3"
 strawberry-graphql = "^0.236.0"
 mongotic = "^0.2.0"
 selenium = "4.16.0"
+langchain = "^0.2.10"
+langchain-community = "^0.2.9"
+graphene = "^3.3"
 
 
 [build-system]

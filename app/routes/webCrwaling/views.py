@@ -1,4 +1,3 @@
-import json
 import threading
 import logging
 
@@ -6,26 +5,18 @@ from fastapi import FastAPI, Request, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from chatGPT.chatGPT import ChatGPT
-from mongo import DBController
+from app.mongo import DBController
 
-from app.webCrwaling.communityWebsite.ygosu import Ygosu
-from app.webCrwaling.communityWebsite.dcinside import Dcinside
+from app.routes.webCrwaling.communityWebsite.ygosu import Ygosu
+from app.routes.webCrwaling.communityWebsite.dcinside import Dcinside
 
-from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU
+from app.constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU
 
 logger = logging.getLogger("")
 
 app = FastAPI()
 
 # CORS 설정
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # 필요한 도메인으로 제한 가능
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 board_semaphores = {}
 db_controller = DBController()

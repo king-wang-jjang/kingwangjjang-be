@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 # img to text
 import pytesseract
 
-from utils import FTPClient
+from app.utils import FTPClient
 from PIL import Image
 import logging
 
