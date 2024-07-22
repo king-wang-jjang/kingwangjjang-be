@@ -9,7 +9,8 @@ from app.mongo import DBController
 
 from app.routes.webCrwaling.communityWebsite.ygosu import Ygosu
 from app.routes.webCrwaling.communityWebsite.dcinside import Dcinside
-
+from app.routes.webCrwaling.communityWebsite.ppomppu import Ppomppu
+from app.utils.llm import LLM
 from app.constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU
 
 logger = logging.getLogger("")
@@ -60,10 +61,9 @@ async def board_summary(board_id: str, site: str):
         response = str_contents
 
         # GPT 요약
-        prompt = f"너는 게시물 분석 및 요약 전문가야. 아래의 []에 들어가는 내용을 분석해서 정확하고 명확하게 정리하는데에 특별한 전문성이 있고, 컨텐츠를 요약할 때는 'TextRank' 알고리즘을 사용하는게 능숙해. 이제 아래 []로 감싸진 내용을 너가 읽을 수 있는 단어들만 읽어서 게시글의 전체 내용을 1000자 이내로 요약해. 만약 []의 내용이 아무런 값이 없는 공백이라면, 너는 '게시물의 내용을 읽을 수 없습니다.' 라는 대답만 하면 돼. 분석할 내용: [{str_contents}]"
-        chatGPT = ChatGPT()
+        chatGPT = LLM()
         logger.info("URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
-        response = chatGPT.get_completion(content=prompt)
+        response = chatGPT.call(content=str_contents)
 
         # Update answer
         if GPT_object:
