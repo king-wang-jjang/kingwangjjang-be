@@ -31,6 +31,6 @@ class LLM:
         )  # assuming you have Ollama installed and have llama3 model pulled with `ollama pull llama3 `
         self.chain = chat_prompt | llm
     def call(self,content:str):
-        return self.chain.invoke({"text":content}).content
-
+        # return self.chain.invoke({"text":content}).content
+        return "일시적인 오류가 발생함."
 

@@ -99,6 +99,7 @@ async def board_summary_rest(request: Request):
 async def get_real_time_best():
     dcincideCrwaller = Dcinside()
     ygosuCrawller = Ygosu()
+    ppomppuCrawller = Ppomppu()
     # dcincideCrwaller.get_real_time_best()
     ygosuCrawller.get_real_time_best()
     return JSONResponse(content={'response': "실시간 베스트 가져오기 완료"})
@@ -106,7 +107,9 @@ async def get_real_time_best():
 
 @router.get("/get_daily_best/")
 async def get_daily_best():
+    dcincideCrwaller = Dcinside()
     ygosuCrawller = Ygosu()
+    ppomppuCrawller = Ppomppu()
     ygosuCrawller.get_daily_best()
     return JSONResponse(content={'response': "데일리 베스트 가져오기 완료"})
 
