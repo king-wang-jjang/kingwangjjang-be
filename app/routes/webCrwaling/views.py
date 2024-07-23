@@ -120,4 +120,4 @@ async def add(a: int, b: int):
     return JSONResponse(content={'result': a + b})
 
 
-include_router(router)
+app.include_router(router)
