@@ -3,11 +3,11 @@ import os
 from bs4 import BeautifulSoup
 import requests
 
-from app.constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE
-from app.mongo import DBController
-from app.routes.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
-from app.utils import FTPClient
-from app.config import Config
+from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE
+from mongo import DBController
+from routes.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
+from utils import FTPClient
+from config import Config
 
 
 # selenium

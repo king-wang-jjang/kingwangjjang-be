@@ -1,14 +1,14 @@
 import os
 from bs4 import BeautifulSoup
 import requests
-from app.constants import SITE_DCINSIDE, SITE_PPOMPPU, SITE_YGOSU
+from constants import SITE_DCINSIDE, SITE_PPOMPPU, SITE_YGOSU
 
 import graphene
 from graphene import Mutation
 
 from .pagination import BoardSummaryType, get_page_data_by_index
 from .views import board_summary, get_real_time_best, get_daily_best
-from app.mongo import DBController
+from mongo import DBController
 from datetime import datetime, timedelta
 import logging
 from .tasks import task_add

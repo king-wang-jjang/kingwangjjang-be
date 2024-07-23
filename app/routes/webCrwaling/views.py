@@ -5,13 +5,13 @@ from fastapi import FastAPI, Request, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.mongo import DBController
+from mongo import DBController
 
-from app.routes.webCrwaling.communityWebsite.ygosu import Ygosu
-from app.routes.webCrwaling.communityWebsite.dcinside import Dcinside
-from app.routes.webCrwaling.communityWebsite.ppomppu import Ppomppu
-from app.utils.llm import LLM
-from app.constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU
+from routes.webCrwaling.communityWebsite.ygosu import Ygosu
+from routes.webCrwaling.communityWebsite.dcinside import Dcinside
+from routes.webCrwaling.communityWebsite.ppomppu import Ppomppu
+from utils.llm import LLM
+from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU
 
 logger = logging.getLogger("")
 
@@ -120,4 +120,4 @@ async def add(a: int, b: int):
     return JSONResponse(content={'result': a + b})
 
 
-app.include_router(router)
+include_router(router)

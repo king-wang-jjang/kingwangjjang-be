@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
 
-from app.db.context import Database
+from db.context import Database
 
 
 router = APIRouter(

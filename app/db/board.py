@@ -3,7 +3,7 @@ from pymongo.collection import Collection
 from pydantic import BaseModel, Field
 from bson import ObjectId
 from typing import Optional
-import app.mongo
+import mongo
 
 db_controller = app.mongo.DBController()
 

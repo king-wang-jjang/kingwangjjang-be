@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import json
 
 import graphene
-from app.mongo import DBController
+from mongo import DBController
 
 # DBController 인스턴스 생성
 db_controller = DBController()

@@ -1,13 +1,13 @@
 import re
 from bs4 import BeautifulSoup
 import requests
-from app.routes.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
+from routes.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 from datetime import datetime
-from app.mongo import DBController
-from app.utils import FTPClient
+from mongo import DBController
+from utils import FTPClient
 import logging
-from app.config import Config
-from app.constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU
+from config import Config
+from constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU
 import os
 logger = logging.getLogger("")
 class Ppomppu(AbstractCommunityWebsite):

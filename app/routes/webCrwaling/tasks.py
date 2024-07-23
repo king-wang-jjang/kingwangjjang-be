@@ -1,9 +1,9 @@
 # from apscheduler.schedulers.background import BackgroundScheduler
 # import datetime
 
-from app.routes.webCrwaling.communityWebsite.dcinside import Dcinside
-from app.routes.webCrwaling.communityWebsite.ppomppu import Ppomppu
-from app.routes.webCrwaling.communityWebsite.ygosu import Ygosu
+from routes.webCrwaling.communityWebsite.dcinside import Dcinside
+from routes.webCrwaling.communityWebsite.ppomppu import Ppomppu
+from routes.webCrwaling.communityWebsite.ygosu import Ygosu
 
 # scheduler = BackgroundScheduler()
 
@@ -31,7 +31,7 @@ def real_time_scheduler():
 # if next_date < now:
 #     next_date += datetime.timedelta(hours=1)
     
-# # Schedule 등록하고 app.py에서 실행
+# # Schedule 등록하고 py에서 실행
 # scheduler.add_job(real_time_scheduler, 'interval', minutes=5, start_date=next_date)
 
 
@@ -40,7 +40,7 @@ from kingwangjjang.celery import app
 
 # app = Celery('tasks', backend='redis://localhost:6379', broker='redis://localhost:6379')
  
-@app.task()
+@task()
 def task_add(x, y):
     real_time_scheduler()
 

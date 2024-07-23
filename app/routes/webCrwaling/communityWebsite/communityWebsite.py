@@ -1,10 +1,10 @@
 from abc import abstractmethod
 import os
-from app.config import Config
+from config import Config
 # img to text
 import pytesseract
 
-from app.utils import FTPClient
+from utils import FTPClient
 from PIL import Image
 import logging
 

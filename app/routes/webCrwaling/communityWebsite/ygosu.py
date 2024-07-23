@@ -3,13 +3,13 @@ from datetime import datetime
 import os
 from bs4 import BeautifulSoup
 import requests
-from app.utils.FTPClient import FTPClient
-from app.mongo import DBController
-from app.routes.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
+from utils.FTPClient import FTPClient
+from mongo import DBController
+from routes.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 
-from app.constants import DEFAULT_GPT_ANSWER, SITE_YGOSU
+from constants import DEFAULT_GPT_ANSWER, SITE_YGOSU
 import logging
-from app.config import Config
+from config import Config
 logger = logging.getLogger("")
 class Ygosu(AbstractCommunityWebsite):
     def __init__(self):

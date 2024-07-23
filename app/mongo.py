@@ -4,7 +4,7 @@ from urllib.parse import quote_plus
 from dotenv import load_dotenv
 import pymongo
 logger = logging.getLogger("")
-from app.config import Config
+from config import Config
 class DBController(object):
 
     def __init__(self):
