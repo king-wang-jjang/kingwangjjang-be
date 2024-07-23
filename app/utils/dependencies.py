@@ -5,9 +5,9 @@ from fastapi import Request
 from fastapi import Response
 from fastapi import HTTPException
 
-from app.constants import COOKIES_KEY_NAME
+from constants import COOKIES_KEY_NAME
 # from models import db
-from app.routes.user import user_service
+from routes.user import user_service
 
 
 # def get_user(req: Request, res: Response) -> db.User:
