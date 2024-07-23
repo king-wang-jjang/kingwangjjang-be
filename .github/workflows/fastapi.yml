@@ -11,7 +11,7 @@ on:
     # PR 발생할 시 -> main 및 develop 브랜치에서 실행
 
 
-# django.yml (Django CI)workflow 에서 실행할 Job(작업) 정의 
+# fastapi.yml (Django CI)workflow 에서 실행할 Job(작업) 정의
 jobs: 
   # job 1(build) -> job 2(run)
 

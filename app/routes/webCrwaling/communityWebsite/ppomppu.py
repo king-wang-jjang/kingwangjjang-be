@@ -6,10 +6,9 @@ from datetime import datetime
 from app.mongo import DBController
 from app.utils import FTPClient
 import logging
-from dotenv import load_dotenv
+from app.config import Config
 from app.constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU
 import os
-load_dotenv()
 logger = logging.getLogger("")
 class Ppomppu(AbstractCommunityWebsite):
     def __init__(self):
@@ -17,9 +16,9 @@ class Ppomppu(AbstractCommunityWebsite):
         self.db_controller = DBController()
         try:
             self.ftp_client = FTPClient(
-                                server_address=os.getenv('FTP_HOST'),
-                                username=os.getenv('FTP_USERNAME'),
-                                password=os.getenv('FTP_PASSWORD'))
+                                server_address=Config().get('FTP_HOST'),
+                                username=Config().get('FTP_USERNAME'),
+                                password=Config().get('FTP_PASSWORD'))
             super().__init__(self.yyyymmdd, self.ftp_client)
 
         except Exception as e:

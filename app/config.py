@@ -1,13 +1,21 @@
 import os
 from dotenv import load_dotenv,find_dotenv
 from urllib.parse import quote_plus
-
-load_dotenv()
-
+import logging
+logger = logging.getLogger("")
 class Config:
-    USERNAME = quote_plus(os.getenv("DB_USER"))
-    PASSWORD = quote_plus(os.getenv("DB_PASSWORD"))
-    HOST = os.getenv("DB_HOST")
-    DATABASE = os.getenv("DB_NAME")
+    def __init__(self):
+        if find_dotenv() == "":
+            logger.info("ENV로더 : env 파일이 감지되지 않음.")
+            if os.getenv("DB_HOST") == None:
+                logger.error("ENV가 설정되지 않음!!")
+        else:
+            load_dotenv(find_dotenv())
 
-    MONGO_URI = f"mongodb://{USERNAME}:{PASSWORD}@{HOST}:27017/{DATABASE}"
+
+    def get(self, env):
+        if  os.getenv(env) == None:
+            logger.error(f"ENV가 알수없는 애러로 불러오지 못함. {env}")
+            return None
+        else:
+            return os.getenv(env)

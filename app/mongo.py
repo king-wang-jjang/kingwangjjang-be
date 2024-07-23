@@ -4,14 +4,14 @@ from urllib.parse import quote_plus
 from dotenv import load_dotenv
 import pymongo
 logger = logging.getLogger("")
-load_dotenv()
+from app.config import Config
 class DBController(object):
 
     def __init__(self):
-        self.db_host = os.getenv("DB_HOST")
-        self.db_name = os.getenv("DB_NAME")
-        self.db_user = os.getenv("DB_USER")
-        self.db_password = os.getenv("DB_PASSWORD")
+        self.db_host = Config().get("DB_HOST")
+        self.db_name = Config().get("DB_NAME")
+        self.db_user = Config().get("DB_USER")
+        self.db_password = Config().get("DB_PASSWORD")
         escaped_user = quote_plus(self.db_user)
         escaped_password = quote_plus(self.db_password)
         self.dbUri = f'mongodb://{escaped_user}:{escaped_password}@{self.db_host}/{self.db_name}?authMechanism=SCRAM-SHA-256'

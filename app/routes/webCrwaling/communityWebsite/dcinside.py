@@ -7,7 +7,7 @@ from app.constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE
 from app.mongo import DBController
 from app.routes.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 from app.utils import FTPClient
-from dotenv import load_dotenv
+from app.config import Config
 
 
 # selenium
@@ -19,7 +19,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import logging
 
 logger = logging.getLogger("")
-load_dotenv()
+
 class Dcinside(AbstractCommunityWebsite):
     g_headers = [
             {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
@@ -30,9 +30,9 @@ class Dcinside(AbstractCommunityWebsite):
         self.db_controller = DBController()
         try:
             self.ftp_client = FTPClient(
-                                server_address=os.getenv('FTP_HOST'),
-                                username=os.getenv('FTP_USERNAME'),
-                                password=os.getenv('FTP_PASSWORD'))
+                                server_address=Config().get('FTP_HOST'),
+                                username=Config().get('FTP_USERNAME'),
+                                password=Config().get('FTP_PASSWORD'))
             super().__init__(self.yyyymmdd, self.ftp_client)
             
         except Exception as e:

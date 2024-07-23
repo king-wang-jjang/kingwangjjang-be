@@ -6,11 +6,10 @@ import requests
 from app.utils.FTPClient import FTPClient
 from app.mongo import DBController
 from app.routes.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
-from dotenv import load_dotenv,find_dotenv
 
 from app.constants import DEFAULT_GPT_ANSWER, SITE_YGOSU
 import logging
-load_dotenv(find_dotenv())
+from app.config import Config
 logger = logging.getLogger("")
 class Ygosu(AbstractCommunityWebsite):
     def __init__(self):
@@ -18,9 +17,9 @@ class Ygosu(AbstractCommunityWebsite):
         self.db_controller = DBController()
         try:
             self.ftp_client = FTPClient(
-                                server_address=os.getenv('FTP_HOST'),
-                                username=os.getenv('FTP_USERNAME'),
-                                password=os.getenv('FTP_PASSWORD'))
+                                server_address=Config().get('FTP_HOST'),
+                                username=Config().get('FTP_USERNAME'),
+                                password=Config().get('FTP_PASSWORD'))
             super().__init__(self.yyyymmdd, self.ftp_client)
 
         except Exception as e:

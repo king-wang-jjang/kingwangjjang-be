@@ -1,7 +1,6 @@
 from abc import abstractmethod
 import os
-from dotenv import load_dotenv
-
+from app.config import Config
 # img to text
 import pytesseract
 
@@ -10,7 +9,7 @@ from PIL import Image
 import logging
 
 logger = logging.getLogger("")
-load_dotenv()
+
 class AbstractCommunityWebsite():
     dayBestUrl = ''
     realtimeBestUrl = ''
