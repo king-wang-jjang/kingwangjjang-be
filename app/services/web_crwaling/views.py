@@ -5,9 +5,9 @@ from fastapi import FastAPI, Request, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes.web_crwaling.community_website.ppomppu import Ppomppu
-from app.routes.web_crwaling.community_website.theqoo import Theqoo
-from app.routes.web_crwaling.community_website.ygosu import Ygosu
+from app.services.web_crwaling.community_website.ppomppu import Ppomppu
+from app.services.web_crwaling.community_website.theqoo import Theqoo
+from app.services.web_crwaling.community_website.ygosu import Ygosu
 from mongo import DBController
 
 from utils.llm import LLM
