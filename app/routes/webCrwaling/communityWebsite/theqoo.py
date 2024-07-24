@@ -49,56 +49,57 @@ class Theqoo(AbstractCommunityWebsite):
         soup = BeautifulSoup(html_content, 'html.parser')
         li_elements = soup.select('.hide_notice tr')
         already_exists_post = []
-
         for li in li_elements:
             elements = li.select('td')
-            p_element = elements[2]
-            a_element = elements[2]
-            time_element = elements[3]
+            if len(elements) != 1:
+                p_element = elements[2]
+                a_element = elements[2]
+                time_element = elements[3]
+                if p_element and a_element and time_element and not "공지" in elements[0].get_text(strip=True):
+                    title = p_element.get_text(strip=True)
+                    # print(elements)
+                    url = "https://theqoo.net" + a_element.find('a')['href']
 
-            if p_element and a_element and time_element and not "공지" in elements[0]:
-                title = p_element.get_text(strip=True)
-                url = a_element['href']
-                board_id = url.split('hot/')[-1]
-                time_text = time_element.get_text(strip=True)
-                if(time_text.find('-') > 0): 
-                    break  # 오늘 것만 추가 (이전 글은 제외 (DB에서 확인))
+                    board_id = url.split('hot/')[-1]
+                    time_text = time_element.get_text(strip=True)
+                    if(time_text.find('-') > 0):
+                        break  # 오늘 것만 추가 (이전 글은 제외 (DB에서 확인))
 
-                # 시간 13:40 -> 2024.01.29 13:40 로 수정
-                now = datetime.now()
-                hour, minute = map(int, time_text.split(':'))
-                # 시간 설정 및 datetime 객체 생성
-                target_datetime = datetime(now.year, now.month, now.day, hour, minute)
+                    # 시간 13:40 -> 2024.01.29 13:40 로 수정
+                    now = datetime.now()
+                    hour, minute = map(int, time_text.split(':'))
+                    # 시간 설정 및 datetime 객체 생성
+                    target_datetime = datetime(now.year, now.month, now.day, hour, minute)
 
-                try:
-                    existing_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': SITE_Theqoo})
-                    if existing_instance:
-                        already_exists_post.append(board_id)
-                        continue
-                    else:
-                        gpt_exists = self.db_controller.select('GPT', {'board_id': board_id, 'site': SITE_Theqoo})
-                        if gpt_exists:
-                            gpt_obj_id = gpt_exists[0]['_id']
-                        else :
-                            gpt_obj = self.db_controller.insert('GPT', {
+                    try:
+                        existing_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': SITE_THEQOO})
+                        if existing_instance:
+                            already_exists_post.append(board_id)
+                            continue
+                        else:
+                            gpt_exists = self.db_controller.select('GPT', {'board_id': board_id, 'site': SITE_THEQOO})
+                            if gpt_exists:
+                                gpt_obj_id = gpt_exists[0]['_id']
+                            else :
+                                gpt_obj = self.db_controller.insert('GPT', {
+                                    'board_id': board_id,
+                                    'site': SITE_THEQOO,
+                                    'answer': DEFAULT_GPT_ANSWER
+                                })
+                                gpt_obj_id = gpt_obj.inserted_id
+
+                            self.db_controller.insert('RealTime', {
                                 'board_id': board_id,
                                 'site': SITE_THEQOO,
-                                'answer': DEFAULT_GPT_ANSWER
+                                'title': title,
+                                'url': url,
+                                'create_time': target_datetime,
+                                'GPTAnswer': gpt_obj_id
                             })
-                            gpt_obj_id = gpt_obj.inserted_id
-                            
-                        self.db_controller.insert('RealTime', {
-                            'board_id': board_id,
-                            'site': SITE_THEQOO,
-                            'title': title,
-                            'url': url,
-                            'create_time': target_datetime,
-                            'GPTAnswer': gpt_obj_id
-                        })
-                except Exception as e:
-                    logger.error('error', e)
-                    
-        logger.info({"already exists post": already_exists_post})
+                    except Exception as e:
+                        logger.error('error', e)
+
+            logger.info({"already exists post": already_exists_post})
 
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
