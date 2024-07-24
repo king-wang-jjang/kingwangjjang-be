@@ -5,12 +5,10 @@ from fastapi import FastAPI, Request, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.routes.web_crwaling.community_website.ppomppu import Ppomppu
+from app.routes.web_crwaling.community_website.theqoo import Theqoo
+from app.routes.web_crwaling.community_website.ygosu import Ygosu
 from mongo import DBController
-
-from routes.webCrwaling.communityWebsite.ygosu import Ygosu
-from routes.webCrwaling.communityWebsite.dcinside import Dcinside
-from routes.webCrwaling.communityWebsite.ppomppu import Ppomppu
-from routes.webCrwaling.communityWebsite.theqoo import Theqoo
 
 from utils.llm import LLM
 from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU,SITE_THEQOO
@@ -19,15 +17,12 @@ logger = logging.getLogger("")
 
 app = FastAPI()
 
-# CORS 설정
-
 board_semaphores = {}
 db_controller = DBController()
 
 router = APIRouter()
 
 
-@router.post("/board_summary/")
 async def board_summary(board_id: str, site: str):
     global board_semaphores
     semaphore_label = site + board_id
@@ -84,7 +79,6 @@ async def board_summary(board_id: str, site: str):
         semaphore.release()
 
 
-@router.post("/board_summary_rest/")
 async def board_summary_rest(request: Request):
     if request.method == 'POST':
         data = await request.json()
@@ -92,38 +86,26 @@ async def board_summary_rest(request: Request):
         site = data.get('site')
 
         return await board_summary(board_id, site)
-    else:
-        dcincideCrwaller = Dcinside()
-        dcincideCrwaller.get_real_time_best()
+    # else:
+    #     dcincideCrwaller = Dcinside()
+    #     dcincideCrwaller.get_real_time_best()
 
         return JSONResponse(content={'response': "성공하는 루트 추가해야함"})
 
 
-@router.get("/get_real_time_best/")
 async def get_real_time_best():
-    dcincideCrwaller = Dcinside()
     ygosuCrawller = Ygosu()
     ppomppuCrawller = Ppomppu()
     theqooCrawller = Theqoo()
-    # dcincideCrwaller.get_real_time_best()
     ygosuCrawller.get_real_time_best()
     theqooCrawller.get_real_time_best()
     return JSONResponse(content={'response': "실시간 베스트 가져오기 완료"})
 
 
-@router.get("/get_daily_best/")
 async def get_daily_best():
-    dcincideCrwaller = Dcinside()
     ygosuCrawller = Ygosu()
     ppomppuCrawller = Ppomppu()
     ygosuCrawller.get_daily_best()
     return JSONResponse(content={'response': "데일리 베스트 가져오기 완료"})
 
 
-# 간단한 a + b 함수
-@router.get("/add/")
-async def add(a: int, b: int):
-    return JSONResponse(content={'result': a + b})
-
-
-app.include_router(router)
