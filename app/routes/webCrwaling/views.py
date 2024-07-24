@@ -10,8 +10,10 @@ from mongo import DBController
 from routes.webCrwaling.communityWebsite.ygosu import Ygosu
 from routes.webCrwaling.communityWebsite.dcinside import Dcinside
 from routes.webCrwaling.communityWebsite.ppomppu import Ppomppu
+from routes.webCrwaling.communityWebsite.theqoo import Theqoo
+
 from utils.llm import LLM
-from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU
+from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU,SITE_THEQOO
 
 logger = logging.getLogger("")
 
@@ -52,6 +54,8 @@ async def board_summary(board_id: str, site: str):
             crawler_instance = Ygosu()
         elif site == SITE_PPOMPPU:
             crawler_instance = Ppomppu()
+        elif site == SITE_THEQOO:
+            crawler_instance = Theqoo()
         json_contents = crawler_instance.get_board_contents(board_id)
 
         str_contents = ''
@@ -100,8 +104,10 @@ async def get_real_time_best():
     dcincideCrwaller = Dcinside()
     ygosuCrawller = Ygosu()
     ppomppuCrawller = Ppomppu()
+    theqooCrawller = Theqoo()
     # dcincideCrwaller.get_real_time_best()
     ygosuCrawller.get_real_time_best()
+    theqooCrawller.get_real_time_best()
     return JSONResponse(content={'response': "실시간 베스트 가져오기 완료"})
 
 
