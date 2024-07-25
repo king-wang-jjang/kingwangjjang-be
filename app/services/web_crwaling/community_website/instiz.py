@@ -53,8 +53,14 @@ class Instiz(AbstractCommunityWebsite):
 
 
             if title_element:
-                # title = title_element.text.strip()  
-                title = tr.get_text(strip=True).replace(tr.find('span','itsme rank').get_text(strip=True)+tr.find('span','minitext').get_text(strip=True),'').replace(tr.find('span','cmt').get_text(strip=True),'')
+                # title = title_element.text.strip()
+                rank = tr.find('span','itsme rank').get_text(strip=True)
+                cate = tr.find('span','minitext').get_text(strip=True)
+                try:
+                    cmt = tr.find('span','cmt').get_text(strip=True)
+                except Exception as e:
+                    cmt = ""
+                title = tr.get_text(strip=True).replace(rank+cate,'').replace(cmt,'')
 
                 # print(title)
                 domain = "https://instiz.co.kr"
@@ -62,7 +68,10 @@ class Instiz(AbstractCommunityWebsite):
                 # url_parts = url.split("/")
                 board_id = url.split('/')[-1]
                 date_format = "%Y-%m-%dT%H:%M"
-                target_datetime = datetime.strptime(self.extract_time(url), date_format)
+                try:
+                    target_datetime = datetime.strptime(self.extract_time(url), date_format)
+                except Exception as e:
+                    continue
                 # contents_url = domain + url
                 contents_url = url
 
@@ -102,7 +111,10 @@ class Instiz(AbstractCommunityWebsite):
     def extract_time(self, url):
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
-        return soup.find('span',{'itemprop':'datePublished'}).get('content')
+        try:
+            return soup.find('span',{'itemprop':'datePublished'}).get('content')
+        except Exception as e:
+            return None
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
         self.download_path = os.path.abspath(abs_path) 
