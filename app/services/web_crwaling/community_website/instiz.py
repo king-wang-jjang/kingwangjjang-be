@@ -121,7 +121,7 @@ class Instiz(AbstractCommunityWebsite):
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
         }
-        daily_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': 'ppomppu'})
+        daily_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': 'instiz'})
         content_list = []
         if daily_instance:
             response = requests.get(daily_instance[0]['url'], headers=headers)
