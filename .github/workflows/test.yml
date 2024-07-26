@@ -84,7 +84,7 @@ jobs:
         port: ${{ secrets.TESTSV_SSH_PORT }}
         script: | # 인스턴스 접속후 실행할 스크립트
           sudo docker version
-          sudo docker rm -f kingwangjjang-be || true
+          sudo docker docker rmi $(docker images -q) || true
           sudo docker pull ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:test
           sudo docker run -d --name kingwangjjang-be \
           -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
@@ -95,7 +95,7 @@ jobs:
           -e FTP_USERNAME="${{ secrets.FTP_USERNAME }}" \
           -e FTP_PASSWORD="${{ secrets.FTP_PASSWORD }}" \
           -e FTP_HOST="${{ secrets.FTP_HOST }}" \
-          -e WEBHOOK_URL="${{ secrets.TEST_WEBHOOK_URL }}"
+          -e WEBHOOK_URL="${{ secrets.TEST_WEBHOOK_URL }}" \
           -p 3000:3000 ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:test
 
 
