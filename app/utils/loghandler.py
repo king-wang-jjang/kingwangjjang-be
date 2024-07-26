@@ -1,18 +1,26 @@
-from logging import handlers
 import logging
+from logging import handlers
 import os
 import sys
-from config import Config
 import requests
+from config import Config
+from colorama import Fore, Style, init
+
+init(autoreset=True)  # colorama 초기화
+
 class DiscordWebhookHandler(logging.Handler):
     def __init__(self):
         super().__init__()
-        self.webhook_url = Config().get("WEBHOOK_URL")
+        if Config().get("SERVER_RUN_MODE") == "True":
+            self.webhook_url = Config().get("WEBHOOK_URL")
 
     def emit(self, record):
         log_entry = self.format(record)
-        embed = self.create_embed(log_entry, record.levelname)
-        self.send_to_discord(embed)
+        if Config().get("SERVER_RUN_MODE") == "True":
+            embed = self.create_embed(log_entry, record.levelname)
+            self.send_to_discord(embed)
+        else:
+            self.print_colored_log(log_entry, record.levelname)
 
     def create_embed(self, message, level):
         color_map = {
@@ -41,6 +49,17 @@ class DiscordWebhookHandler(logging.Handler):
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"Error sending log to Discord: {e}")
+
+    def print_colored_log(self, message, level):
+        color_map = {
+            "DEBUG": Fore.LIGHTBLACK_EX,
+            "INFO": Fore.GREEN,
+            "WARNING": Fore.YELLOW,
+            "ERROR": Fore.RED,
+            "CRITICAL": Fore.RED + Style.BRIGHT
+        }
+        color = color_map.get(level, Fore.WHITE)  # Default to white if level not found
+        print(f"{color}{message}")
 
 def setup_logger():
     logger = logging.getLogger("discord_logger")

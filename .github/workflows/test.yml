@@ -96,6 +96,7 @@ jobs:
           -e FTP_PASSWORD="${{ secrets.FTP_PASSWORD }}" \
           -e FTP_HOST="${{ secrets.FTP_HOST }}" \
           -e WEBHOOK_URL="${{ secrets.TEST_WEBHOOK_URL }}" \
+          -e SERVER_RUN_MODE=TRUE \
           -p 3000:3000 ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:test
 
 
