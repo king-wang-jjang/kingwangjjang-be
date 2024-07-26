@@ -5,7 +5,7 @@ from datetime import datetime
 import logging
 import strawberry
 from strawberry.fastapi import GraphQLRouter
-
+from services.web_crwaling.views import board_summary
 app = FastAPI()
 logger = logging.getLogger("")
 router = APIRouter(

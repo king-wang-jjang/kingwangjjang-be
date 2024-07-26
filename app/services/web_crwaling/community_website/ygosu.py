@@ -3,8 +3,8 @@ from datetime import datetime
 import os
 from bs4 import BeautifulSoup
 import requests
-from app.db.mongo_controller import MongoController
-from app.services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
+from db.mongo_controller import MongoController
+from services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
 from utils.FTPClient import FTPClient
 
 from constants import DEFAULT_GPT_ANSWER, SITE_YGOSU

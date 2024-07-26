@@ -2,8 +2,8 @@ import re
 from bs4 import BeautifulSoup
 import requests
 from datetime import datetime
-from app.db.mongo_controller import MongoController
-from app.services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
+from db.mongo_controller import MongoController
+from services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
 from utils import FTPClient
 import logging
 from config import Config
