@@ -1,5 +1,5 @@
 # GitHub Actions workflow 이름
-name: Django CI
+name: test CI/CD
 
 # Workflow 실행조건
 on:
