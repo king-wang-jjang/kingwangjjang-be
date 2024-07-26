@@ -85,7 +85,7 @@ jobs:
         script: | # 인스턴스 접속후 실행할 스크립트
           sudo docker version
           sudo docker stop $(sudo docker ps -aq)
-          sudo docker rmi $(sudo docker images -q) || true
+          sudo docker rmi -f $(sudo docker images -q) || true
           sudo docker pull ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:test
           sudo docker run -d --name kingwangjjang-be \
           -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
