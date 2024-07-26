@@ -2,7 +2,6 @@ from fastapi import APIRouter, FastAPI, HTTPException, Request
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
-from mongo import DBController
 import logging
 import strawberry
 from strawberry.fastapi import GraphQLRouter

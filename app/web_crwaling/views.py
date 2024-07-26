@@ -5,11 +5,11 @@ from fastapi import FastAPI, Request, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+
 from app.db.mongo_controller import MongoController
 from app.services.web_crwaling.community_website.ppomppu import Ppomppu
 from app.services.web_crwaling.community_website.theqoo import Theqoo
 from app.services.web_crwaling.community_website.ygosu import Ygosu
-
 from utils.llm import LLM
 from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU,SITE_THEQOO
 
@@ -43,9 +43,7 @@ async def board_summary(board_id: str, site: str):
         if GPT_object['answer'] != DEFAULT_GPT_ANSWER:
             return GPT_object['answer']
 
-        if site == SITE_DCINSIDE:
-            crawler_instance = Dcinside()
-        elif site == SITE_YGOSU:
+        if site == SITE_YGOSU:
             crawler_instance = Ygosu()
         elif site == SITE_PPOMPPU:
             crawler_instance = Ppomppu()

@@ -1,9 +1,9 @@
 import re
 from bs4 import BeautifulSoup
 import requests
+from app.db.mongo_controller import MongoController
 from services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
 from datetime import datetime
-from mongo import DBController
 from utils import FTPClient
 import logging
 from config import Config
@@ -15,7 +15,7 @@ logger = logging.getLogger("")
 class Instiz(AbstractCommunityWebsite):
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
-        self.db_controller = DBController()
+        self.db_controller = MongoController()
         try:
             self.ftp_client = FTPClient(
                                 server_address=Config().get('FTP_HOST'),

@@ -3,9 +3,9 @@ import os
 from bs4 import BeautifulSoup
 import requests
 
+from app.db.mongo_controller import MongoController
+from app.services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
 from constants import DEFAULT_GPT_ANSWER, SITE_THEQOO
-from mongo import DBController
-from routes.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 from utils import FTPClient
 from config import Config
 
@@ -27,7 +27,7 @@ class Theqoo(AbstractCommunityWebsite):
     
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
-        self.db_controller = DBController()
+        self.db_controller = MongoController()
         try:
             self.ftp_client = FTPClient(
                                 server_address=Config().get('FTP_HOST'),

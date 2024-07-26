@@ -3,9 +3,9 @@ from datetime import datetime
 import os
 from bs4 import BeautifulSoup
 import requests
+from app.db.mongo_controller import MongoController
+from app.services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
 from utils.FTPClient import FTPClient
-from mongo import DBController
-from routes.webCrwaling.communityWebsite.communityWebsite import AbstractCommunityWebsite
 
 from constants import DEFAULT_GPT_ANSWER, SITE_YGOSU
 import logging
@@ -14,7 +14,7 @@ logger = logging.getLogger("")
 class Ygosu(AbstractCommunityWebsite):
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
-        self.db_controller = DBController()
+        self.db_controller = MongoController()
         try:
             self.ftp_client = FTPClient(
                                 server_address=Config().get('FTP_HOST'),
