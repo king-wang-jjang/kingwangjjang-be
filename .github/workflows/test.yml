@@ -4,11 +4,9 @@ name: test CI/CD
 # Workflow 실행조건
 on:
   push:
-    branches: [ "*" ]
-    # push 발생할 시 -> main 브랜치에서 실행 
-  pull_request: 
-    branches: [ "*"]
-    # PR 발생할 시 -> main 및 develop 브랜치에서 실행
+    branches:
+      - develop
+      - feature/*
 
 
 # fastapi.yml (Django CI)workflow 에서 실행할 Job(작업) 정의
