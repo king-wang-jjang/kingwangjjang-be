@@ -1,8 +1,9 @@
 from ftplib import FTP
 import os
 import logging
+from utils.loghandler import setup_logger
 
-logger = logging.getLogger("")
+logger = setup_logger()
 
 class FTPClient(object):
     _instance = None  

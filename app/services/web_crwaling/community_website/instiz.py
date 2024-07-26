@@ -9,9 +9,10 @@ import logging
 from config import Config
 from constants import DEFAULT_GPT_ANSWER, SITE_INSTIZ
 from celery_app import celery_app
+from utils.loghandler import setup_logger
 
 import os
-logger = logging.getLogger("")
+logger = setup_logger()
 class Instiz(AbstractCommunityWebsite):
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')

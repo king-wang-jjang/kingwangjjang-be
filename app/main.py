@@ -10,13 +10,16 @@ from routes.auth import auth_controller
 from routes.page import page_controller
 from routes.user import user_controller
 from routes.board import board_controller
-
+from utils.loghandler import setup_logger
 import uvicorn
 from middlewares import cors_middleware
+import logging
 # from middlewares import static_middleware
 
 app = FastAPI(lifespan=lifespan)
-
+logger = setup_logger()
+logging.getLogger("uvicorn.access").handlers = [logger.handlers[0]]
+logging.getLogger("uvicorn.error").handlers = [logger.handlers[0]]
 cors_middleware.add(app)
 # static_middleware.add(app)
 

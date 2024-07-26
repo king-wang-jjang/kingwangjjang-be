@@ -17,8 +17,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 import logging
+from utils.loghandler import setup_logger
 
-logger = logging.getLogger("")
+logger = setup_logger()
 
 class Theqoo(AbstractCommunityWebsite):
     g_headers = [

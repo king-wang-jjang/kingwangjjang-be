@@ -10,7 +10,9 @@ from utils.FTPClient import FTPClient
 from constants import DEFAULT_GPT_ANSWER, SITE_YGOSU
 import logging
 from config import Config
-logger = logging.getLogger("")
+from utils.loghandler import setup_logger
+
+logger = setup_logger()
 class Ygosu(AbstractCommunityWebsite):
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')

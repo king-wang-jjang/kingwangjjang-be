@@ -6,8 +6,10 @@ import logging
 import strawberry
 from strawberry.fastapi import GraphQLRouter
 from services.web_crwaling.views import board_summary
+from utils.loghandler import setup_logger
+
 app = FastAPI()
-logger = logging.getLogger("")
+logger = setup_logger()
 router = APIRouter(
     prefix="/board",
     tags=["Boards"]

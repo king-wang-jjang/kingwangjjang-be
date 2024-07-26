@@ -7,8 +7,9 @@ import pytesseract
 from utils import FTPClient
 from PIL import Image
 import logging
+from utils.loghandler import setup_logger
 
-logger = logging.getLogger("")
+logger = setup_logger()
 
 class AbstractCommunityWebsite():
     dayBestUrl = ''

@@ -9,7 +9,9 @@ import logging
 from config import Config
 from constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU
 import os
-logger = logging.getLogger("")
+from utils.loghandler import setup_logger
+
+logger = setup_logger()
 class Ppomppu(AbstractCommunityWebsite):
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')

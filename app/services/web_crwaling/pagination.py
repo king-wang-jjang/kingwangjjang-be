@@ -3,7 +3,7 @@ import json
 
 import graphene
 
-from app.db.mongo_controller import MongoController
+from db.mongo_controller import MongoController
 
 # DBController 인스턴스 생성
 db_controller = MongoController()

@@ -4,6 +4,7 @@ import logging
 from fastapi import FastAPI, Request, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pymongo import settings
 
 from db.mongo_controller import MongoController
 from services.web_crwaling.community_website.ppomppu import Ppomppu
@@ -12,8 +13,9 @@ from services.web_crwaling.community_website.ygosu import Ygosu
 
 from utils.llm import LLM
 from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU,SITE_THEQOO
+from utils.loghandler import setup_logger
 
-logger = logging.getLogger("")
+logger = setup_logger()
 
 app = FastAPI()
 

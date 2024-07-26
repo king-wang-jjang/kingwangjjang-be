@@ -3,8 +3,8 @@ from pymongo.collection import Collection
 from pydantic import BaseModel, Field
 from bson import ObjectId
 from typing import Optional
-from app.constants import DEFAULT_GPT_ANSWER
-from app.db.context import Database
+from constants import DEFAULT_GPT_ANSWER
+from db.context import Database
 
 db_controller = Database()
 class PyObjectId(ObjectId):
