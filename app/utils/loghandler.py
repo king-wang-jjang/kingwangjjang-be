@@ -11,12 +11,12 @@ init(autoreset=True)  # colorama 초기화
 class DiscordWebhookHandler(logging.Handler):
     def __init__(self):
         super().__init__()
-        if Config().get("SERVER_RUN_MODE") == "True":
+        if Config().get("SERVER_RUN_MODE") == "TRUE":
             self.webhook_url = Config().get("WEBHOOK_URL")
 
     def emit(self, record):
         log_entry = self.format(record)
-        if Config().get("SERVER_RUN_MODE") == "True":
+        if Config().get("SERVER_RUN_MODE") == "TRUE":
             embed = self.create_embed(log_entry, record.levelname)
             self.send_to_discord(embed)
         else:
