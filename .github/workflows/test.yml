@@ -38,7 +38,7 @@ jobs:
    
     # Docker Image 빌드 step
     - name: Build docker image
-      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:test ./kingwangjjang
+      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:test .
       
 
     # Docker Hub 로그인 step
