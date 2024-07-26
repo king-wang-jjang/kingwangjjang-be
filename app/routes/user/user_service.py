@@ -1,8 +1,8 @@
-from random import randint
+# from random import randint
 
-from db import user_db
+# from app.models import user_db
 
-from utils import formating
+# from utils import formating
 
 
 # def get(limit: int, offset: int) -> list[db.User]:

@@ -3,10 +3,10 @@ from pymongo.collection import Collection
 from pydantic import BaseModel, Field
 from bson import ObjectId
 from typing import Optional
+from app.constants import DEFAULT_GPT_ANSWER
 import mongo
 
-db_controller = app.mongo.DBController()
-
+db_controller = mongo.MongoController()
 class PyObjectId(ObjectId):
     @classmethod
     def __get_validators__(cls):
@@ -29,7 +29,7 @@ class RealTimeDTO(BaseModel):
     title: str
     url: str
     create_time: datetime
-    GPTAnswer: str = "GPT 생성 중입니다. 이미지가 많은 경우 오래 걸립니다."
+    GPTAnswer: str = DEFAULT_GPT_ANSWER
 
     class Config:
         allow_population_by_field_name = True
@@ -70,7 +70,7 @@ class DailyDTO(BaseModel):
     title: str
     url: str
     create_time: datetime
-    GPTAnswer: str = "GPT 생성 중입니다. 이미지가 많은 경우 오래 걸립니다."
+    GPTAnswer: str = DEFAULT_GPT_ANSWER
 
     class Config:
         allow_population_by_field_name = True
