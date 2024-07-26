@@ -19,5 +19,7 @@ RUN poetry install --no-root
 #소스코드 복사
 COPY app .
 
+#3000번 포트 개방.
+EXPOSE 3000
 # uvicorn 서버 실행
 ENTRYPOINT  ["poetry","run", "sh", "dev.bash"]
