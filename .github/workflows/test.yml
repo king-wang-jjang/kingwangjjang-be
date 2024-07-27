@@ -82,8 +82,9 @@ jobs:
         username: ${{ secrets.TESTSV_USERNAME }}
         port: ${{ secrets.TESTSV_SSH_PORT }}
         key: ${{ secrets.TESTSV_KEY }}
-        source: "docker-compose.yml"
+        source: "./docker-compose.yml"
         target: "/home/kingwangjjang/"
+        rm : true
     - name: Connect to WAS & Execute Application
       uses: appleboy/ssh-action@master # GitHub제공 액션 사용, ssh로 인스턴스 접속
       with:
