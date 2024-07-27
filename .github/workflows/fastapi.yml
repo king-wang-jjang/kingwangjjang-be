@@ -47,14 +47,14 @@ jobs:
     - name: Login docker hub
       uses: docker/login-action@master
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME_JS }}
-        password: ${{ secrets.DOCKERHUB_PASSWD_JS }} 
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }} 
       # docker/login-action 사용(GitHub제공) 도커허브 로그인
       # github actions secrets 민감정보 사용
 
     # Docker Hub 퍼블리시 step
     - name: Publish to docker hub 
-      run: docker push ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
 
 
 
@@ -69,6 +69,17 @@ jobs:
         python-version: [3.9]
         
     steps:
+    # WAS 인스턴스 접속 & 애플리케이션 실행 step
+    - name: docker-compose upload
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.WAS_HOST }}
+        username: ${{ secrets.WAS_USERNAME }}
+        port: ${{ secrets.WAS_SSH_PORT }}
+        key: ${{ secrets.SSH_KEY }}
+        source: "docker-compose.yml"
+        target: "/home/kingwangjjang/"
+        overwrite : true
 
     # WAS 인스턴스 접속 & 애플리케이션 실행 step
     - name: Connect to WAS & Execute Application
