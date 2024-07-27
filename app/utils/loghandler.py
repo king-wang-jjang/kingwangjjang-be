@@ -5,9 +5,7 @@ import sys
 import requests
 from config import Config
 from colorama import Fore, Style, init
-from utils.loghandler import catch_exception
-import sys
-sys.excepthook = catch_exception
+
 init(autoreset=True)  # colorama 초기화
 
 class DiscordWebhookHandler(logging.Handler):

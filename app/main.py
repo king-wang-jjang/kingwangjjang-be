@@ -12,6 +12,7 @@ from routes.user import user_controller
 from routes.board import board_controller
 from utils.loghandler import setup_logger
 from utils.loghandler import catch_exception
+import sys
 sys.excepthook = catch_exception
 
 import uvicorn
