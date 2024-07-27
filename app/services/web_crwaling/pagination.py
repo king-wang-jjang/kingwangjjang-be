@@ -1,6 +1,3 @@
-from datetime import datetime, timedelta
-import json
-
 import graphene
 
 from db.mongo_controller import MongoController
@@ -21,86 +18,8 @@ class BoardSummaryType(graphene.ObjectType):
         kwargs.pop('_id', None)  # '_id' 필드 제거
         super().__init__(**kwargs)
 
-# 페이지 번호를 받아, create_time이 (오늘 날짜 - 페이지 번호)에 해당하는 데이터 파싱
-def get_page_data_by_index(index: str):
-    index = int(index)
-    board_summaries = []
-    current_time = datetime.now()
-    start_date = current_time.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=index) 
-    end_date = current_time.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=index - 1) 
+# 페이지 번호를 받아, 30개씩 데이터를 반환하는 함수
+def get_pagination_real_time_best(index: int):
+    data = db_controller.get_real_time_best(index, 30)
 
-    filter = {
-        'create_time': {
-            '$gte': start_date,
-            '$lt': end_date
-        }
-    }
-
-    sort = [('create_time', -1)]  # Sort by create_time in descending order
-
-    realtime_joined_data = db_controller.get_collection('RealTime').aggregate([
-        {
-            '$match': filter
-        },
-        {
-            '$lookup': {
-                'from': 'GPT',
-                'localField': 'GPTAnswer',
-                'foreignField': '_id', 
-                'as': 'GPT'
-            }
-        },
-        {
-            '$sort': sort
-        },
-        {
-            '$limit': 30  # Limit the result to 30 documents
-        }
-    ])
-
-    daily_joined_data = db_controller.get_collection('Daily').aggregate([
-        {
-            '$match': filter
-        },
-        {
-            '$lookup': {
-                'from': 'GPT',
-                'localField': 'GPTAnswer',
-                'foreignField': '_id', 
-                'as': 'GPT'
-            }
-        },
-        {
-            '$sort': sort
-        },
-        {
-            '$limit': 30  # Limit the result to 30 documents
-        }
-    ])
-
-    for summary in realtime_joined_data:
-        answer = summary['GPT'][0]['answer'] if summary['GPT'] else None  
-        board_summary = {
-            'board_id': summary['board_id'],
-            'site': summary['site'],
-            'title': summary['title'],
-            'url': summary['url'],
-            'create_time': summary['create_time'],
-            'GPTAnswer': answer
-        }
-        board_summaries.append(board_summary)
-
-    for summary in daily_joined_data:
-        answer = summary['GPT'][0]['answer'] if summary['GPT'] else None  
-        board_summary = {
-            'board_id': summary['board_id'],
-            'rank': summary['rank'],
-            'site': summary['site'],
-            'title': summary['title'],
-            'url': summary['url'],
-            'create_time': summary['create_time'],
-            'GPTAnswer': answer
-        }
-        board_summaries.append(board_summary)
-
-    return [BoardSummaryType(**summary) for summary in board_summaries]
+    return [BoardSummaryType(**item) for item in data]

@@ -5,6 +5,7 @@ from datetime import datetime
 import logging
 import strawberry
 from strawberry.fastapi import GraphQLRouter
+from app.services.web_crwaling.pagination import get_pagination_real_time_best
 from services.web_crwaling.views import board_summary
 from utils.loghandler import setup_logger
 
@@ -25,14 +26,34 @@ class Daily:
     GPTAnswer: Optional[str] = None
 
 @strawberry.type
+class RealTime:
+    board_id: str
+    rank: str
+    site: str
+    title: str
+    url: str
+    create_time: datetime
+    GPTAnswer: Optional[str] = None
+
+@strawberry.type
 class Query:
     @strawberry.field
-    def all_daily(self, index: int = 0) -> List[Daily]:
+    def daily_pagination(self, index: int = 0) -> List[Daily]:
         try:
             # 여기에 실제 데이터 조회 로직 추가
             return []  # 예시 데이터 반환
         except Exception as e:
             logger.exception(f"Error getting daily data: {e}")
+            raise HTTPException(status_code=500, detail="Internal server error")
+        
+    @strawberry.field
+    def realtime_pagination(self, index: int = 0) -> List[RealTime]:
+        try:
+            print(get_pagination_real_time_best(index))
+            # 여기에 실제 데이터 조회 로직 추가
+            return []  # 예시 데이터 반환
+        except Exception as e:
+            logger.exception(f"Error getting realtime data: {e}")
             raise HTTPException(status_code=500, detail="Internal server error")
 
 @strawberry.type
