@@ -64,13 +64,13 @@ class Ruliweb(AbstractCommunityWebsite):
 
 
                 try:
-                    existing_instance = self.db_controller.select('Daily',
+                    existing_instance = self.db_controller.find('Daily',
                                                                   {'board_id': board_id, 'site': SITE_RULIWEB})
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
                     else:
-                        gpt_exists = self.db_controller.select('GPT', {'board_id': board_id, 'site': SITE_RULIWEB})
+                        gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_RULIWEB})
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
                         else:
@@ -108,7 +108,7 @@ class Ruliweb(AbstractCommunityWebsite):
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
         }
-        daily_instance = self.db_controller.select('Daily', {'board_id': board_id, 'site': 'ruliweb'})
+        daily_instance = self.db_controller.find('Daily', {'board_id': board_id, 'site': 'ruliweb'})
         content_list = []
         if daily_instance:
             response = requests.get(daily_instance[0]['url'], headers=headers)

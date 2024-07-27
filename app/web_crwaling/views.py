@@ -6,10 +6,10 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 
-from app.db.mongo_controller import MongoController
-from app.services.web_crwaling.community_website.ppomppu import Ppomppu
-from app.services.web_crwaling.community_website.theqoo import Theqoo
-from app.services.web_crwaling.community_website.ygosu import Ygosu
+from db.mongo_controller import MongoController
+from services.web_crwaling.community_website.ppomppu import Ppomppu
+from services.web_crwaling.community_website.theqoo import Theqoo
+from services.web_crwaling.community_website.ygosu import Ygosu
 from utils.llm import LLM
 from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU,SITE_THEQOO
 

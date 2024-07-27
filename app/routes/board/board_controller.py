@@ -7,7 +7,7 @@ import strawberry
 from strawberry.fastapi import GraphQLRouter
 from services.web_crwaling.views import board_summary
 from utils.loghandler import setup_logger
-
+import asyncio
 app = FastAPI()
 logger = setup_logger()
 router = APIRouter(
@@ -49,7 +49,7 @@ schema = strawberry.Schema(query=Query, mutation=Mutation)
 
 @app.post("/graphql")
 async def graphql_endpoint(request: Request):
-    
+
     data = await request.json()
     response = schema.execute_sync(data["query"])
     if response.errors:

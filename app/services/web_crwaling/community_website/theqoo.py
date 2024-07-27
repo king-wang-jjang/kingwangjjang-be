@@ -48,10 +48,10 @@ class Theqoo(AbstractCommunityWebsite):
         req = requests.get('https://theqoo.net/hot', headers=self.g_headers[0])
         html_content = req.text
         soup = BeautifulSoup(html_content, 'html.parser')
-        li_elements = soup.select('.hide_notice tr')
+        li_elements = soup.find('.hide_notice tr')
         already_exists_post = []
         for li in li_elements:
-            elements = li.select('td')
+            elements = li.find('td')
             if len(elements) != 1:
                 p_element = elements[2]
                 a_element = elements[2]
@@ -73,12 +73,12 @@ class Theqoo(AbstractCommunityWebsite):
                     target_datetime = datetime(now.year, now.month, now.day, hour, minute)
 
                     try:
-                        existing_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': SITE_THEQOO})
+                        existing_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': SITE_THEQOO})
                         if existing_instance:
                             already_exists_post.append(board_id)
                             continue
                         else:
-                            gpt_exists = self.db_controller.select('GPT', {'board_id': board_id, 'site': SITE_THEQOO})
+                            gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_THEQOO})
                             if gpt_exists:
                                 gpt_obj_id = gpt_exists[0]['_id']
                             else :

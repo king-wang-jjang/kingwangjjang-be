@@ -4,9 +4,9 @@ from pydantic import BaseModel, Field
 from bson import ObjectId
 from typing import Optional
 from constants import DEFAULT_GPT_ANSWER
-from db.context import Database
+from db.mongo_controller import MongoController
 
-db_controller = Database()
+db_controller = MongoController()
 class PyObjectId(ObjectId):
     @classmethod
     def __get_validators__(cls):

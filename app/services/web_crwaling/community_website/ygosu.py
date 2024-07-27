@@ -38,10 +38,10 @@ class Ygosu(AbstractCommunityWebsite):
         soup = BeautifulSoup(req.text, 'html.parser')
         already_exists_post = []
 
-        for tr in soup.select('tbody tr'):
-            tit_element = tr.select_one('.tit a')
-            create_time_element = tr.select_one('.day')
-            rank_element = tr.select_one('.num')
+        for tr in soup.find('tbody tr'):
+            tit_element = tr.find_one('.tit a')
+            create_time_element = tr.find_one('.day')
+            rank_element = tr.find_one('.num')
             if tit_element:
                 title = tit_element.get_text(strip=True)
                 rank = rank_element.get_text(strip=True)
@@ -57,12 +57,12 @@ class Ygosu(AbstractCommunityWebsite):
                     if board_id.isdigit():
                         break
                 try:
-                    existing_instance = self.db_controller.select('Daily', {'board_id': board_id, 'site': 'ygosu'}) # 이미 있는 Board는 넘기기
+                    existing_instance = self.db_controller.find('Daily', {'board_id': board_id, 'site': 'ygosu'}) # 이미 있는 Board는 넘기기
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
                     else:
-                        gpt_exists = self.db_controller.select('GPT', {'board_id': board_id, 'site': SITE_YGOSU})
+                        gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_YGOSU})
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
                         else :
@@ -97,9 +97,9 @@ class Ygosu(AbstractCommunityWebsite):
         soup = BeautifulSoup(req.text, 'html.parser')
         already_exists_post = []
 
-        for tr in soup.select('tbody tr'):
-            tit_element = tr.select_one('.tit a')
-            create_time_element = tr.select_one('.date')
+        for tr in soup.find('tbody tr'):
+            tit_element = tr.find_one('.tit a')
+            create_time_element = tr.find_one('.date')
             
             if tit_element:
                 
@@ -117,12 +117,12 @@ class Ygosu(AbstractCommunityWebsite):
                     if board_id.isdigit():
                         break
                 try:
-                    existing_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': SITE_YGOSU})
+                    existing_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': SITE_YGOSU})
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
                     else:
-                        gpt_exists = self.db_controller.select('GPT', {'board_id': board_id, 'site': SITE_YGOSU})
+                        gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_YGOSU})
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
                         else :
@@ -149,7 +149,7 @@ class Ygosu(AbstractCommunityWebsite):
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
         self.download_path = os.path.abspath(abs_path) 
-        daily_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': 'ygosu'})
+        daily_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': 'ygosu'})
         content_list = []
         if daily_instance:
             response = requests.get(daily_instance[0]['url'])

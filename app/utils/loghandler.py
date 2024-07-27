@@ -17,12 +17,13 @@ class DiscordWebhookHandler(logging.Handler):
     def emit(self, record):
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
-            embed = self.create_embed(log_entry, record.levelname)
+            embed = self.create_embed(record)
             self.send_to_discord(embed)
         else:
             self.print_colored_log(log_entry, record.levelname)
 
-    def create_embed(self, message, level):
+
+    def create_embed(self, record):
         color_map = {
             "DEBUG": 0x808080,   # Gray
             "INFO": 0x00FF00,    # Green
@@ -30,11 +31,69 @@ class DiscordWebhookHandler(logging.Handler):
             "ERROR": 0xFF0000,   # Red
             "CRITICAL": 0x8B0000 # Dark Red
         }
-        embed = {
-            "title": f"Log - {level}",
-            "description": message,
-            "color": color_map.get(level, 0x000000) # Default to black if level not found
-        }
+        try:
+            embed = {
+                "title": record.levelname,
+                "fields": [
+                    {
+                        "name": "MESSAGE",
+                        "value": record.message
+                    },
+                    {
+                        "name": "TYPE",
+                        "value": record.exc_info[0],
+                        "inline": True
+                    },
+                    {
+                        "name": "VALUE",
+                        "value" : record.exc_info[1],
+                        "inline": True
+                    },
+                    {
+                        "name": "TRACEBACK",
+                        "value": record.exc_info[2],
+                        "inline": True
+                    },
+                    {
+                        "name": "FILE",
+                        "value": record.filename,
+                        "inline": True
+                    },
+                    {
+                        "name": "ERROR LINE",
+                        "value": record.lineno,
+                        "inline": True
+                    }
+                ],
+                "footer": {
+                    "text": record.__dict
+                },
+                "color" : color_map.get(record.levelname)
+            }
+        except Exception as e:
+            embed = {
+                "title": record.levelname,
+                "fields": [
+                    {
+                        "name": "MESSAGE",
+                        "value": record.message
+                    },
+                    {
+                        "name": "FILE",
+                        "value": record.filename,
+                        "inline": True
+                    },
+                    {
+                        "name": "ERROR LINE",
+                        "value": record.lineno,
+                        "inline": True
+                    }
+                ],
+                "footer": {
+                    "text": str(record.__dict__)
+                },
+                "color": color_map.get(record.levelname)
+            }
         return embed
 
     def send_to_discord(self, embed):
@@ -63,11 +122,11 @@ class DiscordWebhookHandler(logging.Handler):
 
 def setup_logger():
     logger = logging.getLogger("discord_logger")
-    logger.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
+    logger.setLevel(logging.ERROR)  # ERROR 레벨까지 모든 로그를 처리
 
     # 디스코드 웹훅 핸들러 추가
     discord_handler = DiscordWebhookHandler()
-    discord_handler.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
+    discord_handler.setLevel(logging.ERROR)  # ERROR 레벨까지 모든 로그를 처리
 
     # 로그 메시지 형식 설정
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -77,3 +136,8 @@ def setup_logger():
     logger.addHandler(discord_handler)
 
     return logger
+def catch_exception(exc_type, exc_value, exc_traceback):
+
+    # 로깅 모듈을 이용해 로거를 미리 등록해놔야 합니다.
+    logger = logging.getLogger("discord_logger")
+    logger.error("Unexpected exception.",exc_info=(exc_type, exc_value, exc_traceback))

@@ -10,10 +10,12 @@ from routes.auth import auth_controller
 from routes.page import page_controller
 from routes.user import user_controller
 from routes.board import board_controller
-from utils.loghandler import setup_logger
+from utils.loghandler import setup_logger,catch_exception
 import uvicorn
 from middlewares import cors_middleware
 import logging
+
+sys.excepthook = catch_exception
 # from middlewares import static_middleware
 
 app = FastAPI(lifespan=lifespan)
