@@ -20,7 +20,7 @@ router = APIRouter(
 @strawberry.type
 class Daily:
     board_id: str
-    rank: str
+    rank: Optional[str] = None
     site: str
     title: str
     url: str
@@ -30,7 +30,7 @@ class Daily:
 @strawberry.type
 class RealTime:
     board_id: str
-    rank: str
+    rank: Optional[str] = None
     site: str
     title: str
     url: str
@@ -51,9 +51,8 @@ class Query:
     @strawberry.field
     def realtime_pagination(self, index: int = 0) -> List[RealTime]:
         try:
-            print(get_pagination_real_time_best(index))
-            # 여기에 실제 데이터 조회 로직 추가
-            return []  # 예시 데이터 반환
+            # print(get_pagination_real_time_best(index))
+            return get_pagination_real_time_best(index)
         except Exception as e:
             logger.exception(f"Error getting realtime data: {e}")
             raise HTTPException(status_code=500, detail="Internal server error")
