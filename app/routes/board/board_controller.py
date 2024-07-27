@@ -8,7 +8,9 @@ from strawberry.fastapi import GraphQLRouter
 from app.services.web_crwaling.pagination import get_pagination_real_time_best
 from services.web_crwaling.views import board_summary
 from utils.loghandler import setup_logger
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 app = FastAPI()
 logger = setup_logger()
 router = APIRouter(

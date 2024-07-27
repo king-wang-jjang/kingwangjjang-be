@@ -6,6 +6,9 @@ from db.mongo_controller import MongoController
 from services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
 from utils import FTPClient
 import logging
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 from config import Config
 from constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU
 import os
@@ -68,12 +71,12 @@ class Ppomppu(AbstractCommunityWebsite):
                     break
 
                 try:
-                    existing_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': SITE_PPOMPPU})
+                    existing_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': SITE_PPOMPPU})
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
                     else:
-                        gpt_exists = self.db_controller.select('GPT', {'board_id': board_id, 'site': SITE_PPOMPPU})
+                        gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_PPOMPPU})
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
                         else :
@@ -118,7 +121,7 @@ class Ppomppu(AbstractCommunityWebsite):
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
         }
-        daily_instance = self.db_controller.select('RealTime', {'board_id': board_id, 'site': 'ppomppu'})
+        daily_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': 'ppomppu'})
         content_list = []
         if daily_instance:
             response = requests.get(daily_instance[0]['url'], headers=headers)

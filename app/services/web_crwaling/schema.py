@@ -5,7 +5,9 @@
 
 # import graphene
 # from graphene import Mutation
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 # from .pagination import BoardSummaryType, get_page_data_by_index
 # from .views import board_summary, get_real_time_best, get_daily_best
 # from mongo import DBController

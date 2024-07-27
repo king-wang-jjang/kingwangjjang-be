@@ -1,5 +1,7 @@
 # from random import randint
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 # from app.models import user_db
 
 # from utils import formating

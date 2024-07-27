@@ -3,7 +3,9 @@ from hashlib import sha256
 from random import randint
 
 from constants import HASH_SALT
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 
 class HashLib:
     @staticmethod

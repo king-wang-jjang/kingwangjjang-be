@@ -8,6 +8,9 @@ from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 import os
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 from config import Config
 class LLM:
     def __init__(self):
