@@ -136,6 +136,7 @@ jobs:
         script: | # 인스턴스 접속후 실행할 스크립트
           sudo docker version
           cd kingwangjjang
-          sudo docker rm -f kingwangjjang-be || true
+          sudo docker stop $(sudo docker ps -aq)
+          sudo docker rm -f $(sudo docker ps -a -q) || true
           sudo docker rmi -f $(sudo docker images -q) || true
-          sudo docker-compose up -d || y
+          sudo docker-compose up -d
