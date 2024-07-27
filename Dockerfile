@@ -14,7 +14,7 @@ RUN pip install poetry
 COPY ./pyproject.toml ./poetry.lock* /code/
 
 # 필요 라이브러리 설치
-RUN poetry install --no-root
+RUN poetry install --no-root --no-dev
 
 #소스코드 복사
 COPY app .
