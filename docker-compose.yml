@@ -2,7 +2,7 @@ version: '3.3'
 
 services:
   kingwangjjang-be:
-    image: hwanju1596/kingwangjjang-be:lastest
+    image: hwanju1596/kingwangjjang-be:0.0.1
 
     ports:
       - "8000:8000"
