@@ -110,7 +110,7 @@ jobs:
         port: ${{ secrets.WAS_SSH_PORT }}
         key: ${{ secrets.SSH_KEY }}
         source: ".env"
-        target: "/home/ubuntu/kingwangjjang/"
+        target: "/home/ubuntu/"
         overwrite: true
 
     # WAS 인스턴스 접속 & 애플리케이션 실행 step
@@ -122,7 +122,7 @@ jobs:
         port: ${{ secrets.WAS_SSH_PORT }}
         key: ${{ secrets.SSH_KEY }}
         source: "docker-compose.yml"
-        target: "/home/ubuntu/kingwangjjang/"
+        target: "/home/ubuntu/"
         overwrite : true
 
     # WAS 인스턴스 접속 & 애플리케이션 실행 step
