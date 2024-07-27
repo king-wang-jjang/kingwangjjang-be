@@ -1,7 +1,11 @@
 import os
 from dotenv import load_dotenv,find_dotenv
 import logging
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 logger = logging.getLogger("")
+
 class Config:
     def __init__(self):
         if find_dotenv() == "":

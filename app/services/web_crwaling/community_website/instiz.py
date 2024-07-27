@@ -10,7 +10,9 @@ from config import Config
 from constants import DEFAULT_GPT_ANSWER, SITE_INSTIZ
 from celery_app import celery_app
 from utils.loghandler import setup_logger
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 import os
 logger = setup_logger()
 class Instiz(AbstractCommunityWebsite):

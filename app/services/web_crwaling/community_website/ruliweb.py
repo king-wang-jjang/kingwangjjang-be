@@ -4,7 +4,9 @@ import requests
 from datetime import datetime
 
 from pygments.lexers import q
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 from db.mongo_controller import MongoController
 from services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
 from utils import FTPClient

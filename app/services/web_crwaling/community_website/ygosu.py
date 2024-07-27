@@ -11,7 +11,9 @@ from constants import DEFAULT_GPT_ANSWER, SITE_YGOSU
 import logging
 from config import Config
 from utils.loghandler import setup_logger
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 logger = setup_logger()
 class Ygosu(AbstractCommunityWebsite):
     def __init__(self):

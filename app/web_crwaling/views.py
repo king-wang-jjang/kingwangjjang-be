@@ -12,7 +12,9 @@ from services.web_crwaling.community_website.theqoo import Theqoo
 from services.web_crwaling.community_website.ygosu import Ygosu
 from utils.llm import LLM
 from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU,SITE_THEQOO
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 logger = logging.getLogger("")
 
 app = FastAPI()

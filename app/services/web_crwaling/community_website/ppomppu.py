@@ -6,6 +6,9 @@ from db.mongo_controller import MongoController
 from services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
 from utils import FTPClient
 import logging
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 from config import Config
 from constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU
 import os

@@ -8,7 +8,9 @@ from services.web_crwaling.community_website.community_website import AbstractCo
 from constants import DEFAULT_GPT_ANSWER, SITE_THEQOO
 from utils import FTPClient
 from config import Config
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 
 # selenium
 from selenium import webdriver

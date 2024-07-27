@@ -2,7 +2,9 @@ from ftplib import FTP
 import os
 import logging
 from utils.loghandler import setup_logger
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 logger = setup_logger()
 
 class FTPClient(object):

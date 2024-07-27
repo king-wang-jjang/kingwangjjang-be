@@ -5,7 +5,9 @@
 # from models.db import User
 # from .context import session_maker
 
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 # def add(name: str, surname: str, role: User.Role, email: str, password: str)-> User:
     # with session_maker.begin() as session:
     #     user = User()

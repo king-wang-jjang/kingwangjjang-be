@@ -6,3 +6,6 @@ from utils.lifespan import *
 from utils.llm import *
 from utils.pymongo_object_id import *
 from utils.sha256_hashing import *
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception

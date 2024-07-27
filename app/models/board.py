@@ -5,7 +5,9 @@ from bson import ObjectId
 from typing import Optional
 from constants import DEFAULT_GPT_ANSWER
 from db.mongo_controller import MongoController
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 db_controller = MongoController()
 class PyObjectId(ObjectId):
     @classmethod

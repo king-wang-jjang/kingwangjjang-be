@@ -3,6 +3,9 @@ import os
 from urllib.parse import quote_plus
 from dotenv import load_dotenv
 import pymongo
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 logger = logging.getLogger("")
 from db.context import Database
 from config import Config

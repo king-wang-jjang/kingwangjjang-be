@@ -8,7 +8,9 @@ from utils import FTPClient
 from PIL import Image
 import logging
 from utils.loghandler import setup_logger
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 logger = setup_logger()
 
 class AbstractCommunityWebsite():

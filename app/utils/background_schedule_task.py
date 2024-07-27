@@ -3,7 +3,9 @@ from datetime import timezone
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 
 def daily_task_example():
     print('Daily task executed at', datetime.now(timezone.utc))

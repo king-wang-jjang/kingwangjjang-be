@@ -4,7 +4,9 @@ import json
 import graphene
 
 from db.mongo_controller import MongoController
-
+from utils.loghandler import catch_exception
+import sys
+sys.excepthook = catch_exception
 # DBController 인스턴스 생성
 db_controller = MongoController()
 
