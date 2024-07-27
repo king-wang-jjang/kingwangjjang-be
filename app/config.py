@@ -11,8 +11,8 @@ class Config:
         else:
             load_dotenv(find_dotenv())
 
-
-    def get_env(self, env: str):
+    @staticmethod
+    def get_env(env: str):
         if  os.getenv(env) == None:
             logger.error(f"ENV가 알수없는 애러로 불러오지 못함. {env}")
             return None
