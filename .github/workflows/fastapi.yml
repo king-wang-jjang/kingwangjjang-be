@@ -130,7 +130,7 @@ jobs:
         username: ${{ secrets.WAS_USERNAME }}
         port: ${{ secrets.WAS_SSH_PORT }}
         key: ${{ secrets.SSH_KEY }}
-        source: "kingwangjjang-be/docker-compose.yml"
+        source: "docker-compose.yml"
         target: "/home/ubuntu/kingwangjjang/"
         overwrite : true
 
