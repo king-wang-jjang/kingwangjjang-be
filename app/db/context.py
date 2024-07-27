@@ -4,10 +4,10 @@ from urllib.parse import quote_plus
 
 
 class Database:
-    db_host = Config().get("DB_HOST")
-    db_name = Config().get("DB_NAME")
-    db_user = Config().get("DB_USER")
-    db_password = Config().get("DB_PASSWORD")
+    db_host = Config().get_env("DB_HOST")
+    db_name = Config().get_env("DB_NAME")
+    db_user = Config().get_env("DB_USER")
+    db_password = Config().get_env("DB_PASSWORD")
     escaped_user = quote_plus(db_user)
     escaped_password = quote_plus(db_password)
 

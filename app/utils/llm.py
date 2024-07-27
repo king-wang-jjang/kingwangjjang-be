@@ -26,7 +26,7 @@ class LLM:
 
         llm = ChatOpenAI(
             model="gpt-4o",
-            openai_api_key=Config().get("CHATGPT_API_KEY")
+            openai_api_key=Config().get_env("CHATGPT_API_KEY")
         )  # assuming you have Ollama installed and have llama3 model pulled with `ollama pull llama3 `
         self.chain = chat_prompt | llm
     def call(self,content:str):

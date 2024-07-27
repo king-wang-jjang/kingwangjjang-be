@@ -49,6 +49,7 @@ schema = strawberry.Schema(query=Query, mutation=Mutation)
 
 @app.post("/graphql")
 async def graphql_endpoint(request: Request):
+    
     data = await request.json()
     response = schema.execute_sync(data["query"])
     if response.errors:

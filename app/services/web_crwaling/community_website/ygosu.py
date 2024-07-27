@@ -19,9 +19,9 @@ class Ygosu(AbstractCommunityWebsite):
         self.db_controller = MongoController()
         try:
             self.ftp_client = FTPClient(
-                                server_address=Config().get('FTP_HOST'),
-                                username=Config().get('FTP_USERNAME'),
-                                password=Config().get('FTP_PASSWORD'))
+                                server_address=Config().get_env('FTP_HOST'),
+                                username=Config().get_env('FTP_USERNAME'),
+                                password=Config().get_env('FTP_PASSWORD'))
             super().__init__(self.yyyymmdd, self.ftp_client)
 
         except Exception as e:
