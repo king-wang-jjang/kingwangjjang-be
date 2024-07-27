@@ -27,8 +27,9 @@ class Daily:
 @strawberry.type
 class Query:
     @strawberry.field
-    def all_daily(self) -> List[Daily]:
+    def all_daily(self, index: int = 0) -> List[Daily]:
         try:
+            # 여기에 실제 데이터 조회 로직 추가
             return []  # 예시 데이터 반환
         except Exception as e:
             logger.exception(f"Error getting daily data: {e}")
@@ -39,6 +40,7 @@ class Mutation:
     @strawberry.field
     def summary_board(self, board_id: str, site: str) -> Daily:
         try:
+
             # 여기에 실제 데이터 생성 로직 추가
             return Daily(board_id=board_id, rank="1", site=site, title="Example Title", url="http://example.com", create_time=datetime.now())
         except Exception as e:
@@ -49,7 +51,6 @@ schema = strawberry.Schema(query=Query, mutation=Mutation)
 
 @app.post("/graphql")
 async def graphql_endpoint(request: Request):
-    
     data = await request.json()
     response = schema.execute_sync(data["query"])
     if response.errors:

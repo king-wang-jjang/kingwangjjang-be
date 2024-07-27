@@ -31,10 +31,12 @@ def get_page_data_by_index(index: str):
 
     filter = {
         'create_time': {
-        '$gte': start_date,
-        '$lt': end_date
+            '$gte': start_date,
+            '$lt': end_date
         }
     }
+
+    sort = [('create_time', -1)]  # Sort by create_time in descending order
 
     realtime_joined_data = db_controller.get_collection('RealTime').aggregate([
         {
@@ -47,6 +49,12 @@ def get_page_data_by_index(index: str):
                 'foreignField': '_id', 
                 'as': 'GPT'
             }
+        },
+        {
+            '$sort': sort
+        },
+        {
+            '$limit': 30  # Limit the result to 30 documents
         }
     ])
 
@@ -61,8 +69,15 @@ def get_page_data_by_index(index: str):
                 'foreignField': '_id', 
                 'as': 'GPT'
             }
+        },
+        {
+            '$sort': sort
+        },
+        {
+            '$limit': 30  # Limit the result to 30 documents
         }
     ])
+
     for summary in realtime_joined_data:
         answer = summary['GPT'][0]['answer'] if summary['GPT'] else None  
         board_summary = {
