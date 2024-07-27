@@ -107,7 +107,7 @@ jobs:
         port: ${{ secrets.WAS_SSH_PORT }}
         key: ${{ secrets.SSH_KEY }}
         source: "docker-compose.yml"
-        target: "/home/kingwangjjang/"
+        target: "/home/ubuntu/kingwangjjang/"
         overwrite : true
 
     # Was 인스턴스에 github secrets 변수 값들을 .env 파일에 복사해서 was 인스턴스에 업로드
@@ -121,7 +121,7 @@ jobs:
         port: ${{ secrets.WAS_SSH_PORT }}
         key: ${{ secrets.SSH_KEY }}
         source: ".env"
-        target: "/home/kingwangjjang/"
+        target: "/home/ubuntu/kingwangjjang/"
         overwrite: true
 
     # WAS 인스턴스 접속 & 애플리케이션 실행 step
