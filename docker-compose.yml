@@ -2,17 +2,10 @@ version: '3.3'
 
 services:
   kingwangjjang-be:
-    image: jinsunglee/kingwangjjang-be:lastest
+    image: hwanju1596/kingwangjjang-be:lastest
+
     ports:
-      - "3000:3000"
-    environment:
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: ${DB_HOST}
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      CHATGPT_API_KEY: ${CHATGPT_API_KEY}
-      FTP_USERNAME: ${FTP_USERNAME}
-      FTP_PASSWORD: ${FTP_PASSWORD}
-      FTP_HOST: ${FTP_HOST}
-      WEBHOOK_URL: ${WEBHOOK_URL}
-      SERVER_RUN_MODE: "TRUE"
+      - "8000:8000"
+    env_file:
+      - .env
+

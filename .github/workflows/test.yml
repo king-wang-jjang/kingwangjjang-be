@@ -38,21 +38,21 @@ jobs:
    
     # Docker Image 빌드 step
     - name: Build docker image
-      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:test .
+      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:test .
       
 
     # Docker Hub 로그인 step
     - name: Login docker hub
       uses: docker/login-action@master
       with:
-        username: ${{ secrets.DOCKERHUB_USERNAME_JS }}
-        password: ${{ secrets.DOCKERHUB_PASSWD_JS }} 
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }} 
       # docker/login-action 사용(GitHub제공) 도커허브 로그인
       # github actions secrets 민감정보 사용
 
     # Docker Hub 퍼블리시 step
     - name: Publish to docker hub 
-      run: docker push ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:test
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:test
 
 
 
@@ -77,14 +77,14 @@ jobs:
         oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
         tags: tag:kingwangjjang
     # WAS 인스턴스 접속 & 애플리케이션 실행 step
-    - name: docker-compose upload
+    - name: test-docker-compose upload
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.TESTSV_HOST }}
         username: ${{ secrets.TESTSV_USERNAME }}
         port: ${{ secrets.TESTSV_SSH_PORT }}
         key: ${{ secrets.TESTSV_KEY }}
-        source: "docker-compose.yml"
+        source: "test-docker-compose.yml"
         target: "/home/kingwangjjang/"
         overwrite : true
     - name: Connect to WAS & Execute Application
@@ -99,27 +99,4 @@ jobs:
           sudo docker stop $(sudo docker ps -aq)
           sudo docker rm -f $(sudo docker ps -a -q) || true
           sudo docker rmi -f $(sudo docker images -q) || true
-          sudo docker-compose up -d
-#          sudo docker pull ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:test
-#          sudo docker run -d --name kingwangjjang-be \
-#          -e DB_PASSWORD="${{ secrets.DB_PASSWORD }}" \
-#          -e DB_HOST="${{ secrets.DB_HOST }}" \
-#          -e DB_NAME="${{ secrets.DB_NAME }}" \
-#          -e DB_USER="${{ secrets.DB_USER }}" \
-#          -e CHATGPT_API_KEY="${{ secrets.CHATGPT_API_KEY }}" \
-#          -e FTP_USERNAME="${{ secrets.FTP_USERNAME }}" \
-#          -e FTP_PASSWORD="${{ secrets.FTP_PASSWORD }}" \
-#          -e FTP_HOST="${{ secrets.FTP_HOST }}" \
-#          -e WEBHOOK_URL="${{ secrets.TEST_WEBHOOK_URL }}" \
-#          -e SERVER_RUN_MODE=TRUE \
-#          -p 3000:3000 ${{ secrets.DOCKERHUB_USERNAME_JS }}/kingwangjjang-be:test
-
-
-    # 도커 버전 출력
-    # 실행중인 kingwangjjang컨테이너 제거
-    # 도커허브에서 hwanju1596/kingwangjjang:version 이미지 pull
-    # 새로운 컨테이너 실행,백그라운드에서(-d옵션), 환경변수 지정(-e옵션, 명령어 실행전 Secrets에서 해당 값 땡겨옴)
-
-    #     docker exec kingwangjjang_migration python manage.py migrate
-    #     docker stop kingwangjjang_migration
-    #     docker rm kingwangjjang_migration
+          sudo test-docker-compose up -d

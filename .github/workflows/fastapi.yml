@@ -69,6 +69,35 @@ jobs:
         python-version: [3.9]
         
     steps:
+    - name: Create .env file
+      run: |
+        echo "BE_DEV_VERSION=${{ secrets.BE_DEV_VERSION }}" >> .env
+        echo "CHATGPT_API_KEY=${{ secrets.CHATGPT_API_KEY }}" >> .env
+        echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+        echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+        echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+        echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+        echo "DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }}" >> .env
+        echo "DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" >> .env
+        echo "DOPPLER_CONFIG=${{ secrets.DOPPLER_CONFIG }}" >> .env
+        echo "DOPPLER_ENVIRONMENT=${{ secrets.DOPPLER_ENVIRONMENT }}" >> .env
+        echo "DOPPLER_PROJECT=${{ secrets.DOPPLER_PROJECT }}" >> .env
+        echo "FTP_HOST=${{ secrets.FTP_HOST }}" >> .env
+        echo "FTP_PASSWORD=${{ secrets.FTP_PASSWORD }}" >> .env
+        echo "FTP_USER=${{ secrets.FTP_USER }}" >> .env
+        echo "FTP_USERNAME=${{ secrets.FTP_USERNAME }}" >> .env
+        echo "SERVER_RUN_MODE=${{ secrets.SERVER_RUN_MODE }}" >> .env
+        echo "TESTSV_HOST=${{ secrets.TESTSV_HOST }}" >> .env
+        echo "TESTSV_KEY=${{ secrets.TESTSV_KEY }}" >> .env
+        echo "TESTSV_SSH_PORT=${{ secrets.TESTSV_SSH_PORT }}" >> .env
+        echo "TESTSV_USERNAME=${{ secrets.TESTSV_USERNAME }}" >> .env
+        echo "TEST_WEBHOOK_URL=${{ secrets.TEST_WEBHOOK_URL }}" >> .env
+        echo "TS_OAUTH_CLIENT_ID=${{ secrets.TS_OAUTH_CLIENT_ID }}" >> .env
+        echo "TS_OAUTH_SECRET=${{ secrets.TS_OAUTH_SECRET }}" >> .env
+        echo "WAS_HOST=${{ secrets.WAS_HOST }}" >> .env
+        echo "WAS_PASSWORD=${{ secrets.WAS_PASSWORD }}" >> .env
+        echo "WAS_USERNAME=${{ secrets.WAS_USERNAME }}" >> .env
+
     # WAS 인스턴스 접속 & 애플리케이션 실행 step
     - name: docker-compose upload
       uses: appleboy/scp-action@v0.1.7
@@ -80,6 +109,20 @@ jobs:
         source: "docker-compose.yml"
         target: "/home/kingwangjjang/"
         overwrite : true
+
+    # Was 인스턴스에 github secrets 변수 값들을 .env 파일에 복사해서 was 인스턴스에 업로드
+    # .env 파일에 데이터를 넣어야하는데 그 데이터는 github secrets에 있음
+    # scp-action 사용해서 was 인스턴스에 업로드
+    - name: Upload secrets to WAS instance
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.WAS_HOST }}
+        username: ${{ secrets.WAS_USERNAME }}
+        port: ${{ secrets.WAS_SSH_PORT }}
+        key: ${{ secrets.SSH_KEY }}
+        source: ".env"
+        target: "/home/kingwangjjang/"
+        overwrite: true
 
     # WAS 인스턴스 접속 & 애플리케이션 실행 step
     - name: Connect to WAS & Execute Application
@@ -95,11 +138,3 @@ jobs:
           sudo docker rm -f $(sudo docker ps -a -q) || true
           sudo docker rmi -f $(sudo docker images -q) || true
           sudo docker-compose up -d
-    # 도커 버전 출력
-    # 실행중인 kingwangjjang컨테이너 제거
-    # 도커허브에서 hwanju1596/kingwangjjang:version 이미지 pull
-    # 새로운 컨테이너 실행,백그라운드에서(-d옵션), 환경변수 지정(-e옵션, 명령어 실행전 Secrets에서 해당 값 땡겨옴)
-
-    #     docker exec kingwangjjang_migration python manage.py migrate
-    #     docker stop kingwangjjang_migration
-    #     docker rm kingwangjjang_migration
