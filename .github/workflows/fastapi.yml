@@ -138,4 +138,4 @@ jobs:
           cd kingwangjjang
           sudo docker rm -f kingwangjjang-be || true
           sudo docker rmi -f $(sudo docker images -q) || true
-          sudo docker-compose up -d
+          sudo docker-compose up -d || y
