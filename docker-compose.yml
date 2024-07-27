@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   kingwangjjang-be:
-    image: $DOCKERHUB_USERNAME_JS/kingwangjjang-be:test
+    image: jinsunglee/kingwangjjang-be:test
     ports:
       - "3000:3000"
     environment:

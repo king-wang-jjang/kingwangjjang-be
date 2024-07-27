@@ -67,6 +67,8 @@ jobs:
         python-version: [3.9]
         
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
     #tailscale 로그인
     - name: Tailscale
       uses: tailscale/github-action@v2
@@ -82,7 +84,7 @@ jobs:
         username: ${{ secrets.TESTSV_USERNAME }}
         port: ${{ secrets.TESTSV_SSH_PORT }}
         key: ${{ secrets.TESTSV_KEY }}
-        source: "./docker-compose.yml"
+        source: "docker-compose.yml"
         target: "/home/kingwangjjang/"
         rm : true
     - name: Connect to WAS & Execute Application
