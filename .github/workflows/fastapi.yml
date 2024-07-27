@@ -105,7 +105,7 @@ jobs:
       run: ls -la ./
 
     - name: List files in project root directory
-      run: ls -la ../
+      run: ls -la ../kingwangjjang-be/
 
     # Was 인스턴스에 github secrets 변수 값들을 .env 파일에 복사해서 was 인스턴스에 업로드
     # .env 파일에 데이터를 넣어야하는데 그 데이터는 github secrets에 있음
@@ -129,7 +129,7 @@ jobs:
         username: ${{ secrets.WAS_USERNAME }}
         port: ${{ secrets.WAS_SSH_PORT }}
         key: ${{ secrets.SSH_KEY }}
-        source: "docker-compose.yml"
+        source: "kingwangjjang-be/docker-compose.yml"
         target: "/home/ubuntu/kingwangjjang/"
         overwrite : true
 
