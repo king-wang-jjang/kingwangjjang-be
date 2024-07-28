@@ -1,9 +1,9 @@
 import random
 from datetime import timedelta
 from enum import Enum
-from utils.loghandler import catch_exception
-import sys
-sys.excepthook = catch_exception
+# from utils.loghandler import catch_exception
+# import sys
+# sys.excepthook = catch_exception
 DEFAULT_GPT_ANSWER = 'GPT 생성 중입니다. 이미지가 많은 경우 오래 걸립니다.'
 SITE_DCINSIDE = 'dcinside'
 SITE_YGOSU = 'ygosu'

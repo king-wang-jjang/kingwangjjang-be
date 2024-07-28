@@ -1,15 +1,15 @@
-from typing import Annotated
-
-from fastapi import Depends
-from fastapi import Request
-from fastapi import Response
-from fastapi import HTTPException
-from utils.loghandler import catch_exception
-import sys
-sys.excepthook = catch_exception
-from constants import COOKIES_KEY_NAME
+# from typing import Annotated
+#
+# from fastapi import Depends
+# from fastapi import Request
+# from fastapi import Response
+# from fastapi import HTTPException
+# from utils.loghandler import catch_exception
+# import sys
+# sys.excepthook = catch_exception
+# from constants import COOKIES_KEY_NAME
 # from models import db
-from routes.user import user_service
+# from routes.user import user_service
 
 
 # def get_user(req: Request, res: Response) -> db.User:
