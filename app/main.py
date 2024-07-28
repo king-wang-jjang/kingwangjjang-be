@@ -18,13 +18,14 @@ sys.excepthook = catch_exception
 import uvicorn
 from middlewares import cors_middleware
 import logging
-
+from config import Config
 # from middlewares import static_middleware
 
 app = FastAPI(lifespan=lifespan)
 logger = setup_logger()
-logging.getLogger("uvicorn.access").handlers = [logger.handlers[0]]
-logging.getLogger("uvicorn.error").handlers = [logger.handlers[0]]
+if Config.get_env("SERVER_RUN_MODE") == "TRUE":
+    logging.getLogger("uvicorn.access").handlers = [logger.handlers[0]]
+    logging.getLogger("uvicorn.error").handlers = [logger.handlers[0]]
 cors_middleware.add(app)
 # static_middleware.add(app)
 

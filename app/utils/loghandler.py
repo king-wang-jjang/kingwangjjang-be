@@ -136,10 +136,17 @@ def setup_logger():
 
     # 핸들러를 로거에 추가
     logger.addHandler(slack_handler)
-
-    return logger
+    if Config.get_env("SERVER_RUN_MODE") == "TRUE":
+        return logger
+    else:
+        log = logging.getLogger("")
+        log.setLevel(logging.DEBUG)
+        return log
 
 def catch_exception(exc_type, exc_value, exc_traceback):
     # 로깅 모듈을 이용해 로거를 미리 등록해놔야 합니다.
-    logger = logging.getLogger("slack_logger")
+    if Config.get_env("SERVER_RUN_MODE") == "TRUE":
+        logger = logging.getLogger("slack_logger")
+    else:
+        logger = logging.getLogger("")
     logger.error("Unexpected exception.", exc_info=(exc_type, exc_value, exc_traceback))

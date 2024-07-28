@@ -25,3 +25,7 @@ def get_pagination_real_time_best(index: int):
     data = db_controller.get_real_time_best(index, 30)
 
     return [BoardSummaryType(**item) for item in data]
+def get_pagination_daily_best(index: int):
+    data = db_controller.get_daily_best(index, 30)
+    return [BoardSummaryType(**item) for item in data]
+
