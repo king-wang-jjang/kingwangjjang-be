@@ -102,28 +102,17 @@ jobs:
     # Was 인스턴스에 github secrets 변수 값들을 .env 파일에 복사해서 was 인스턴스에 업로드
     # .env 파일에 데이터를 넣어야하는데 그 데이터는 github secrets에 있음
     # scp-action 사용해서 was 인스턴스에 업로드
-    - name: Upload secrets to WAS instance
+    - name: Upload secrets,docker-compose to WAS instance
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.WAS_HOST }}
         username: ${{ secrets.WAS_USERNAME }}
         port: ${{ secrets.WAS_SSH_PORT }}
         key: ${{ secrets.SSH_KEY }}
-        source: ".env"
+        source: ".env,docker-compose.yml"
         target: "/home/ubuntu/kingwangjjang/"
         overwrite: true
 
-    # WAS 인스턴스 접속 & 애플리케이션 실행 step
-    - name: docker-compose upload
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.WAS_HOST }}
-        username: ${{ secrets.WAS_USERNAME }}
-        port: ${{ secrets.WAS_SSH_PORT }}
-        key: ${{ secrets.SSH_KEY }}
-        source: "docker-compose.yml"
-        target: "/home/ubuntu/kingwangjjang/"
-        overwrite : true
 
     # WAS 인스턴스 접속 & 애플리케이션 실행 step
     - name: Connect to WAS & Execute Application
