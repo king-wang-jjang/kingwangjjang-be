@@ -1,0 +1,129 @@
+# GitHub Actions workflow 이름
+name: Fastapi CI
+
+# Workflow 실행조건
+on:
+  push:
+    branches: [ "develop" ]
+    # push 발생할 시 -> main 브랜치에서 실행 
+  pull_request: 
+    branches: [ "main", "develop" ] 
+    # PR 발생할 시 -> main 및 develop 브랜치에서 실행
+
+
+# fastapi.yml (Django CI)workflow 에서 실행할 Job(작업) 정의
+jobs: 
+  # job 1(build) -> job 2(run)
+
+
+  build: # job 1
+
+    # job 실행 환경 (최신 ubuntu)
+    runs-on: ubuntu-latest 
+
+    strategy:
+      max-parallel: 4 # 동시 실행될 최대 Job 수
+      matrix: # 각 Job에 전달될 매트릭스 변수 설정
+        python-version: [3.9]
+
+    steps:
+    # Job 수행 단계별 작업
+
+    # actions/checkout 액션 사용(GitHub제공), 소스코드 체크아웃(@v3 == 액션 버전)
+    - uses: actions/checkout@v3 
+
+    # Python 버전 설정 step
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+   
+    # Docker Image 빌드 step
+    - name: Build docker image
+      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }} .
+      
+
+    # Docker Hub 로그인 step
+    - name: Login docker hub
+      uses: docker/login-action@master
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }} 
+      # docker/login-action 사용(GitHub제공) 도커허브 로그인
+      # github actions secrets 민감정보 사용
+
+    # Docker Hub 퍼블리시 step
+    - name: Publish to docker hub 
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
+
+
+
+  run: # job 2
+    # WAS 인스턴스에 접속, Docker 이미지 pull, run하는 Job
+    
+    needs: build # build job이 성공적으로 실행되야 실행
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.9]
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Create .env file
+      run: |
+        echo "BE_DEV_VERSION=${{ secrets.BE_DEV_VERSION }}" >> .env
+        echo "CHATGPT_API_KEY=${{ secrets.CHATGPT_API_KEY }}" >> .env
+        echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+        echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+        echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+        echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+        echo "DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }}" >> .env
+        echo "DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" >> .env
+        echo "DOPPLER_CONFIG=${{ secrets.DOPPLER_CONFIG }}" >> .env
+        echo "DOPPLER_ENVIRONMENT=${{ secrets.DOPPLER_ENVIRONMENT }}" >> .env
+        echo "DOPPLER_PROJECT=${{ secrets.DOPPLER_PROJECT }}" >> .env
+        echo "FTP_HOST=${{ secrets.FTP_HOST }}" >> .env
+        echo "FTP_PASSWORD=${{ secrets.FTP_PASSWORD }}" >> .env
+        echo "FTP_USER=${{ secrets.FTP_USER }}" >> .env
+        echo "FTP_USERNAME=${{ secrets.FTP_USERNAME }}" >> .env
+        echo "SERVER_RUN_MODE=${{ secrets.SERVER_RUN_MODE }}" >> .env
+        echo "TESTSV_HOST=${{ secrets.TESTSV_HOST }}" >> .env
+        echo "TESTSV_KEY=${{ secrets.TESTSV_KEY }}" >> .env
+        echo "TESTSV_SSH_PORT=${{ secrets.TESTSV_SSH_PORT }}" >> .env
+        echo "TESTSV_USERNAME=${{ secrets.TESTSV_USERNAME }}" >> .env
+        echo "WEBHOOK_URL=${{ secrets.PRODUCTION_WEBHOOK_URL }}" >> .env
+        echo "TS_OAUTH_CLIENT_ID=${{ secrets.TS_OAUTH_CLIENT_ID }}" >> .env
+        echo "TS_OAUTH_SECRET=${{ secrets.TS_OAUTH_SECRET }}" >> .env
+        echo "WAS_HOST=${{ secrets.WAS_HOST }}" >> .env
+        echo "WAS_PASSWORD=${{ secrets.WAS_PASSWORD }}" >> .env
+        echo "WAS_USERNAME=${{ secrets.WAS_USERNAME }}" >> .env
+
+    # Was 인스턴스에 github secrets 변수 값들을 .env 파일에 복사해서 was 인스턴스에 업로드
+    # .env 파일에 데이터를 넣어야하는데 그 데이터는 github secrets에 있음
+    # scp-action 사용해서 was 인스턴스에 업로드
+    - name: Upload secrets,docker-compose to WAS instance
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.WAS_HOST }}
+        username: ${{ secrets.WAS_USERNAME }}
+        port: ${{ secrets.WAS_SSH_PORT }}
+        key: ${{ secrets.SSH_KEY }}
+        source: ".env,docker-compose.yml"
+        target: "/home/ubuntu/kingwangjjang/"
+        overwrite: true
+
+
+    # WAS 인스턴스 접속 & 애플리케이션 실행 step
+    - name: Connect to WAS & Execute Application
+      uses: appleboy/ssh-action@master # GitHub제공 액션 사용, ssh로 인스턴스 접속
+      with:
+        host: ${{ secrets.WAS_HOST }}
+        username: ${{ secrets.WAS_USERNAME }}
+        key: ${{secrets.SSH_KEY}}
+        port: ${{ secrets.WAS_SSH_PORT }}
+        script: | # 인스턴스 접속후 실행할 스크립트
+          sudo docker version
+          cd kingwangjjang
+          sudo docker-compose down
+          sudo docker-compose up -d
