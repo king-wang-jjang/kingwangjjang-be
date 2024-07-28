@@ -57,13 +57,15 @@ poetry = "^1.8.3"
 strawberry-graphql = "^0.236.0"
 mongotic = "^0.2.0"
 selenium = "4.16.0"
+langchain = "^0.2.10"
+langchain-community = "^0.2.9"
+graphene = "^3.3"
 langchain-openai = "^0.1.17"
 beautifulsoup4 = "^4.12.3"
 pytesseract = "^0.3.10"
 pillow = "^10.4.0"
 opencv-python = "^4.10.0.84"
 celery = {extras = ["redis"], version = "^5.4.0"}
-langchain = "^0.2.11"
 
 
 [build-system]
