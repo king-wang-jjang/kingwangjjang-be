@@ -9,6 +9,7 @@ from services.web_crwaling.pagination import get_pagination_real_time_best,get_p
 from services.web_crwaling.views import board_summary,tag
 from utils.loghandler import setup_logger
 from utils.loghandler import catch_exception
+from typing import List, Optional
 import sys
 sys.excepthook = catch_exception
 app = FastAPI()
@@ -38,7 +39,7 @@ class Summary:
     board_id: str
     site: str
     GPTAnswer : str
-    Tag : list
+    Tag : List[str]
 @strawberry.type
 class Query:
     @strawberry.field
@@ -66,7 +67,7 @@ class Mutation:
         try:
 
             # 여기에 실제 데이터 생성 로직 추가
-            return Summary(board_id=board_id, site=site, GPTAnswer=board_summary(board_id, site),Tag=tag(board_id, site))
+            return Summary(board_id=board_id, site=site, GPTAnswer=board_summary(board_id, site),Tag=list(tag(board_id, site)))
         except Exception as e:
             logger.exception(f"Error creating summary board: {e}")
             raise HTTPException(status_code=500, detail="Internal server error")
