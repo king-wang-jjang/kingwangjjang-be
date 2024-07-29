@@ -38,7 +38,7 @@ class Summary:
     board_id: str
     site: str
     GPTAnswer : str
-    Tag : List
+    Tag : list
 @strawberry.type
 class Query:
     @strawberry.field
