@@ -66,6 +66,7 @@ pytesseract = "^0.3.10"
 pillow = "^10.4.0"
 opencv-python = "^4.10.0.84"
 celery = {extras = ["redis"], version = "^5.4.0"}
+langchain-ollama = "^0.1.0"
 
 
 [build-system]

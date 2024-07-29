@@ -5,6 +5,9 @@ from langchain.prompts.chat import (
 )
 from langchain.chains import LLMChain
 from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_ollama.llms import OllamaLLM
+from langchain_ollama.embeddings import OllamaEmbeddings
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 import os
@@ -12,6 +15,8 @@ from utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
 from config import Config
+import ollama
+os.environ["OLLAMA_HOST"] = Config.get_env("OLLAMA_HOST")
 class LLM:
     def __init__(self):
 
@@ -27,12 +32,14 @@ class LLM:
 
         chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
 
-        llm = ChatOpenAI(
-            model="gpt-4o",
-            openai_api_key=Config().get_env("CHATGPT_API_KEY")
+        llm = OllamaLLM(
+            model="gemma2",
+            base_url = Config.get_env("OLLAMA_HOST"),
+            # openai_api_key=Config().get_env("CHATGPT_API_KEY"),
         )  # assuming you have Ollama installed and have llama3 model pulled with `ollama pull llama3 `
         self.chain = chat_prompt | llm
     def call(self,content:str):
-        # return self.chain.invoke({"text":content}).content
-        return "일시적인 오류가 발생함."
+        return self.chain.invoke({"text":content}).content
+        # return "일시적인 오류가 발생함."
+print(LLM().call("ㅌ태스트"))
 
