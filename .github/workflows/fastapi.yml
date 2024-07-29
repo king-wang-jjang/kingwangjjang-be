@@ -78,27 +78,21 @@ jobs:
         echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
         echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
         echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-        echo "DJANGO_DEBUG=${{ secrets.DJANGO_DEBUG }}" >> .env
-        echo "DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}" >> .env
-        echo "DOPPLER_CONFIG=${{ secrets.DOPPLER_CONFIG }}" >> .env
-        echo "DOPPLER_ENVIRONMENT=${{ secrets.DOPPLER_ENVIRONMENT }}" >> .env
-        echo "DOPPLER_PROJECT=${{ secrets.DOPPLER_PROJECT }}" >> .env
         echo "FTP_HOST=${{ secrets.FTP_HOST }}" >> .env
         echo "FTP_PASSWORD=${{ secrets.FTP_PASSWORD }}" >> .env
         echo "FTP_USER=${{ secrets.FTP_USER }}" >> .env
         echo "FTP_USERNAME=${{ secrets.FTP_USERNAME }}" >> .env
         echo "SERVER_RUN_MODE=${{ secrets.SERVER_RUN_MODE }}" >> .env
-        echo "TESTSV_HOST=${{ secrets.TESTSV_HOST }}" >> .env
-        echo "TESTSV_KEY=${{ secrets.TESTSV_KEY }}" >> .env
-        echo "TESTSV_SSH_PORT=${{ secrets.TESTSV_SSH_PORT }}" >> .env
-        echo "TESTSV_USERNAME=${{ secrets.TESTSV_USERNAME }}" >> .env
         echo "WEBHOOK_URL=${{ secrets.PRODUCTION_WEBHOOK_URL }}" >> .env
-        echo "TS_OAUTH_CLIENT_ID=${{ secrets.TS_OAUTH_CLIENT_ID }}" >> .env
-        echo "TS_OAUTH_SECRET=${{ secrets.TS_OAUTH_SECRET }}" >> .env
         echo "WAS_HOST=${{ secrets.WAS_HOST }}" >> .env
         echo "WAS_PASSWORD=${{ secrets.WAS_PASSWORD }}" >> .env
         echo "WAS_USERNAME=${{ secrets.WAS_USERNAME }}" >> .env
-
+    - name: Tailscale
+      uses: tailscale/github-action@v2
+      with:
+        oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+        oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+        tags: tag:cicd
     # Was 인스턴스에 github secrets 변수 값들을 .env 파일에 복사해서 was 인스턴스에 업로드
     # .env 파일에 데이터를 넣어야하는데 그 데이터는 github secrets에 있음
     # scp-action 사용해서 was 인스턴스에 업로드

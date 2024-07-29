@@ -94,7 +94,7 @@ jobs:
       with:
         oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
         oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-        tags: tag:kingwangjjang
+        tags: tag:cicd
     # WAS 인스턴스 접속 & 애플리케이션 실행 step
     - name: test-docker-compose upload
       uses: appleboy/scp-action@v0.1.7
