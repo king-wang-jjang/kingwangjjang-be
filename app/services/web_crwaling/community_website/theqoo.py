@@ -5,7 +5,7 @@ import requests
 
 from db.mongo_controller import MongoController
 from services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
-from constants import DEFAULT_GPT_ANSWER, SITE_THEQOO
+from constants import DEFAULT_GPT_ANSWER, SITE_THEQOO,DEFAULT_TAG
 from utils import FTPClient
 from config import Config
 from utils.loghandler import catch_exception
@@ -90,14 +90,24 @@ class Theqoo(AbstractCommunityWebsite):
                                     'answer': DEFAULT_GPT_ANSWER
                                 })
                                 gpt_obj_id = gpt_obj.inserted_id
-
+                            tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_THEQOO})
+                            if tag_exists:
+                                tag_obj_id = gpt_exists[0]['_id']
+                            else:
+                                gpt_obj = self.db_controller.find('TAG', {
+                                    'board_id': board_id,
+                                    'site': SITE_THEQOO,
+                                    'Tag': DEFAULT_TAG
+                                })
+                                tag_obj_id = gpt_obj.inserted_id
                             self.db_controller.insert('RealTime', {
                                 'board_id': board_id,
                                 'site': SITE_THEQOO,
                                 'title': title,
                                 'url': url,
                                 'create_time': target_datetime,
-                                'GPTAnswer': gpt_obj_id
+                                'GPTAnswer': gpt_obj_id,
+                                'Tag': tag_obj_id
                             })
                     except Exception as e:
                         logger.error('error', e)

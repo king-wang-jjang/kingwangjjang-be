@@ -10,7 +10,7 @@ from utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
 from config import Config
-from constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU
+from constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU, DEFAULT_TAG
 import os
 from utils.loghandler import setup_logger
 
@@ -86,14 +86,24 @@ class Ppomppu(AbstractCommunityWebsite):
                                 'answer': DEFAULT_GPT_ANSWER
                             })
                             gpt_obj_id = gpt_obj.inserted_id
-                            
+                            tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_PPOMPPU})
+                            if tag_exists:
+                                tag_obj_id = gpt_exists[0]['_id']
+                            else:
+                                gpt_obj = self.db_controller.find('TAG', {
+                                    'board_id': board_id,
+                                    'site': SITE_PPOMPPU,
+                                    'Tag': DEFAULT_TAG
+                                })
+                                tag_obj_id = gpt_obj.inserted_id
                         self.db_controller.insert('RealTime', {
                             'board_id': board_id,
                             'site': SITE_PPOMPPU,
                             'title': title,
                             'url': contents_url,
                             'create_time': target_datetime,
-                            'GPTAnswer': gpt_obj_id
+                            'GPTAnswer': gpt_obj_id,
+                            'Tag' : tag_obj_id
                         })
                 except Exception as e:
                     logger.info(e)
