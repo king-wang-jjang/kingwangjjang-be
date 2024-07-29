@@ -7,7 +7,7 @@ from datetime import datetime
 from utils import FTPClient
 import logging
 from config import Config
-from constants import DEFAULT_GPT_ANSWER, SITE_INSTIZ
+from constants import DEFAULT_GPT_ANSWER, SITE_INSTIZ,DEFAULT_TAG
 from celery_app import celery_app
 from utils.loghandler import setup_logger
 from utils.loghandler import catch_exception
@@ -96,14 +96,24 @@ class Instiz(AbstractCommunityWebsite):
                                 'answer': DEFAULT_GPT_ANSWER
                             })
                             gpt_obj_id = gpt_obj.inserted_id
-                            
+                        tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_INSTIZ})
+                        if tag_exists:
+                            tag_obj_id = gpt_exists[0]['_id']
+                        else :
+                            gpt_obj = self.db_controller.find('TAG', {
+                                'board_id': board_id,
+                                'site': SITE_INSTIZ,
+                                'Tag': DEFAULT_TAG
+                            })
+                            tag_obj_id = gpt_obj.inserted_id
                         self.db_controller.insert('RealTime', {
                             'board_id': board_id,
                             'site': SITE_INSTIZ,
                             'title': title,
                             'url': contents_url,
                             'create_time': target_datetime,
-                            'GPTAnswer': gpt_obj_id
+                            'GPTAnswer': gpt_obj_id,
+                            'Tag': tag_obj_id
                         })
                 except Exception as e:
                     logger.info(e)

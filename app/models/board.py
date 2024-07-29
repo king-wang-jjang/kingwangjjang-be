@@ -3,7 +3,7 @@ from pymongo.collection import Collection
 from pydantic import BaseModel, Field
 from bson import ObjectId
 from typing import Optional
-from constants import DEFAULT_GPT_ANSWER
+from constants import DEFAULT_GPT_ANSWER,DEFAULT_TAG
 from db.mongo_controller import MongoController
 from utils.loghandler import catch_exception
 import sys
@@ -32,6 +32,7 @@ class RealTimeDTO(BaseModel):
     url: str
     create_time: datetime
     GPTAnswer: str = DEFAULT_GPT_ANSWER
+    Tag : list[str] = DEFAULT_TAG
 
     class Config:
         allow_population_by_field_name = True
@@ -73,6 +74,8 @@ class DailyDTO(BaseModel):
     url: str
     create_time: datetime
     GPTAnswer: str = DEFAULT_GPT_ANSWER
+    Tag : str = DEFAULT_TAG
+
 
     class Config:
         allow_population_by_field_name = True
