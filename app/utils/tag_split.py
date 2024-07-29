@@ -23,9 +23,9 @@ class Tagsplit:
 
         template = """
         너는 게시물 태그 분석 전문가야.
-        너는 []사이에 글들을 읽어서 태그로 나눠야돼. 예를들어 정치,IT,연애 이런식으로
+        너는 []사이에 글들을 읽어서 태그로 나눠야돼. 예를들어 정치,IT,연애,핫딜 이런식으로
         또한 너는 리턴해줄때 json포맷으로 리턴해줘야해.
-        ["연애","유머"] 이런식으로
+        ["연애","유머","핫딜"] 이런식으로
         분석할 내용:"""
         output_parser = JsonOutputParser(pydantic_object=Parser_model)
 
