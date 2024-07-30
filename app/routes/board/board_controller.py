@@ -5,8 +5,9 @@ from datetime import datetime
 import logging
 import strawberry
 from strawberry.fastapi import GraphQLRouter
+from services.web_crwaling.index import tag
 from services.web_crwaling.pagination import get_pagination_real_time_best,get_pagination_daily_best
-from services.web_crwaling.views import board_summary,tag
+from tests.test_main import board_summary
 from utils.loghandler import setup_logger
 from utils.loghandler import catch_exception
 from typing import List, Optional
