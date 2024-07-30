@@ -17,3 +17,13 @@ services:
       FTP_HOST: ${FTP_HOST}
       WEBHOOK_URL: ${WEBHOOK_URL}
       SERVER_RUN_MODE: "TRUE"
+    networks:
+      - kingwangjjang-network
+  redis:
+    image: redis:latest
+    networks:
+      - kingwangjjang-network
+
+networks:
+  kingwangjjang-network:
+    driver: bridge

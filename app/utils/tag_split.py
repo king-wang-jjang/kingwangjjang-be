@@ -11,10 +11,10 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 import os
 from config import Config
-from utils.loghandler import catch_exception
+from utils.loghandler import catch_exception,setup_logger
 import sys
 sys.excepthook = catch_exception
-
+logger = setup_logger()
 # 자료구조 정의 (pydantic)
 class Parser_model(BaseModel):
     tags: list = Field(description="글들에 태그들")
@@ -42,6 +42,7 @@ class Tagsplit:
         )  # assuming you have Ollama installed and have llama3 model pulled with `ollama pull llama3 `
         self.chain = chat_prompt | llm | output_parser
     def call(self,content:str):
+        logger.debug(f"LLM tag split : {content}")
         return self.chain.invoke({"text":content})
         # return "일시적인 오류가 발생함."
 

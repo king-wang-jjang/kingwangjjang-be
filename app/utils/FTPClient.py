@@ -34,9 +34,9 @@ class FTPClient(object):
             try:
                 self.ftp.connect(self.server_address)
                 self.ftp.login(self.username, self.password)
-                logger.info("Successfully FTP connected")
+                logger.debug("Successfully FTP connected")
             except Exception as e:
-                logger.info(f'FTP Error: {e}')
+                logger.error(f'FTP Error: {e}')
                 raise  # 예외 발생
             else:
                 self.initialized = True
@@ -46,32 +46,33 @@ class FTPClient(object):
             files = []
             self.ftp.cwd(directory)
             self.ftp.dir(files.append)
+            logger.debug(f'FTP list files: {files}')
             return files
         except Exception as e:
-            logger.info(f'FTP Error: {e}')
+            logger.error(f'FTP Error: {e}')
             return []
         
     def ftp_upload_file(self, local_file_path):
         file_name = os.path.basename(local_file_path)  
         full_remote_path = f'{self.ftp.pwd()}/{file_name}'
-        logger.info('full_remote_path', full_remote_path)
+        logger.debug('full_remote_path', full_remote_path)
         try:
             with open(local_file_path, 'rb') as file:
                 self.ftp.storbinary(f'STOR {full_remote_path}', file)
-            logger.info(f'File uploaded successfully to {full_remote_path}')
+            logger.debug(f'File uploaded successfully to {full_remote_path}')
 
         except Exception as e:
-            logger.info(f'FTP Error: {e}')
+            logger.error(f'FTP Error: {e}')
 
     def ftp_download_file(self, remote_file_path, local_file_path):
         try:
             with open(local_file_path, 'wb') as file:
                 self.ftp.retrbinary(f'RETR {remote_file_path[1:]}', file.write)
 
-            logger.info(f'File downloaded successfully to {local_file_path}')
+            logger.debug(f'File downloaded successfully to {local_file_path}')
 
         except Exception as e:
-            logger.info(f'FTP Error: {e}')
+            logger.error(f'FTP Error: {e}')
 
     def ftp_upload_folder(self, local_directory, remote_directory):
             """
@@ -85,14 +86,14 @@ class FTPClient(object):
                 self.ftp.mkd(remote_directory)
                 # self.create_directory(remote_directory)
                 self.ftp.cwd(self.root + '/' + remote_directory)
-                logger.info(f"FTP Server Directory created: {remote_directory}")
+                logger.debug(f"FTP Server Directory created: {remote_directory}")
             except Exception as e:
                 if "550" in str(e):
-                    logger.info('FTP Server directory already exists')
+                    logger.debug('FTP Server directory already exists')
                     self.ftp.cwd(self.root + '/'  + remote_directory)
                     pass
                 else:
-                    logger.info(f"error occurred: {e}")
+                    logger.error(f"error occurred: {e}")
             for filename in os.listdir(local_directory):
                 local_path = os.path.join(local_directory, filename).replace('\\', '/')  # windows에서 \\로 표시되는데 linux에서는 어떨지 봐야함
                 remote_path = os.path.join(remote_directory, filename).replace('\\', '/')
@@ -101,7 +102,7 @@ class FTPClient(object):
                 else:
                     self.ftp_upload_folder(local_path, remote_path)  
             self.ftp.cwd(self.root)
-            logger.info(f'FTP Server Folder uploaded successfully to {remote_directory}')
+            logger.debug(f'FTP Server Folder uploaded successfully to {remote_directory}')
 
     def create_directory(self, directory):
         """
@@ -143,8 +144,8 @@ class FTPClient(object):
             except Exception as e:
                 raise ValueError(f"Error creating directory: {e}")
             else:
-                logger.info(f"Directory created: {self.root}")
+                logger.debug(f"Directory created: {self.root}")
                 return True
         else:
-            logger.info(f"Directory created: {self.root}")
+            logger.debug(f"Directory created: {self.root}")
             return True

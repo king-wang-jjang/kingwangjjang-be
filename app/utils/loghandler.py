@@ -35,7 +35,7 @@ class SlackWebhookHandler(logging.Handler):
                 "attachments": [
                     {
                         "color": color_map.get(record.levelname),
-                        "title": f"{record.levelname}! @everyone",
+                        "title": f"{record.levelname}!",
                         "fields": [
                             {
                                 "title": "MESSAGE",
