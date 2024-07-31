@@ -2,6 +2,7 @@ from celery import Celery
 from config import Config
 from utils.loghandler import catch_exception
 import sys
+
 sys.excepthook = catch_exception
 celery_app = Celery(
                 __name__,

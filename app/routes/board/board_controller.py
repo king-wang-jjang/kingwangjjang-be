@@ -5,19 +5,17 @@ from datetime import datetime
 import logging
 import strawberry
 from strawberry.fastapi import GraphQLRouter
+from services.web_crwaling.index import tag
 from services.web_crwaling.pagination import get_pagination_real_time_best,get_pagination_daily_best
-from services.web_crwaling.views import board_summary
-from services.count import likes,views
+from tests.test_main import board_summary
 from utils.loghandler import setup_logger
 from utils.loghandler import catch_exception
+from typing import List, Optional
 import sys
 sys.excepthook = catch_exception
 app = FastAPI()
 logger = setup_logger()
-router = APIRouter(
-    prefix="",
-    tags=["Boards"]
-)
+router = APIRouter()
 @strawberry.type
 class Daily:
     board_id: str
@@ -42,16 +40,7 @@ class Summary:
     board_id: str
     site: str
     GPTAnswer : str
-@strawberry.type
-class Likes:
-    board_id: str
-    site: str
-    NOWLIKE : int
-@strawberry.type
-class Views:
-    board_id: str
-    site: str
-    NOWVIEW : int
+    Tag : List[str]
 @strawberry.type
 class Query:
     @strawberry.field
@@ -79,26 +68,11 @@ class Mutation:
         try:
 
             # 여기에 실제 데이터 생성 로직 추가
-            return Summary(board_id=board_id, site=site, GPTAnswer=board_summary(board_id, site))
+            return Summary(board_id=board_id, site=site, GPTAnswer=board_summary(board_id, site),Tag=list(tag(board_id, site)))
         except Exception as e:
             logger.exception(f"Error creating summary board: {e}")
             raise HTTPException(status_code=500, detail="Internal server error")
-    @strawberry.field
-    def likes_add(self, board_id: str, site: str) -> Likes:
-        try:
-            # 여기에 실제 데이터 생성 로직 추가
-            return Likes(board_id=board_id, site=site, NOWLIKE=likes.add_likes(board_id, site))
-        except Exception as e:
-            logger.exception(f"Error getting likes board: {e}")
-            raise HTTPException(status_code=500, detail="Internal server error")
-    @strawberry.field
-    def views_add(self, board_id: str, site: str) -> Views:
-        try:
-            # 여기에 실제 데이터 생성 로직 추가
-            return Views(board_id=board_id, site=site, NOWVIEW=views.add_views(board_id, site))
-        except Exception as e:
-            logger.exception(f"Error getting views board: {e}")
-            raise HTTPException(status_code=500, detail="Internal server error")
+
 schema = strawberry.Schema(query=Query, mutation=Mutation)
 
 @app.post("/graphql")
