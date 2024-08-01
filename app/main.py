@@ -21,6 +21,8 @@ import logging
 from config import Config
 # from middlewares import static_middleware
 from routes.oauth import google
+from routes.oauth import kakao
+
 app = FastAPI(lifespan=lifespan)
 app.add_middleware(SessionMiddleware, secret_key="some-random-string")
 
@@ -36,6 +38,7 @@ app.include_router(page_controller.router)
 app.include_router(user_controller.router)
 app.include_router(board_controller.router)
 app.include_router(google.router)
+app.include_router(kakao.router)
 
 if __name__ == '__main__':
     uvicorn.run("main:app", host='0.0.0.0', port=8000,reload=True)

@@ -22,3 +22,12 @@ oauth.register(
     }
 )
 
+oauth.register(
+	name='kakao',
+	client_id= Config().get_env('KAKAO_CLIENT_ID'),
+	server_metadata_url='https://kauth.kakao.com/.well-known/openid-configuration',
+    client_kwargs={
+        'scope': 'profile_nickname'
+    }
+)
+
