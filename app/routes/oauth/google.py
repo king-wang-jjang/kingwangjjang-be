@@ -3,6 +3,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from utils.oauth import oauth
 from fastapi import APIRouter, FastAPI, HTTPException, Request
+from services.user.user import get_user_by_email,add_user
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
@@ -15,16 +16,27 @@ from utils.loghandler import setup_logger
 from utils.loghandler import catch_exception
 from typing import List, Optional
 import sys
+sys.excepthook = catch_exception
+
 app = FastAPI()
 router = APIRouter()
 @router.get("/login/google")
 async def login_via_google(request: Request):
     redirect_uri = request.url_for('auth_via_google')
-    print(redirect_uri)
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 @router.get("/auth/google")
 async def auth_via_google(request: Request):
     token = await oauth.google.authorize_access_token(request)
     user = token['userinfo']
-    return dict(user)
+
+    if not get_user_by_email(user["email"]) == None:
+        data =  get_user_by_email(user["email"])
+        data["_id"] = str(data["_id"])
+        return data
+    else:
+        add_user(user["email"],user["name"])
+        data = get_user_by_email(user["email"])
+        data["_id"] = str(data["_id"])
+        return data
+    # return dict(user)

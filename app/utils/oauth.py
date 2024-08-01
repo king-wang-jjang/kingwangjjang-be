@@ -9,7 +9,6 @@ oauth = OAuth()
 
 import os
 # Google API용 OAuth 2.0 인증 정보
-REDIRECT_URI = 'http://localhost:8000'
 SCOPES = ['openid', 'https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email']
 
 
