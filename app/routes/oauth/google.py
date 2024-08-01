@@ -1,0 +1,30 @@
+from fastapi import FastAPI
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.requests import Request
+from utils.oauth import oauth
+from fastapi import APIRouter, FastAPI, HTTPException, Request
+from pydantic import BaseModel
+from typing import List, Optional
+from datetime import datetime
+import logging
+import strawberry
+from strawberry.fastapi import GraphQLRouter
+from services.web_crwaling.pagination import get_pagination_real_time_best,get_pagination_daily_best
+from services.web_crwaling.views import board_summary,tag
+from utils.loghandler import setup_logger
+from utils.loghandler import catch_exception
+from typing import List, Optional
+import sys
+app = FastAPI()
+router = APIRouter()
+@router.get("/login/google")
+async def login_via_google(request: Request):
+    redirect_uri = request.url_for('auth_via_google')
+    print(redirect_uri)
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@router.get("/auth/google")
+async def auth_via_google(request: Request):
+    token = await oauth.google.authorize_access_token(request)
+    user = token['userinfo']
+    return dict(user)
