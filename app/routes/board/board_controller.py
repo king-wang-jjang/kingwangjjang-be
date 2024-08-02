@@ -7,10 +7,13 @@ import strawberry
 from strawberry.fastapi import GraphQLRouter
 from services.web_crwaling.index import tag
 from services.web_crwaling.pagination import get_pagination_real_time_best,get_pagination_daily_best
-from tests.test_main import board_summary
+from services.board_comment.add import board_comment_add
+from services.board_comment.get import board_comment_get
+
+from services.web_crwaling.index import board_summary
 from utils.loghandler import setup_logger
 from utils.loghandler import catch_exception
-from typing import List, Optional
+from typing import List, Optional,Dict
 import sys
 sys.excepthook = catch_exception
 app = FastAPI()
@@ -42,6 +45,11 @@ class Summary:
     GPTAnswer : str
     Tag : List[str]
 @strawberry.type
+class Comment:
+    board_id: str
+    site: str
+    Comments : List[Dict]
+@strawberry.type
 class Query:
     @strawberry.field
     def daily_pagination(self, index: int = 0) -> List[Daily]:
@@ -61,6 +69,15 @@ class Query:
             logger.exception(f"Error getting realtime data: {e}")
             raise HTTPException(status_code=500, detail="Internal server error")
 
+    @strawberry.field
+    def comment(self, board_id: str, site: str) -> Comment:
+        try:
+
+            # 여기에 실제 데이터 생성 로직 추가
+            return Comment(board_id=board_id, site=site, Comments=board_comment_get(board_id, site))
+        except Exception as e:
+            logger.exception(f"Error creating summary board: {e}")
+            raise HTTPException(status_code=500, detail="Internal server error")
 @strawberry.type
 class Mutation:
     @strawberry.field
@@ -73,6 +90,15 @@ class Mutation:
             logger.exception(f"Error creating summary board: {e}")
             raise HTTPException(status_code=500, detail="Internal server error")
 
+    @strawberry.field
+    def comment(self, board_id: str, site: str, userid: str, comment: str) -> Comment:
+        try:
+
+            # 여기에 실제 데이터 생성 로직 추가
+            return Comment(board_id=board_id, site=site, Comments=board_comment_add(board_id, site,userid,comment))
+        except Exception as e:
+            logger.exception(f"Error creating summary board: {e}")
+            raise HTTPException(status_code=500, detail="Internal server error")
 schema = strawberry.Schema(query=Query, mutation=Mutation)
 
 @app.post("/graphql")
