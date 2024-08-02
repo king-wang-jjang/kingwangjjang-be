@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import requests
 
 from db.mongo_controller import MongoController
-from services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
+from services.web_crawling.community_website.community_website import AbstractCommunityWebsite
 from constants import DEFAULT_GPT_ANSWER, SITE_THEQOO,DEFAULT_TAG
 from utils import FTPClient
 from config import Config

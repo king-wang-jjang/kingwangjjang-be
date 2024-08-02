@@ -4,7 +4,7 @@ import os
 from bs4 import BeautifulSoup
 import requests
 from db.mongo_controller import MongoController
-from services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
+from services.web_crawling.community_website.community_website import AbstractCommunityWebsite
 from utils.FTPClient import FTPClient
 
 from constants import DEFAULT_GPT_ANSWER, SITE_YGOSU,DEFAULT_TAG

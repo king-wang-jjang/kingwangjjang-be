@@ -2,20 +2,22 @@ import re
 from bs4 import BeautifulSoup
 import requests
 from datetime import datetime
-from db.mongo_controller import MongoController
-from services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
-from utils import FTPClient
-import logging
+
+from pygments.lexers import q
 from utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
+from db.mongo_controller import MongoController
+from services.web_crawling.community_website.community_website import AbstractCommunityWebsite
+from utils import FTPClient
+import logging
 from config import Config
-from constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU, DEFAULT_TAG
+from constants import DEFAULT_GPT_ANSWER, SITE_RULIWEB,DEFAULT_TAG
 import os
 from utils.loghandler import setup_logger
 
 logger = setup_logger()
-class Ppomppu(AbstractCommunityWebsite):
+class Ruliweb(AbstractCommunityWebsite):
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
         self.db_controller = MongoController()
@@ -27,103 +29,90 @@ class Ppomppu(AbstractCommunityWebsite):
             super().__init__(self.yyyymmdd, self.ftp_client)
 
         except Exception as e:
-            logger.info("Dcinside error:", e)
+            logger.info("ruliweb error:", e)
             return None
     
     def get_daily_best(self):
-        pass        
-
-    def get_real_time_best(self):
         '''
-        ppomppu daily post 
+        ppomppu daily post
 
         :return: {rank: { {title: string, url: string}[]} }
         '''
         num = 1
-        _url = f"https://www.ppomppu.co.kr/hot.php?id=&page={num}&category=999&search_type=&keyword=&page_num=&del_flag=&bbs_list_category=0"
+        _url = f"https://bbs.ruliweb.com/best/humor_only/now?orderby=best_id&range=24h"
         response = requests.get(_url)
+        print(response.text)
         soup = BeautifulSoup(response.text, 'html.parser')
         now = datetime.now()
         already_exists_post = []
 
         result = []
 
-        for tr in soup.find_all('tr', class_='line'):
-            title_element = tr.find('a', class_='title')
-            create_time_element = tr.find('td', class_='board_date')
-            create_time = create_time_element.get_text(strip=True)
-            # create_time = create_time_element.text.strip()  
-            
+        for tr in soup.find_all('li', class_='item blocktarget'):
+            title_element = tr.find('a', class_='deco')
+
+            # create_time = create_time_element.text.strip()
 
             if title_element:
-                # title = title_element.text.strip()  
+                # title = title_element.text.strip()
                 title = title_element.get_text(strip=True)
-                domain = "https://ppomppu.co.kr"
+                domain = "https://bbs.ruliweb.co.kr"
                 url = title_element['href']
                 # url_parts = url.split("/")
-                board_id = self.extract_id_and_no_from_url(url)
-                hour, minute, second = map(int, create_time.split(":"))
-                target_datetime = datetime(now.year, now.month, now.day, hour, minute)
+                board_id = url.split('/')[-1]
+                target_datetime = datetime(now.year, now.month, now.day)
                 # contents_url = domain + url
-                contents_url = domain + url
+                contents_url = url
 
-                if ("/" in create_time): 
-                    break
 
                 try:
-                    existing_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': SITE_PPOMPPU})
+                    existing_instance = self.db_controller.find('Daily',
+                                                                  {'board_id': board_id, 'site': SITE_RULIWEB})
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
                     else:
-                        gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_PPOMPPU})
+                        gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_RULIWEB})
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
-                        else :
+                        else:
                             gpt_obj = self.db_controller.insert('GPT', {
                                 'board_id': board_id,
-                                'site': SITE_PPOMPPU,
+                                'site': SITE_RULIWEB,
                                 'answer': DEFAULT_GPT_ANSWER
                             })
                             gpt_obj_id = gpt_obj.inserted_id
-                            tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_PPOMPPU})
+                            tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_RULIWEB})
                             if tag_exists:
                                 tag_obj_id = gpt_exists[0]['_id']
                             else:
                                 gpt_obj = self.db_controller.find('TAG', {
                                     'board_id': board_id,
-                                    'site': SITE_PPOMPPU,
+                                    'site': SITE_RULIWEB,
                                     'Tag': DEFAULT_TAG
                                 })
                                 tag_obj_id = gpt_obj.inserted_id
-                        self.db_controller.insert('RealTime', {
+                        self.db_controller.insert('Daily', {
                             'board_id': board_id,
-                            'site': SITE_PPOMPPU,
+                            'site': SITE_RULIWEB,
                             'title': title,
                             'url': contents_url,
                             'create_time': target_datetime,
                             'GPTAnswer': gpt_obj_id,
-                            'Tag' : tag_obj_id
+                            'Tag': tag_obj_id
                         })
                 except Exception as e:
                     logger.info(e)
-                    
+
         logger.info({"already exists post": already_exists_post})
-        
+
         data = {"rank": {i + 1: item for i, item in enumerate(result)}}
 
         return data
+
+    def get_real_time_best(self):
+        pass
     
-    def extract_id_and_no_from_url(self, url):
-        pattern = r"id=([^&]*)&no=([^&]*)"
-        match = re.search(pattern, url)
-        if match:
-            id_value = match.group(1)
-            no_value = match.group(2)
-            return id_value + no_value
-        else:
-            return None
-        
 
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
@@ -131,7 +120,7 @@ class Ppomppu(AbstractCommunityWebsite):
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
         }
-        daily_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': 'ppomppu'})
+        daily_instance = self.db_controller.find('Daily', {'board_id': board_id, 'site': 'ruliweb'})
         content_list = []
         if daily_instance:
             response = requests.get(daily_instance[0]['url'], headers=headers)
@@ -150,14 +139,14 @@ class Ppomppu(AbstractCommunityWebsite):
                             content_list.append({'type': 'image', 'url': img_url, 
                                                 'content': img_txt})
                         except Exception as e:
-                            logger.info(f'Ppomppu Error {e}')
+                            logger.info(f'ruliweb Error {e}')
                     elif p.find('video'):
                         video_tag = p.find('video')
                         video_url = "https:" + video_tag.find('source')['src']
                         try:
                             self.save_img(video_url)
                         except Exception as e:
-                            logger.info(f'Ppomppu Error {e}')
+                            logger.info(f'ruliweb Error {e}')
                     else: 
                         content_list.append({'type': 'text', 'content': p.text.strip()})
             else:
