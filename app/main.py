@@ -2,6 +2,7 @@ import os
 import sys
 
 
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from fastapi import FastAPI
@@ -33,6 +34,18 @@ cors_middleware.add(app)
 app.include_router(page_controller.router)
 app.include_router(user_controller.router)
 app.include_router(board_controller.router)
+
+# ---------------------------------------------------
+# -- LLM 할 때 사용될 예정 --
+# from strawberry.fastapi import GraphQLRouter
+# from .schema import schema, task_status_schema
+
+# graphql_app = GraphQLRouter(schema)
+# task_status_app = GraphQLRouter(task_status_schema)
+
+# app.include_router(graphql_app, prefix="/graphql")
+# app.include_router(task_status_app, prefix="/status")
+# ---------------------------------------------------
 
 if __name__ == '__main__':
     uvicorn.run("main:app", host='0.0.0.0', port=8000,reload=True)

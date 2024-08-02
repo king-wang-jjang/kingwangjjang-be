@@ -8,7 +8,6 @@ from utils import FTPClient
 import logging
 from config import Config
 from constants import DEFAULT_GPT_ANSWER, SITE_INSTIZ,DEFAULT_TAG
-from celery_app import celery_app
 from utils.loghandler import setup_logger
 from utils.loghandler import catch_exception
 import sys
