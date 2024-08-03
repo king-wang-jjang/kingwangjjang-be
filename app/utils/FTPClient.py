@@ -1,8 +1,8 @@
 from ftplib import FTP
 import os
 import logging
-from utils.loghandler import setup_logger
-from utils.loghandler import catch_exception
+from app.utils.loghandler import setup_logger
+from app.utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
 logger = setup_logger()

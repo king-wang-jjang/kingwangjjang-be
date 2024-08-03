@@ -1,7 +1,7 @@
 from pymongo import MongoClient
-from config import Config
+from app.config import Config
 from urllib.parse import quote_plus
-from utils.loghandler import catch_exception
+from app.utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
 

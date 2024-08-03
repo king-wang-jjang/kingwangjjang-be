@@ -1,14 +1,14 @@
 from abc import abstractmethod
 import os
-from config import Config
+from app.config import Config
 # img to text
 import pytesseract
 
-from utils import FTPClient
+from app.utils import FTPClient
 from PIL import Image
 import logging
-from utils.loghandler import setup_logger
-from utils.loghandler import catch_exception
+from app.utils.loghandler import setup_logger
+from app.utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
 logger = setup_logger()

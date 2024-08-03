@@ -5,16 +5,18 @@ from datetime import datetime
 import logging
 import strawberry
 from strawberry.fastapi import GraphQLRouter
-from services.web_crwaling.index import tag
-from services.web_crwaling.pagination import get_pagination_real_time_best,get_pagination_daily_best
+from services.web_crawling.index import tag
+from services.web_crawling.pagination import get_pagination_real_time_best,get_pagination_daily_best
 from services.board_comment.add import board_comment_add
 from services.board_comment.get import board_comment_get
 
-from services.web_crwaling.index import board_summary
+from services.web_crawling.index import board_summary
 from utils.loghandler import setup_logger
 from utils.loghandler import catch_exception
 from typing import List, Optional,Dict
 import sys
+from strawberry import Schema
+from .board_controller import Query, Mutation
 sys.excepthook = catch_exception
 app = FastAPI()
 logger = setup_logger()
@@ -107,7 +109,7 @@ async def graphql_endpoint(request: Request):
     response = schema.execute_sync(data["query"])
     if response.errors:
         raise HTTPException(status_code=400, detail=str(response.errors[0]))
-    return response.data
+    return response.data 
 
 graphql_app = GraphQLRouter(schema)
 router.include_router(graphql_app, prefix="/graphql")

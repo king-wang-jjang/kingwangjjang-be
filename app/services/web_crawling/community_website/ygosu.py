@@ -3,15 +3,15 @@ from datetime import datetime
 import os
 from bs4 import BeautifulSoup
 import requests
-from db.mongo_controller import MongoController
-from services.web_crawling.community_website.community_website import AbstractCommunityWebsite
-from utils.FTPClient import FTPClient
+from app.db.mongo_controller import MongoController
+from app.services.web_crawling.community_website.community_website import AbstractCommunityWebsite
+from app.utils.FTPClient import FTPClient
 
-from constants import DEFAULT_GPT_ANSWER, SITE_YGOSU,DEFAULT_TAG
+from app.constants import DEFAULT_GPT_ANSWER, SITE_YGOSU,DEFAULT_TAG
 import logging
-from config import Config
-from utils.loghandler import setup_logger
-from utils.loghandler import catch_exception
+from app.config import Config
+from app.utils.loghandler import setup_logger
+from app.utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
 logger = setup_logger()
