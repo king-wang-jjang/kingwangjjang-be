@@ -2,8 +2,8 @@ from time import time
 from hashlib import sha256
 from random import randint
 
-from app.constants import HASH_SALT
-from app.utils.loghandler import catch_exception,setup_logger
+from constants import HASH_SALT
+from utils.loghandler import catch_exception,setup_logger
 import sys
 logger = setup_logger()
 sys.excepthook = catch_exception

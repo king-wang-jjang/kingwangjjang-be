@@ -3,7 +3,7 @@ from typing import Annotated, Any, Callable
 from bson import ObjectId
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import core_schema
-from app.utils.loghandler import catch_exception
+from utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
 class _ObjectIdPydanticAnnotation:
