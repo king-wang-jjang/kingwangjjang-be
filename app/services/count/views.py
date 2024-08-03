@@ -6,18 +6,7 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import settings, MongoClient
 
-from db.mongo_controller import MongoController
-from services.web_crawling.community_website.instiz import Instiz
-from services.web_crawling.community_website.ppomppu import Ppomppu
-from services.web_crawling.community_website.ruliweb import Ruliweb
-from services.web_crawling.community_website.theqoo import Theqoo
-from services.web_crawling.community_website.ygosu import Ygosu
-from services.web_crawling.community_website.dcinside import Dcinside
-
-from utils.llm import LLM
-from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU,SITE_THEQOO,SITE_INSTIZ,SITE_RULIWEB
-from utils.loghandler import setup_logger
-from utils.loghandler import catch_exception
+from app.db.mongo_controller import MongoController
 import sys
 db_controller = MongoController()
 

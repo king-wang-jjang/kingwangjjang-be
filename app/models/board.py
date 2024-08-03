@@ -3,9 +3,9 @@ from pymongo.collection import Collection
 from pydantic import BaseModel, Field
 from bson import ObjectId
 from typing import Optional
-from constants import DEFAULT_GPT_ANSWER,DEFAULT_TAG
-from db.mongo_controller import MongoController
-from utils.loghandler import catch_exception
+from app.constants import DEFAULT_GPT_ANSWER,DEFAULT_TAG
+from app.db.mongo_controller import MongoController
+from app.utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
 db_controller = MongoController()

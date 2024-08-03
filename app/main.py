@@ -8,18 +8,18 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 from fastapi import FastAPI
 from utils import lifespan
 # from routes.auth import auth_controller
-from routes.page import page_controller
-from routes.user import user_controller
+from app.routes.page import page_controller
+from app.routes.user import user_controller
 # from routes.board import board_controller
-from utils.loghandler import setup_logger
-from utils.loghandler import catch_exception
+from app.utils.loghandler import setup_logger
+from app.utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
 
 import uvicorn
 from middlewares import cors_middleware
 import logging
-from config import Config
+from app.config import Config
 # from middlewares import static_middleware
 
 app = FastAPI(lifespan=lifespan)
