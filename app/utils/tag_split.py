@@ -10,8 +10,8 @@ from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 import os
-from app.config import Config
-from app.utils.loghandler import catch_exception,setup_logger
+from config import Config
+from utils.loghandler import catch_exception,setup_logger
 import sys
 sys.excepthook = catch_exception
 logger = setup_logger()

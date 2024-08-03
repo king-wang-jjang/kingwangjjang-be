@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
-from app.utils.loghandler import catch_exception
+from utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
 # from db import context

@@ -1,6 +1,6 @@
 # app/tasks.py
 
-from app.services.web_crawling.index import get_real_time_best
+from services.web_crawling.index import get_real_time_best
 from .celery_app import celery_app
 
 @celery_app.task

@@ -3,7 +3,7 @@ from logging import handlers
 import os
 import sys
 import requests
-from app.config import Config
+from config import Config
 from colorama import Fore, Style, init
 
 init(autoreset=True)  # colorama 초기화
