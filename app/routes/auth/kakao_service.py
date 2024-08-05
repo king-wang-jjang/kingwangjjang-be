@@ -20,16 +20,16 @@ sys.excepthook = catch_exception
 
 app = FastAPI()
 router = APIRouter()
-@router.get("/login/google")
 async def login_via_google(request: Request):
     redirect_uri = request.url_for('auth_via_google')
-    return await oauth.google.authorize_redirect(request, redirect_uri)
+    return None
+    # return await oauth.kakao.authorize_redirect(request, "http://localhost:8000/auth/kakao")
 
-@router.get("/auth/google")
 async def auth_via_google(request: Request):
-    token = await oauth.google.authorize_access_token(request)
+    token = await oauth.kakao.authorize_access_token(request)
+    print(token)
     user = token['userinfo']
-
+    print(user)
     if not get_user_by_email(user["email"]) == None:
         data =  get_user_by_email(user["email"])
         data["_id"] = str(data["_id"])
