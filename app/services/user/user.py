@@ -34,4 +34,8 @@ def get_user_by_email(email : str):
     except:
         return None
     
-def get_user_by_id():
+def get_user_by_id(id : str):
+    try:
+        return db_controller.find('user', {'_id': id})[0]
+    except:
+        return None
