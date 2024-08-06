@@ -124,11 +124,11 @@ class SlackWebhookHandler(logging.Handler):
 
 def setup_logger():
     logger = logging.getLogger("slack_logger")
-    logger.setLevel(logging.ERROR)  # ERROR 레벨까지 모든 로그를 처리
+    logger.setLevel(logging.DEBUG)  # ERROR 레벨까지 모든 로그를 처리
 
     # 슬랙 웹훅 핸들러 추가
     slack_handler = SlackWebhookHandler()
-    slack_handler.setLevel(logging.ERROR)  # ERROR 레벨까지 모든 로그를 처리
+    slack_handler.setLevel(logging.DEBUG)  # ERROR 레벨까지 모든 로그를 처리
 
     # 로그 메시지 형식 설정
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
