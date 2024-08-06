@@ -39,3 +39,5 @@ def auth_via_google(request: Request):
         data["_id"] = str(data["_id"])
         return data
     # return dict(user)
+
+# validate user 댓글, 게시글, 좋아요 누를 때 마다 호출
