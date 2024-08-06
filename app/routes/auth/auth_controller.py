@@ -27,8 +27,21 @@ router = APIRouter()
 
 @router.get("/login/google")
 async def login_via_google(request: Request):
-    return await login_via_google(request)
+    redirect_uri = request.url_for('auth_via_google')
+    return await oauth.google.authorize_redirect(request, redirect_uri)
 
 @router.get("/callback/google")
 async def auth_via_google(request: Request):
-    return await auth_via_google(request)
+    token = await oauth.google.authorize_access_token(request)
+    user = token['userinfo']
+
+    if not get_user_by_email(user["email"]) == None:
+        data =  get_user_by_email(user["email"])
+        data["_id"] = str(data["_id"])
+        return data
+    else:
+        add_user(user["email"],user["name"])
+        data = get_user_by_email(user["email"])
+        data["_id"] = str(data["_id"])
+        return data
+    # return dict(user)

@@ -20,13 +20,13 @@ sys.excepthook = catch_exception
 
 app = FastAPI()
 
-def login_via_google(request: Request):
-    redirect_uri = request.url_for('auth_via_google')
+async def login_via_google(request: Request):
+    redirect_uri = request.url_for('auth_google')
     return oauth.google.authorize_redirect(request, redirect_uri)
 
 
-def auth_via_google(request: Request):
-    token = oauth.google.authorize_access_token(request)
+async def auth_via_google(request: Request):
+    token = await oauth.google.authorize_access_token(request)
     user = token['userinfo']
 
     if not get_user_by_email(user["email"]) == None:
