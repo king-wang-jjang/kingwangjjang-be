@@ -27,7 +27,8 @@ router = APIRouter()
 
 @router.get("/login/google")
 async def login_via_google(request: Request):
-    redirect_uri = request.url_for('auth_via_google')
+    # redirect_uri = request.url_for('auth_via_google')
+    redirect_uri = "https://top1.kr/callback/google"
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 @router.get("/callback/google")
