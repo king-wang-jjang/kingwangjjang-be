@@ -29,7 +29,7 @@ router = APIRouter()
 @router.get("/login/google")
 async def login_via_google(request: Request):
     if Config().get_env("SERVER_RUN_MODE") == "TRUE":
-        redirect_uri = "https://top1.kr/callback/google"
+        redirect_uri = "https://api.top1.kr/callback/google"
     else:
         redirect_uri = request.url_for('auth_via_google')
     return await oauth.google.authorize_redirect(request, redirect_uri)
