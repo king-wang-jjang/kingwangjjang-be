@@ -88,6 +88,8 @@ jobs:
         echo "WAS_HOST=${{ secrets.WAS_HOST }}" >> .env
         echo "WAS_PASSWORD=${{ secrets.WAS_PASSWORD }}" >> .env
         echo "WAS_USERNAME=${{ secrets.WAS_USERNAME }}" >> .env
+        echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
+        echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
     #tailscale 로그인
     - name: Tailscale
       uses: tailscale/github-action@v2
