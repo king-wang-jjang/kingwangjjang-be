@@ -5,7 +5,6 @@ from datetime import datetime
 from db.mongo_controller import MongoController
 from services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
 from utils import FTPClient
-import logging
 from utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
@@ -28,7 +27,7 @@ class Ppomppu(AbstractCommunityWebsite):
 
         except Exception as e:
             logger.info("Dcinside error:", e)
-            return None
+            return
     
     def get_daily_best(self):
         pass        
@@ -39,6 +38,7 @@ class Ppomppu(AbstractCommunityWebsite):
 
         :return: {rank: { {title: string, url: string}[]} }
         '''
+        global tag_obj_id
         num = 1
         _url = f"https://www.ppomppu.co.kr/hot.php?id=&page={num}&category=999&search_type=&keyword=&page_num=&del_flag=&bbs_list_category=0"
         response = requests.get(_url)
@@ -80,7 +80,7 @@ class Ppomppu(AbstractCommunityWebsite):
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
                         else :
-                            gpt_obj = self.db_controller.insert('GPT', {
+                            gpt_obj = self.db_controller.insert_one('GPT', {
                                 'board_id': board_id,
                                 'site': SITE_PPOMPPU,
                                 'answer': DEFAULT_GPT_ANSWER
@@ -96,7 +96,7 @@ class Ppomppu(AbstractCommunityWebsite):
                                     'Tag': DEFAULT_TAG
                                 })
                                 tag_obj_id = gpt_obj.inserted_id
-                        self.db_controller.insert('RealTime', {
+                        self.db_controller.insert_one('RealTime', {
                             'board_id': board_id,
                             'site': SITE_PPOMPPU,
                             'title': title,
@@ -176,3 +176,4 @@ class Ppomppu(AbstractCommunityWebsite):
             f.write(response.content)
 
         return self.download_path + "/" + img_name
+Ppomppu().get_real_time_best()

@@ -28,7 +28,7 @@ class LLM:
         chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
 
         llm = ChatOpenAI(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             openai_api_key=Config().get_env("CHATGPT_API_KEY")
         )  # assuming you have Ollama installed and have llama3 model pulled with `ollama pull llama3 `
         self.chain = chat_prompt | llm

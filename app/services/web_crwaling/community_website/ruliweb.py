@@ -76,7 +76,7 @@ class Ruliweb(AbstractCommunityWebsite):
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
                         else:
-                            gpt_obj = self.db_controller.insert('GPT', {
+                            gpt_obj = self.db_controller.insert_one('GPT', {
                                 'board_id': board_id,
                                 'site': SITE_RULIWEB,
                                 'answer': DEFAULT_GPT_ANSWER
@@ -92,7 +92,7 @@ class Ruliweb(AbstractCommunityWebsite):
                                     'Tag': DEFAULT_TAG
                                 })
                                 tag_obj_id = gpt_obj.inserted_id
-                        self.db_controller.insert('Daily', {
+                        self.db_controller.insert_one('Daily', {
                             'board_id': board_id,
                             'site': SITE_RULIWEB,
                             'title': title,

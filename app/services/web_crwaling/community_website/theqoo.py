@@ -27,7 +27,7 @@ class Theqoo(AbstractCommunityWebsite):
     g_headers = [
             {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
         ]
-    
+
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
         self.db_controller = MongoController()
@@ -37,19 +37,19 @@ class Theqoo(AbstractCommunityWebsite):
                                 username=Config().get_env('FTP_USERNAME'),
                                 password=Config().get_env('FTP_PASSWORD'))
             super().__init__(self.yyyymmdd, self.ftp_client)
-            
+
         except Exception as e:
             logger.info("Theqoo error:", e)
-            return None
-            raise  # Directory 생성을 못 하면 일단 멈춤 나중에 Exception 처리 필요
-    
+            # return None
+            # raise  # Directory 생성을 못 하면 일단 멈춤 나중에 Exception 처리 필요
+
     def get_daily_best(self):
         pass
 
     def get_real_time_best(self):
         req = requests.get('https://theqoo.net/hot', headers=self.g_headers[0])
         html_content = req.text
-        soup = BeautifulSoup(html_content, 'html.parser')
+        soup = BeautifulSoup(html_content, 'lxml')
         li_elements = soup.find('.hide_notice tr')
         already_exists_post = []
         for li in li_elements:
@@ -59,7 +59,8 @@ class Theqoo(AbstractCommunityWebsite):
                 a_element = elements[2]
                 time_element = elements[3]
                 if p_element and a_element and time_element and not "공지" in elements[0].get_text(strip=True):
-                    title = p_element.get_text(strip=True)
+                    title = p_element.get_text(strip=True).replace(p_element.find("a", _class="replyNum").get_text(strip=True), "")
+
                     # print(elements)
                     url = "https://theqoo.net" + a_element.find('a')['href']
 
@@ -84,7 +85,7 @@ class Theqoo(AbstractCommunityWebsite):
                             if gpt_exists:
                                 gpt_obj_id = gpt_exists[0]['_id']
                             else :
-                                gpt_obj = self.db_controller.insert('GPT', {
+                                gpt_obj = self.db_controller.insert_one('GPT', {
                                     'board_id': board_id,
                                     'site': SITE_THEQOO,
                                     'answer': DEFAULT_GPT_ANSWER
@@ -100,7 +101,7 @@ class Theqoo(AbstractCommunityWebsite):
                                     'Tag': DEFAULT_TAG
                                 })
                                 tag_obj_id = gpt_obj.inserted_id
-                            self.db_controller.insert('RealTime', {
+                            self.db_controller.insert_one('RealTime', {
                                 'board_id': board_id,
                                 'site': SITE_THEQOO,
                                 'title': title,
@@ -116,7 +117,7 @@ class Theqoo(AbstractCommunityWebsite):
 
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
-        self.download_path = os.path.abspath(abs_path) 
+        self.download_path = os.path.abspath(abs_path)
         # self.set_driver_options()
 
         _url = "https://theqoo.net/hot/" + board_id
@@ -135,7 +136,7 @@ class Theqoo(AbstractCommunityWebsite):
             if len(write_div.find_all(['p'])) > len(write_div.find_all(['div']))
             else write_div.find_all(['div'])
         )
-     
+
         for element in find_all:
             text_content = element.text.strip()
             content_list.append({'type': 'text', 'content': text_content})
@@ -144,7 +145,7 @@ class Theqoo(AbstractCommunityWebsite):
             #     image_url = img_tag['src']
             #     try:
             #         img_txt = super().img_to_text(self.save_img(image_url))
-            #         content_list.append({'type': 'image', 'url': image_url, 
+            #         content_list.append({'type': 'image', 'url': image_url,
             #                             'content': img_txt})
             #     except Exception as e:
             #         logger.info(f'Theqoo Error {e}')
@@ -157,7 +158,7 @@ class Theqoo(AbstractCommunityWebsite):
             #         content_list.append({'type': 'video', 'url': video_url})
         # 업로드
         # self.ftp_client.ftp_upload_folder(local_directory=self.download_path, remote_directory=board_id)
-        
+
         # 업로드 후 삭제
         # shutil.rmtree(self.download_path)
 
@@ -183,7 +184,7 @@ class Theqoo(AbstractCommunityWebsite):
             os.makedirs(self.download_path)
 
         self.driver = webdriver.Chrome(options=chrome_options)
-        
+
         try:
             self.driver.get("https://www.theqoo.com/")
             WebDriverWait(self.driver, 5).until(
@@ -193,7 +194,7 @@ class Theqoo(AbstractCommunityWebsite):
             logger.info('Theqoo Error', e)
         finally:
             return True
-    
+
     def save_img(self, url):
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
@@ -207,7 +208,7 @@ class Theqoo(AbstractCommunityWebsite):
             link.click();
         '''
         self.driver.execute_script(script)
-        
+
         WebDriverWait(self.driver, 5).until(
             lambda x: len(os.listdir(self.download_path)) > initial_file_count
         )

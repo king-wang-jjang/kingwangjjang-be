@@ -106,7 +106,7 @@ class Instiz(AbstractCommunityWebsite):
                                 'Tag': DEFAULT_TAG
                             })
                             tag_obj_id = gpt_obj.inserted_id
-                        self.db_controller.insert('RealTime', {
+                        self.db_controller.insert_one('RealTime', {
                             'board_id': board_id,
                             'site': SITE_INSTIZ,
                             'title': title,

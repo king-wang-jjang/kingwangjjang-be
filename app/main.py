@@ -23,7 +23,7 @@ from config import Config
 from routes.auth import auth_controller
 
 app = FastAPI(lifespan=lifespan)
-app.add_middleware(SessionMiddleware, secret_key="some-random-string")
+# app.add_middleware(SessionMiddleware, secret_key="some-random-string")
 
 logger = setup_logger()
 if Config.get_env("SERVER_RUN_MODE") == "TRUE":
