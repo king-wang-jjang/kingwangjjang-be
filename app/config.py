@@ -1,8 +1,8 @@
 import os
 from dotenv import load_dotenv,find_dotenv
 import logging
-from utils.loghandler import setup_logger
-logger = setup_logger()
+# from utils.loghandler import setup_logger
+logger = logging.getLogger("")
 
 class Config:
     def __init__(self):
