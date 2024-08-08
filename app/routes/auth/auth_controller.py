@@ -36,7 +36,7 @@ async def login_via_google(request: Request):
 
 @router.get("/callback/google")
 async def auth_via_google(request: Request):
-    logger.error(request.json())
+    logger.error(request.json().__dict__)
     token = await oauth.google.authorize_access_token(request)
     user = token['userinfo']
 
