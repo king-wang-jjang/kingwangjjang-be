@@ -20,7 +20,7 @@ from config import Config
 import sys
 from .google_service import auth_via_google,login_via_google
 # from .kakao_service import auth_via_google,login_via_google
-
+logger = setup_logger()
 sys.excepthook = catch_exception
 
 app = FastAPI()
@@ -36,6 +36,7 @@ async def login_via_google(request: Request):
 
 @router.get("/callback/google")
 async def auth_via_google(request: Request):
+    logger.error(request)
     token = await oauth.google.authorize_access_token(request)
     user = token['userinfo']
 
