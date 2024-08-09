@@ -28,7 +28,7 @@ class Mail_webhooks():
                         {
                             "title": "내용",
                             "value": basemodels.TextBody,
-                            "short": True
+                            "short": False
                         }
                     ],
                     "footer": f"DB ID : {db_id}"
