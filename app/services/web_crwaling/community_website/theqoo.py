@@ -32,7 +32,7 @@ class Theqoo(AbstractCommunityWebsite):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
         self.db_controller = MongoController()
         try:
-            self.ftp_client = FTPClient(
+            self.ftp_client = FTPClient.FTPClient(
                                 server_address=Config().get_env('FTP_HOST'),
                                 username=Config().get_env('FTP_USERNAME'),
                                 password=Config().get_env('FTP_PASSWORD'))
