@@ -50,7 +50,7 @@ class Theqoo(AbstractCommunityWebsite):
         req = requests.get('https://theqoo.net/hot', headers=self.g_headers[0])
         html_content = req.text
         soup = BeautifulSoup(html_content, 'lxml')
-        li_elements = soup.find('.hide_notice tr')
+        li_elements = soup.find('tbody').find_all('t1')
         already_exists_post = []
         for li in li_elements:
             elements = li.find('td')
@@ -218,3 +218,4 @@ class Theqoo(AbstractCommunityWebsite):
         newest_file = max(files, key=lambda x: os.path.getctime(os.path.join(self.download_path, x)))
 
         return self.download_path + "/" + newest_file
+Theqoo().get_real_time_best()
