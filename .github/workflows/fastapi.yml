@@ -89,6 +89,7 @@ jobs:
         echo "WAS_USERNAME=${{ secrets.WAS_USERNAME }}" >> .env
         echo "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}" >> .env
         echo "GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}" >> .env
+        echo "MAIL_WEBHOOK_URL=${{ secrets.MAIL_WEBHOOK_URL }}" >> .env
 
     - name: Tailscale
       uses: tailscale/github-action@v2
