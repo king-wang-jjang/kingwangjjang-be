@@ -22,7 +22,7 @@ from config import Config
 # from middlewares import static_middleware
 from routes.auth import auth_controller
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan.lifespan)
 # app.add_middleware(SessionMiddleware, secret_key="some-random-string")
 
 logger = setup_logger()

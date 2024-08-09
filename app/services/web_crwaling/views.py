@@ -8,7 +8,7 @@ from pymongo import settings
 
 from db.mongo_controller import MongoController
 from services.web_crwaling.community_website.instiz import Instiz
-from services.web_crwaling.community_website.ppomppu import Ppomppu
+# from services.web_crwaling.community_website.ppomppu import Ppomppu
 from services.web_crwaling.community_website.ruliweb import Ruliweb
 from services.web_crwaling.community_website.theqoo import Theqoo
 from services.web_crwaling.community_website.ygosu import Ygosu
@@ -54,8 +54,8 @@ def tag(board_id: str, site: str):
             crawler_instance = Dcinside()
         elif site == SITE_YGOSU:
             crawler_instance = Ygosu()
-        elif site == SITE_PPOMPPU:
-            crawler_instance = Ppomppu()
+        # elif site == SITE_PPOMPPU:
+        #     crawler_instance = Ppomppu()
         elif site == SITE_THEQOO:
             crawler_instance = Theqoo()
         elif site == SITE_INSTIZ:
@@ -114,8 +114,8 @@ def board_summary(board_id: str, site: str):
             crawler_instance = Dcinside()
         elif site == SITE_YGOSU:
             crawler_instance = Ygosu()
-        elif site == SITE_PPOMPPU:
-            crawler_instance = Ppomppu()
+        # elif site == SITE_PPOMPPU:
+            # crawler_instance = Ppomppu()
         elif site == SITE_THEQOO:
             crawler_instance = Theqoo()
         elif site == SITE_INSTIZ:
@@ -166,7 +166,7 @@ async def board_summary_rest(request: Request):
 
 async def get_real_time_best():
     ygosuCrawller = Ygosu()
-    ppomppuCrawller = Ppomppu()
+    # ppomppuCrawller = Ppomppu()
     theqooCrawller = Theqoo()
     ygosuCrawller.get_real_time_best()
     theqooCrawller.get_real_time_best()
@@ -175,7 +175,7 @@ async def get_real_time_best():
 
 async def get_daily_best():
     ygosuCrawller = Ygosu()
-    ppomppuCrawller = Ppomppu()
+    # ppomppuCrawller = Ppomppu()
     ygosuCrawller.get_daily_best()
     return JSONResponse(content={'response': "데일리 베스트 가져오기 완료"})
 
