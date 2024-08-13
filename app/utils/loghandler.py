@@ -153,7 +153,7 @@ def setup_logger():
     slack_handler = SlackWebhookHandler()
     slack_handler.setLevel(logging.ERROR)  # ERROR 레벨까지 모든 로그를 처리
     # DB 웹훅 핸들러 추가
-    db_handler = SlackWebhookHandler()
+    db_handler = DBLOGHandler()
     db_handler.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
     # 로그 메시지 형식 설정
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
