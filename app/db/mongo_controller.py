@@ -1,12 +1,12 @@
 import logging
 import pymongo
-from app.utils.loghandler import catch_exception,setup_logger
-import sys
-sys.excepthook = catch_exception
+# from app.utils.loghandler import catch_exception,setup_logger
+# import sys
+# sys.excepthook = catch_exception
 from app.db.context import Database
 from pymongo.errors import ConnectionFailure
 
-logger = setup_logger()
+logger = logging.getLogger()
 
 class MongoController(object):
     def __init__(self):

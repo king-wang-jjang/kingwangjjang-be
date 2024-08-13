@@ -1,6 +1,10 @@
 from celery import Celery
 from celery.schedules import crontab
-
+from celery.signals import setup_logging
+from celery.app.log import TaskFormatter
+from celery.signals import after_setup_logger
+from app.utils.loghandler import setup_logger
+import logging
 celery_app = Celery(
     "worker",
     broker="redis://localhost:6379/0",
@@ -20,6 +24,13 @@ celery_app.conf.update(
         },
     },
 )
+celery_app.conf.update(
+    worker_hijack_root_logger=False,  # Celery가 기본 로거를 사용하지 않도록 설정
+)
+@after_setup_logger.connect
+def setup_loggers(logger, *args, **kwargs):
+    logger.addHandler(setup_logger())
+
 
 if __name__ == "__main__":
     celery_app.start()

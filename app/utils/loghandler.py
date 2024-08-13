@@ -5,7 +5,7 @@ import sys
 import requests
 from app.config import Config
 from colorama import Fore, Style, init
-
+from app.db.mongo_controller import MongoController
 init(autoreset=True)  # colorama 초기화
 
 class SlackWebhookHandler(logging.Handler):
@@ -121,21 +121,47 @@ class SlackWebhookHandler(logging.Handler):
         }
         color = color_map.get(level, Fore.WHITE)  # Default to white if level not found
         print(f"{color}{message}")
+class DBLOGHandler(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        if Config().get_env("SERVER_RUN_MODE") == "TRUE":
+            self.db_controller = MongoController()
 
+    def emit(self, record):
+        log_entry = self.format(record)
+        if Config().get_env("SERVER_RUN_MODE") == "TRUE":
+            self.db_controller.insert_one(dict(record.__dict__))
+        else:
+            self.print_colored_log(log_entry, record.levelname)
+
+
+    def print_colored_log(self, message, level):
+        color_map = {
+            "DEBUG": Fore.LIGHTBLACK_EX,
+            "INFO": Fore.GREEN,
+            "WARNING": Fore.YELLOW,
+            "ERROR": Fore.RED,
+            "CRITICAL": Fore.RED + Style.BRIGHT
+        }
+        color = color_map.get(level, Fore.WHITE)  # Default to white if level not found
+        print(f"{color}{message}")
 def setup_logger():
     logger = logging.getLogger("slack_logger")
-    logger.setLevel(logging.ERROR)  # ERROR 레벨까지 모든 로그를 처리
+    logger.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
 
     # 슬랙 웹훅 핸들러 추가
     slack_handler = SlackWebhookHandler()
     slack_handler.setLevel(logging.ERROR)  # ERROR 레벨까지 모든 로그를 처리
-
+    # DB 웹훅 핸들러 추가
+    db_handler = SlackWebhookHandler()
+    db_handler.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
     # 로그 메시지 형식 설정
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     slack_handler.setFormatter(formatter)
 
     # 핸들러를 로거에 추가
     logger.addHandler(slack_handler)
+    logger.addHandler(db_handler)
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
         return logger
     else:
