@@ -22,7 +22,7 @@ import logging
 from app.config import Config
 # from middlewares import static_middleware
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan.lifespan)
 logger = setup_logger()
 if Config.get_env("SERVER_RUN_MODE") == "TRUE":
     logging.getLogger("uvicorn.access").handlers = [logger.handlers[0]]
