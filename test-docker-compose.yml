@@ -2,19 +2,23 @@ version: '3.3'
 
 services:
   kingwangjjang-be:
-    image: hwanju1596/kingwangjjang-be:0.0.1
-
+    image: hwanju1596/kingwangjjang-be:test
     ports:
       - "8000:8000"
     env_file:
       - .env
     networks:
-      - kingwangjjang-network
+      kingwangjjang-network:
+        ipv4_address: 172.26.0.10
   redis:
     image: redis:latest
     networks:
-      - kingwangjjang-network
+      kingwangjjang-network:
+        ipv4_address: 172.26.0.13
 
 networks:
   kingwangjjang-network:
-    driver: bridge
+    ipam:
+      driver: bridge
+      config:
+        - subnet: 172.26.0.0/16

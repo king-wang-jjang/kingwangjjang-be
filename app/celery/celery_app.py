@@ -6,11 +6,15 @@ from celery.signals import after_setup_logger
 from app.utils.loghandler import setup_logger
 import logging
 import celery.signals
-
+from app.config import Config
+if Config.get_env("SERVER_RUN_MODE") == "TRUE":
+    broker = "redis://172.26.0.13:6379/0"
+else:
+    broker = "redis://localhost:6379/0"
 celery_app = Celery(
     "worker",
-    broker="redis://localhost:6379/0",
-    backend="redis://localhost:6379/0",
+    broker=broker,
+    backend=broker,
     include=["app.celery.tasks"],
 )
 
