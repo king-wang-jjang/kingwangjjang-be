@@ -121,4 +121,5 @@ jobs:
           sudo docker version
           cd kingwangjjang
           sudo docker-compose down
+          sudo docker image rm hwanju1596/kingwangjjang-be:0.0.1 -f
           sudo docker-compose up -d
