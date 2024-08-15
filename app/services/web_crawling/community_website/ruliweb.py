@@ -22,7 +22,7 @@ class Ruliweb(AbstractCommunityWebsite):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
         self.db_controller = MongoController()
         try:
-            self.ftp_client = FTPClient(
+            self.ftp_client = FTPClient.FTPClient(
                                 server_address=Config().get_env('FTP_HOST'),
                                 username=Config().get_env('FTP_USERNAME'),
                                 password=Config().get_env('FTP_PASSWORD'))
@@ -38,10 +38,10 @@ class Ruliweb(AbstractCommunityWebsite):
 
         :return: {rank: { {title: string, url: string}[]} }
         '''
+        global tag_obj_id
         num = 1
         _url = f"https://bbs.ruliweb.com/best/humor_only/now?orderby=best_id&range=24h"
         response = requests.get(_url)
-        print(response.text)
         soup = BeautifulSoup(response.text, 'html.parser')
         now = datetime.now()
         already_exists_post = []
@@ -76,23 +76,23 @@ class Ruliweb(AbstractCommunityWebsite):
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
                         else:
-                            gpt_obj = self.db_controller.insert('GPT', {
+                            gpt_obj = self.db_controller.insert_one('GPT', {
                                 'board_id': board_id,
                                 'site': SITE_RULIWEB,
                                 'answer': DEFAULT_GPT_ANSWER
                             })
                             gpt_obj_id = gpt_obj.inserted_id
-                            tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_RULIWEB})
-                            if tag_exists:
-                                tag_obj_id = gpt_exists[0]['_id']
-                            else:
-                                gpt_obj = self.db_controller.find('TAG', {
-                                    'board_id': board_id,
-                                    'site': SITE_RULIWEB,
-                                    'Tag': DEFAULT_TAG
-                                })
-                                tag_obj_id = gpt_obj.inserted_id
-                        self.db_controller.insert('Daily', {
+                        tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_RULIWEB})
+                        if tag_exists:
+                            tag_obj_id = tag_exists[0]['_id']
+                        else:
+                            tag_obj = self.db_controller.insert_one('TAG', {
+                                'board_id': board_id,
+                                'site': SITE_RULIWEB,
+                                'Tag': DEFAULT_TAG
+                            })
+                            tag_obj_id = tag_obj.inserted_id
+                        self.db_controller.insert_one('Daily', {
                             'board_id': board_id,
                             'site': SITE_RULIWEB,
                             'title': title,
@@ -165,3 +165,4 @@ class Ruliweb(AbstractCommunityWebsite):
             f.write(response.content)
 
         return self.download_path + "/" + img_name
+Ruliweb().get_daily_best()

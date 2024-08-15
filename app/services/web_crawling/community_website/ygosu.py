@@ -68,23 +68,23 @@ class Ygosu(AbstractCommunityWebsite):
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
                         else :
-                            gpt_obj = self.db_controller.insert('GPT', {
+                            gpt_obj = self.db_controller.insert_one('GPT', {
                                 'board_id': board_id,
                                 'site': SITE_YGOSU,
                                 'answer': DEFAULT_GPT_ANSWER
                             })
                             gpt_obj_id = gpt_obj.inserted_id
-                        tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_YGOSU})
-                        if tag_exists:
-                            tag_obj_id = gpt_exists[0]['_id']
-                        else:
-                            gpt_obj = self.db_controller.find('TAG', {
-                                'board_id': board_id,
-                                'site': SITE_YGOSU,
-                                'Tag': DEFAULT_TAG
-                            })
-                            tag_obj_id = gpt_obj.inserted_id
-                        self.db_controller.insert('Daily', {
+                    tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_YGOSU})
+                    if tag_exists:
+                        tag_obj_id = tag_exists[0]['_id']
+                    else:
+                        tag_obj = self.db_controller.insert_one('TAG', {
+                            'board_id': board_id,
+                            'site': SITE_YGOSU,
+                            'Tag': DEFAULT_TAG
+                        })
+                        tag_obj_id = tag_obj.inserted_id
+                        self.db_controller.insert_one('Daily', {
                             'board_id': board_id,
                             'site': SITE_YGOSU,
                             'rank': rank,
@@ -138,20 +138,31 @@ class Ygosu(AbstractCommunityWebsite):
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
                         else :
-                            gpt_obj = self.db_controller.insert('GPT', {
+                            gpt_obj = self.db_controller.insert_one('GPT', {
                                 'board_id': board_id,
                                 'site': SITE_YGOSU,
                                 'answer': DEFAULT_GPT_ANSWER
                             })
                             gpt_obj_id = gpt_obj.inserted_id
-                            
-                        self.db_controller.insert('RealTime', {
+                        tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_YGOSU})
+                        if tag_exists:
+                            tag_obj_id = gpt_exists[0]['_id']
+                        else:
+                            tag_obj = self.db_controller.insert_one('TAG', {
+                                'board_id': board_id,
+                                'site': SITE_YGOSU,
+                                'Tag': DEFAULT_TAG
+                            })
+                            tag_obj_id = tag_obj.inserted_id
+                        self.db_controller.insert_one('RealTime', {
                             'board_id': board_id,
                             'site': SITE_YGOSU,
                             'title': title,
                             'url': url,
                             'create_time': target_datetime,
-                            'GPTAnswer': gpt_obj_id
+                            'GPTAnswer': gpt_obj_id,
+                            'Tag': tag_obj_id
+
                         })
                 except Exception as e:
                     logger.error(e)

@@ -19,7 +19,7 @@ class Instiz(AbstractCommunityWebsite):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
         self.db_controller = MongoController()
         try:
-            self.ftp_client = FTPClient(
+            self.ftp_client = FTPClient.FTPClient(
                                 server_address=Config().get_env('FTP_HOST'),
                                 username=Config().get_env('FTP_USERNAME'),
                                 password=Config().get_env('FTP_PASSWORD'))
@@ -95,25 +95,25 @@ class Instiz(AbstractCommunityWebsite):
                                 'answer': DEFAULT_GPT_ANSWER
                             })
                             gpt_obj_id = gpt_obj.inserted_id
-                        tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_INSTIZ})
-                        if tag_exists:
-                            tag_obj_id = gpt_exists[0]['_id']
-                        else :
-                            gpt_obj = self.db_controller.find('TAG', {
-                                'board_id': board_id,
-                                'site': SITE_INSTIZ,
-                                'Tag': DEFAULT_TAG
-                            })
-                            tag_obj_id = gpt_obj.inserted_id
-                        self.db_controller.insert('RealTime', {
+                    tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_INSTIZ})
+                    if tag_exists:
+                        tag_obj_id = tag_exists[0]['_id']
+                    else :
+                        tag_obj = self.db_controller.insert_one('TAG', {
                             'board_id': board_id,
                             'site': SITE_INSTIZ,
-                            'title': title,
-                            'url': contents_url,
-                            'create_time': target_datetime,
-                            'GPTAnswer': gpt_obj_id,
-                            'Tag': tag_obj_id
+                            'Tag': DEFAULT_TAG
                         })
+                        tag_obj_id = tag_obj.inserted_id
+                    self.db_controller.insert_one('RealTime', {
+                        'board_id': board_id,
+                        'site': SITE_INSTIZ,
+                        'title': title,
+                        'url': contents_url,
+                        'create_time': target_datetime,
+                        'GPTAnswer': gpt_obj_id,
+                        'Tag': tag_obj_id
+                    })
                 except Exception as e:
                     logger.info(e)
                     
@@ -178,3 +178,4 @@ class Instiz(AbstractCommunityWebsite):
             f.write(response.content)
 
         return self.download_path + "/" + img_name
+

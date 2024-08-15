@@ -164,18 +164,23 @@ async def board_summary_rest(request: Request):
         return JSONResponse(content={'response': "성공하는 루트 추가해야함"})
 
 
-async def get_real_time_best():
-    ygosuCrawller = Ygosu()
-    ppomppuCrawller = Ppomppu()
-    theqooCrawller = Theqoo()
-    ygosuCrawller.get_real_time_best()
-    theqooCrawller.get_real_time_best()
+def get_real_time_best():
+    CrawllerList = [Ygosu(),Ppomppu(),Theqoo(),Instiz(),Ruliweb()]
+    for i in CrawllerList:
+        try:
+            i.get_real_time_best()
+        except Exception as e:
+            logger.error(e)
     return JSONResponse(content={'response': "실시간 베스트 가져오기 완료"})
 
 
-async def get_daily_best():
-    ygosuCrawller = Ygosu()
-    ppomppuCrawller = Ppomppu()
-    ygosuCrawller.get_daily_best()
+def get_daily_best():
+    CrawllerList = [Ygosu(),Ppomppu(),Theqoo(),Instiz(),Ruliweb()]
+    for i in CrawllerList:
+        try:
+            i.get_daily_best()
+        except Exception as e:
+            logger.error(e)
     return JSONResponse(content={'response': "데일리 베스트 가져오기 완료"})
+
 
