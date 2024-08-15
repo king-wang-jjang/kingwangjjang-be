@@ -11,7 +11,7 @@ WORKDIR /app
 RUN pip install poetry
 
 #poetry 관련 파일 복사
-COPY ./pyproject.toml ./poetry.lock* /code/
+COPY ./pyproject.toml ./poetry.lock* /app/
 
 # 필요 라이브러리 설치
 RUN poetry install --no-root --no-dev
