@@ -158,8 +158,8 @@ def setup_logger():
     db_handler = DBLOGHandler()
     db_handler.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
     # 로그 메시지 형식 설정
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    slack_handler.setFormatter(formatter)
+    # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # slack_handler.setFormatter(formatter)
 
     # 핸들러를 로거에 추가
     logger.addHandler(slack_handler)
