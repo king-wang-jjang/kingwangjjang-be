@@ -6,17 +6,8 @@ services:
 
     ports:
       - "8000:8000"
-    environment:
-      DB_PASSWORD: ${DB_PASSWORD}
-      DB_HOST: ${DB_HOST}
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      CHATGPT_API_KEY: ${CHATGPT_API_KEY}
-      FTP_USERNAME: ${FTP_USERNAME}
-      FTP_PASSWORD: ${FTP_PASSWORD}
-      FTP_HOST: ${FTP_HOST}
-      WEBHOOK_URL: ${WEBHOOK_URL}
-      SERVER_RUN_MODE: "TRUE"
+    env_file:
+      - .env
     networks:
       - kingwangjjang-network
   redis:
