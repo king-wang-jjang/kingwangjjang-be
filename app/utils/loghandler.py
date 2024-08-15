@@ -131,7 +131,6 @@ class DBLOGHandler(logging.Handler):
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
             data = dict(record.__dict__)
-            data["_id"] = ""
             data["server"] = Config().get_env("SERVER_TYPE")
             self.db_controller.insert_one("log",data)
         else:
