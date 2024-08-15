@@ -25,8 +25,8 @@ from app.config import Config
 app = FastAPI(lifespan=lifespan.lifespan)
 logger = setup_logger()
 if Config.get_env("SERVER_RUN_MODE") == "TRUE":
-    logging.getLogger("uvicorn.access").handlers = [logger.handlers[0]]
-    logging.getLogger("uvicorn.error").handlers = [logger.handlers[0]]
+    logging.getLogger("uvicorn.access").handlers = [logger.handlers[1]]
+    logging.getLogger("uvicorn.error").handlers = [logger.handlers[1]]
 cors_middleware.add(app)
 # static_middleware.add(app)
 

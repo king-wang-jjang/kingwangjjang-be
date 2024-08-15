@@ -130,7 +130,10 @@ class DBLOGHandler(logging.Handler):
     def emit(self, record):
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
-            self.db_controller.insert_one("log",dict(record.__dict__))
+            data = dict(record.__dict__)
+            data["_id"] = ""
+            data["server"] = Config().get_env("SERVER_TYPE")
+            self.db_controller.insert_one("log",data)
         else:
             self.print_colored_log(log_entry, record.levelname)
 
@@ -172,8 +175,7 @@ def setup_logger():
 def catch_exception(exc_type, exc_value, exc_traceback):
     # 로깅 모듈을 이용해 로거를 미리 등록해놔야 합니다.
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
-        logger = logging.getLogger("slack_logger")
-        logger.addHandler(DBLOGHandler())
+        logger = setup_logger()
     else:
         logger = logging.getLogger("")
     logger.error("Unexpected exception.", exc_info=(exc_type, exc_value, exc_traceback))
