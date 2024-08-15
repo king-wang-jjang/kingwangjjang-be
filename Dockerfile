@@ -2,7 +2,7 @@
 FROM python:3.12.4
 
 # 디렉토리 설정
-WORKDIR /code
+WORKDIR /app
 
 ## requirements.txt 파일을 /app 디렉토리로 복사
 #COPY ./requirements.txt /code/requirements.txt
@@ -17,7 +17,7 @@ COPY ./pyproject.toml ./poetry.lock* /code/
 RUN poetry install --no-root --no-dev
 
 #소스코드 복사
-COPY app .
+COPY . .
 
 #3000번 포트 개방.
 EXPOSE 8000

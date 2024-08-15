@@ -4,7 +4,7 @@ import sys
 
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append("/Users/jason/PycharmProjects/kingwangjjang-be")
+sys.path.append("/app")
 from fastapi import FastAPI
 from utils import lifespan
 # from routes.auth import auth_controller
