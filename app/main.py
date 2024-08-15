@@ -1,7 +1,7 @@
 import os
 import sys
 
-
+import LLM.schema
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
@@ -37,14 +37,13 @@ app.include_router(user_controller.router)
 
 # ---------------------------------------------------
 # -- LLM 할 때 사용될 예정 --
-# from strawberry.fastapi import GraphQLRouter
-# from .schema import schema, task_status_schema
+from strawberry.fastapi import GraphQLRouter
+from app.celery.schema import schema,task_status_schema
+graphql_app = GraphQLRouter(schema)
+task_status_app = GraphQLRouter(task_status_schema)
 
-# graphql_app = GraphQLRouter(schema)
-# task_status_app = GraphQLRouter(task_status_schema)
-
-# app.include_router(graphql_app, prefix="/graphql")
-# app.include_router(task_status_app, prefix="/status")
+app.include_router(graphql_app, prefix="/graphql")
+app.include_router(task_status_app, prefix="/status")
 # ---------------------------------------------------
 
 if __name__ == '__main__':

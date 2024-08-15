@@ -3,12 +3,12 @@
 import strawberry
 from strawberry.types import Info
 
-from app.celery.LLM.tasks import task_summary_board
+from app.celery.comment.tasks import task_board_comment_add
 from typing import List, Optional,Dict
 from datetime import datetime
 
 @strawberry.type
-class AddTaskTypes:
+class AddTaskType:
     task_id: str
     status: str
 @strawberry.type
@@ -44,7 +44,7 @@ class Comment:
 @strawberry.type
 class Query:
     @strawberry.field
-    def hello(self) -> str:
+    def hellos(self) -> str:
         return "Hello, World!"
 
 
@@ -52,23 +52,11 @@ class Query:
 @strawberry.type
 class Mutation:
 
-    @strawberry.mutation
-    def summary_board(self, board_id: str, site: str) -> AddTaskTypes:
-        task = task_summary_board.apply_async((board_id,site))
-        print(task)
 
-        return AddTaskTypes(task_id=task.id, status="Processing")
-    # @strawberry.mutation
-    # def comment(self, board_id: str, site: str, userid: str, comment: str) -> AddTaskType:
-    #     task = task_board_comment_add.apply_async(board_id,site,userid,comment)
-    #     return AddTaskType(task_id=task.id, status="Processing")
-        # try:
-        #
-        #     # 여기에 실제 데이터 생성 로직 추가
-        #     return Summary(board_id=board_id, site=site, GPTAnswer=board_summary(board_id, site),Tag=list(tag(board_id, site)))
-        # except Exception as e:
-        #     logger.exception(f"Error creating summary board: {e}")
-        #     raise HTTPException(status_code=500, detail="Internal server error")
+    @strawberry.mutation
+    def comment(self, board_id: str, site: str, userid: str, comment: str) -> AddTaskType:
+        task = task_board_comment_add.apply_async(board_id,site,userid,comment)
+        return AddTaskType(task_id=task.id, status="Processing")
 
 @strawberry.type
 class TaskStatusType:
@@ -78,8 +66,8 @@ class TaskStatusType:
 @strawberry.type
 class TaskStatusQuery:
     @strawberry.field
-    def task_status_llm(self, task_id: str) -> TaskStatusType:
-        task_result = task_summary_board.AsyncResult(task_id)
+    def task_status_comment(self, task_id: str) -> TaskStatusType:
+        task_result = task_board_comment_add.AsyncResult(task_id)
 
         if task_result.state == "PENDING":
             return TaskStatusType(status=task_result.state)
