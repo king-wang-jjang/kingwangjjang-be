@@ -22,4 +22,4 @@ COPY . .
 #3000번 포트 개방.
 EXPOSE 8000
 # uvicorn 서버 실행
-ENTRYPOINT  ["poetry","run", "sh", "prod.sh"]
+ENTRYPOINT  ["poetry","run", "sh", "app/prod.sh"]
