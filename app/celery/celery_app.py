@@ -28,8 +28,11 @@ celery_app.conf.update(
     worker_hijack_root_logger=False,  # Celery가 기본 로거를 사용하지 않도록 설정
 )
 @after_setup_logger.connect
-def setup_loggers(logger, *args, **kwargs):
+def setup_task_logger(logger, *args, **kwargs):
     logger.addHandler(setup_logger())
+
+
+
 
 
 if __name__ == "__main__":
