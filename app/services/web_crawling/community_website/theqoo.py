@@ -100,15 +100,15 @@ class Theqoo(AbstractCommunityWebsite):
                                     'Tag': DEFAULT_TAG
                                 })
                                 tag_obj_id = tag_obj.inserted_id
-                            self.db_controller.insert_one('RealTime', {
-                                'board_id': board_id,
-                                'site': SITE_THEQOO,
-                                'title': title,
-                                'url': url,
-                                'create_time': target_datetime,
-                                'GPTAnswer': gpt_obj_id,
-                                'Tag': tag_obj_id
-                            })
+                        self.db_controller.insert_one('RealTime', {
+                            'board_id': board_id,
+                            'site': SITE_THEQOO,
+                            'title': title,
+                            'url': url,
+                            'create_time': target_datetime,
+                            'GPTAnswer': gpt_obj_id,
+                            'Tag': tag_obj_id
+                        })
                     except Exception as e:
                         logger.error('error', e)
 
