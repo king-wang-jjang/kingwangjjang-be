@@ -21,7 +21,7 @@ celery_app = Celery(
 celery_app.conf.update(
     task_routes={
         "app.celery.tasks.task_realtime_to_db": {"queue": "crawling_queue"},
-        "app.celery.tasks.task_daily_to_db": {"queue": "crawling_queue"},
+        # "app.celery.tasks.task_daily_to_db": {"queue": "crawling_queue"},
 
     },
     result_expires=3600,
@@ -30,10 +30,10 @@ celery_app.conf.update(
             'task': 'app.celery.tasks.task_realtime_to_db',
             'schedule': crontab(minute='*/5'),  # Every 5 minutes
         },
-        'daily-to-db-every-5-minutes': {
-            'task': 'app.celery.tasks.task_daily_to_db',
-            'schedule': crontab(minute='*/5'),  # Every 5 minutes
-        },
+        # 'daily-to-db-every-5-minutes': {
+        #     'task': 'app.celery.tasks.task_daily_to_db',
+        #     'schedule': crontab(minute='*/5'),  # Every 5 minutes
+        # },
     },
 )
 celery_app.conf.update(
