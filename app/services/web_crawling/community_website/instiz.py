@@ -89,7 +89,7 @@ class Instiz(AbstractCommunityWebsite):
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
                         else :
-                            gpt_obj = self.db_controller.find('GPT', {
+                            gpt_obj = self.db_controller.insert_one('GPT', {
                                 'board_id': board_id,
                                 'site': SITE_INSTIZ,
                                 'answer': DEFAULT_GPT_ANSWER

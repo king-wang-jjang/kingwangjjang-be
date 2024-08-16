@@ -184,4 +184,3 @@ def get_daily_best():
     return JSONResponse(content={'response': "데일리 베스트 가져오기 완료"})
 
 
-get_real_time_best()
