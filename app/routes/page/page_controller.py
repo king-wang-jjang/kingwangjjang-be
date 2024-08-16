@@ -4,8 +4,8 @@ from fastapi import APIRouter
 from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
 
-from db.context import Database
-from utils.loghandler import catch_exception
+from app.db.context import Database
+from app.utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
 

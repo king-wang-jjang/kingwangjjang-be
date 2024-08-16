@@ -3,8 +3,8 @@ from fastapi import Query
 from fastapi import Path
 from fastapi import HTTPException
 
-from routes.user import user_service
-from utils import dependencies
+from app.routes.user import user_service
+from app.utils import dependencies
 
 
 router = APIRouter(

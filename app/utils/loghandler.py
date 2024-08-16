@@ -3,9 +3,10 @@ from logging import handlers
 import os
 import sys
 import requests
-from config import Config
+from app.config import Config
 from colorama import Fore, Style, init
-
+from app.db.mongo_controller import MongoController
+# from app.celery.Logging.tasks import task_send_to_slack,task_record_db
 init(autoreset=True)  # colorama 초기화
 
 class SlackWebhookHandler(logging.Handler):
@@ -35,7 +36,7 @@ class SlackWebhookHandler(logging.Handler):
                 "attachments": [
                     {
                         "color": color_map.get(record.levelname),
-                        "title": f"{record.levelname}! @everyone",
+                        "title": f"{record.levelname}!",
                         "fields": [
                             {
                                 "title": "MESSAGE",
@@ -121,32 +122,63 @@ class SlackWebhookHandler(logging.Handler):
         }
         color = color_map.get(level, Fore.WHITE)  # Default to white if level not found
         print(f"{color}{message}")
+class DBLOGHandler(logging.Handler):
+    def __init__(self):
+        super().__init__()
+        if Config().get_env("SERVER_RUN_MODE") == "TRUE":
+            self.db_controller = MongoController()
 
+    def emit(self, record):
+        log_entry = self.format(record)
+        if Config().get_env("SERVER_RUN_MODE") == "TRUE":
+            self.record_db(record)
+        else:
+            self.print_colored_log(log_entry, record.levelname)
+
+
+    def print_colored_log(self, message, level):
+        color_map = {
+            "DEBUG": Fore.LIGHTBLACK_EX,
+            "INFO": Fore.GREEN,
+            "WARNING": Fore.YELLOW,
+            "ERROR": Fore.RED,
+            "CRITICAL": Fore.RED + Style.BRIGHT
+        }
+        color = color_map.get(level, Fore.WHITE)  # Default to white if level not found
+        print(f"{color}{message}")
+    def record_db(self, record):
+        data = dict(record.__dict__)
+        data["server"] = Config().get_env("SERVER_TYPE")
+        self.db_controller.insert_one("log", data)
 def setup_logger():
     logger = logging.getLogger("slack_logger")
-    logger.setLevel(logging.ERROR)  # ERROR 레벨까지 모든 로그를 처리
+    logger.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
 
     # 슬랙 웹훅 핸들러 추가
     slack_handler = SlackWebhookHandler()
     slack_handler.setLevel(logging.ERROR)  # ERROR 레벨까지 모든 로그를 처리
-
+    # DB 웹훅 핸들러 추가
+    db_handler = DBLOGHandler()
+    db_handler.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
     # 로그 메시지 형식 설정
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    slack_handler.setFormatter(formatter)
+    # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    # slack_handler.setFormatter(formatter)
 
     # 핸들러를 로거에 추가
     logger.addHandler(slack_handler)
+    logger.addHandler(db_handler)
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
         return logger
     else:
-        log = logging.getLogger("")
+        log = logging.getLogger()
+        log.addHandler(logging.StreamHandler())
         log.setLevel(logging.DEBUG)
         return log
 
 def catch_exception(exc_type, exc_value, exc_traceback):
     # 로깅 모듈을 이용해 로거를 미리 등록해놔야 합니다.
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
-        logger = logging.getLogger("slack_logger")
+        logger = setup_logger()
     else:
         logger = logging.getLogger("")
     logger.error("Unexpected exception.", exc_info=(exc_type, exc_value, exc_traceback))

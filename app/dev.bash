@@ -1,7 +1,2 @@
-set -a
-[ -f ../.env ] && . ../.env
-set +a
-
-export PYTHONPATH=$(pwd)
-
-poetry run python main.py
+celery -A app.celery.celery_app worker --loglevel=info &
+poetry run uvicorn app.main:app --reload

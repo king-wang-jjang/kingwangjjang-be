@@ -3,15 +3,15 @@ from datetime import datetime
 import os
 from bs4 import BeautifulSoup
 import requests
-from db.mongo_controller import MongoController
-from services.web_crwaling.community_website.community_website import AbstractCommunityWebsite
-from utils.FTPClient import FTPClient
+from app.db.mongo_controller import MongoController
+from app.services.web_crawling.community_website.community_website import AbstractCommunityWebsite
+from app.utils.FTPClient import FTPClient
 
-from constants import DEFAULT_GPT_ANSWER, SITE_YGOSU,DEFAULT_TAG
+from app.constants import DEFAULT_GPT_ANSWER, SITE_YGOSU,DEFAULT_TAG
 import logging
-from config import Config
-from utils.loghandler import setup_logger
-from utils.loghandler import catch_exception
+from app.config import Config
+from app.utils.loghandler import setup_logger
+from app.utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
 logger = setup_logger()
@@ -68,7 +68,7 @@ class Ygosu(AbstractCommunityWebsite):
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
                         else :
-                            gpt_obj = self.db_controller.insert('GPT', {
+                            gpt_obj = self.db_controller.insert_one('GPT', {
                                 'board_id': board_id,
                                 'site': SITE_YGOSU,
                                 'answer': DEFAULT_GPT_ANSWER
@@ -76,15 +76,15 @@ class Ygosu(AbstractCommunityWebsite):
                             gpt_obj_id = gpt_obj.inserted_id
                         tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_YGOSU})
                         if tag_exists:
-                            tag_obj_id = gpt_exists[0]['_id']
+                            tag_obj_id = tag_exists[0]['_id']
                         else:
-                            gpt_obj = self.db_controller.find('TAG', {
+                            tag_obj = self.db_controller.insert_one('TAG', {
                                 'board_id': board_id,
                                 'site': SITE_YGOSU,
                                 'Tag': DEFAULT_TAG
                             })
-                            tag_obj_id = gpt_obj.inserted_id
-                        self.db_controller.insert('Daily', {
+                            tag_obj_id = tag_obj.inserted_id
+                        self.db_controller.insert_one('Daily', {
                             'board_id': board_id,
                             'site': SITE_YGOSU,
                             'rank': rank,
@@ -138,20 +138,31 @@ class Ygosu(AbstractCommunityWebsite):
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
                         else :
-                            gpt_obj = self.db_controller.insert('GPT', {
+                            gpt_obj = self.db_controller.insert_one('GPT', {
                                 'board_id': board_id,
                                 'site': SITE_YGOSU,
                                 'answer': DEFAULT_GPT_ANSWER
                             })
                             gpt_obj_id = gpt_obj.inserted_id
-                            
-                        self.db_controller.insert('RealTime', {
+                        tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_YGOSU})
+                        if tag_exists:
+                            tag_obj_id = gpt_exists[0]['_id']
+                        else:
+                            tag_obj = self.db_controller.insert_one('TAG', {
+                                'board_id': board_id,
+                                'site': SITE_YGOSU,
+                                'Tag': DEFAULT_TAG
+                            })
+                            tag_obj_id = tag_obj.inserted_id
+                        self.db_controller.insert_one('RealTime', {
                             'board_id': board_id,
                             'site': SITE_YGOSU,
                             'title': title,
                             'url': url,
                             'create_time': target_datetime,
-                            'GPTAnswer': gpt_obj_id
+                            'GPTAnswer': gpt_obj_id,
+                            'Tag': tag_obj_id
+
                         })
                 except Exception as e:
                     logger.error(e)

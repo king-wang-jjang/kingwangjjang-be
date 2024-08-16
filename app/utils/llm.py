@@ -8,10 +8,13 @@ from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 import os
-from utils.loghandler import catch_exception
+from app.utils.loghandler import catch_exception
 import sys
+from app.utils.loghandler import setup_logger
 sys.excepthook = catch_exception
-from config import Config
+from app.config import Config
+import logging
+logger = setup_logger()
 class LLM:
     def __init__(self):
 
@@ -33,6 +36,9 @@ class LLM:
         )  # assuming you have Ollama installed and have llama3 model pulled with `ollama pull llama3 `
         self.chain = chat_prompt | llm
     def call(self,content:str):
+        logger.debug(f"fLLM 요약 : {content}")
+
         # return self.chain.invoke({"text":content}).content
+        logger.debug("LLM 요약 : 비활성화 되어있음")
         return "일시적인 오류가 발생함."
 

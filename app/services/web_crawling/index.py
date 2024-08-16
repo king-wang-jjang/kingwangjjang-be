@@ -6,20 +6,20 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pymongo import settings
 
-from db.mongo_controller import MongoController
-from services.web_crwaling.community_website.instiz import Instiz
-from services.web_crwaling.community_website.ppomppu import Ppomppu
-from services.web_crwaling.community_website.ruliweb import Ruliweb
-from services.web_crwaling.community_website.theqoo import Theqoo
-from services.web_crwaling.community_website.ygosu import Ygosu
-from services.web_crwaling.community_website.dcinside import Dcinside
+from app.db.mongo_controller import MongoController
+from app.services.web_crawling.community_website.instiz import Instiz
+from app.services.web_crawling.community_website.ppomppu import Ppomppu
+from app.services.web_crawling.community_website.ruliweb import Ruliweb
+from app.services.web_crawling.community_website.theqoo import Theqoo
+from app.services.web_crawling.community_website.ygosu import Ygosu
+from app.services.web_crawling.community_website.dcinside import Dcinside
 
-from utils.llm import LLM
-from utils.tag_split import Tagsplit
+from app.utils.llm import LLM
+from app.utils.tag_split import Tagsplit
 
-from constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU,SITE_THEQOO,SITE_INSTIZ,SITE_RULIWEB
-from utils.loghandler import setup_logger
-from utils.loghandler import catch_exception
+from app.constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU,SITE_THEQOO,SITE_INSTIZ,SITE_RULIWEB
+from app.utils.loghandler import setup_logger
+from app.utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
 logger = setup_logger()
@@ -164,18 +164,23 @@ async def board_summary_rest(request: Request):
         return JSONResponse(content={'response': "성공하는 루트 추가해야함"})
 
 
-async def get_real_time_best():
-    ygosuCrawller = Ygosu()
-    ppomppuCrawller = Ppomppu()
-    theqooCrawller = Theqoo()
-    ygosuCrawller.get_real_time_best()
-    theqooCrawller.get_real_time_best()
+def get_real_time_best():
+    CrawllerList = [Ygosu(),Ppomppu(),Theqoo(),Instiz(),Ruliweb()]
+    for i in CrawllerList:
+        try:
+            i.get_real_time_best()
+        except Exception as e:
+            logger.error(e)
     return JSONResponse(content={'response': "실시간 베스트 가져오기 완료"})
 
 
-async def get_daily_best():
-    ygosuCrawller = Ygosu()
-    ppomppuCrawller = Ppomppu()
-    ygosuCrawller.get_daily_best()
+def get_daily_best():
+    CrawllerList = [Ygosu(),Ppomppu(),Theqoo(),Instiz(),Ruliweb()]
+    for i in CrawllerList:
+        try:
+            i.get_daily_best()
+        except Exception as e:
+            logger.error(e)
     return JSONResponse(content={'response': "데일리 베스트 가져오기 완료"})
+
 
