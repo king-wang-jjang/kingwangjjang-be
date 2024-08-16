@@ -2,7 +2,7 @@ from celery import Celery
 from celery.schedules import crontab
 from celery.signals import setup_logging
 from celery.app.log import TaskFormatter
-from celery.signals import after_setup_logger
+from celery.signals import after_setup_logger,after_setup_task_logger
 from app.utils.loghandler import setup_logger
 import logging
 import celery.signals
@@ -44,7 +44,9 @@ def setup_task_logger(logger : logging.Logger, *args, **kwargs):
     logger.addHandler(setup_logger())
     # for handler in logger.handlers:
     #     handler.setFormatter(TaskFormatter('%(asctime)s - %(task_id)s - %(task_name)s - %(name)s - %(levelname)s - %(message)s'))
-
+@after_setup_task_logger.connect
+def after_setup_task_logger(logger : logging.Logger, *args, **kwargs):
+    logger.addHandler(setup_logger())
 @celery.signals.setup_logging.connect
 def on_celery_setup_logging(**kwargs):
     pass
