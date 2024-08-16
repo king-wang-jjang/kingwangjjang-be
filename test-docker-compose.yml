@@ -19,6 +19,6 @@ services:
 networks:
   kingwangjjang-network:
     ipam:
-      driver: bridge
+      driver: default
       config:
         - subnet: 172.26.0.0/16
