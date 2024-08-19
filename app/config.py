@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv,find_dotenv
 import logging
-
+# from utils.loghandler import setup_logger
 logger = logging.getLogger("")
 
 class Config:
@@ -15,7 +15,7 @@ class Config:
 
     @staticmethod
     def get_env(env: str):
-        if  os.getenv(env) == None:
+        if os.getenv(env) == None:
             logger.error(f"ENV가 알수없는 애러로 불러오지 못함. {env}")
             return None
         else:
