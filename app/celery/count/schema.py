@@ -1,17 +1,24 @@
 # app/schema.py
-
 import sys
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import strawberry
-from fastapi import APIRouter, FastAPI, HTTPException, Request
+from fastapi import APIRouter
+from fastapi import FastAPI
+from fastapi import HTTPException
+from fastapi import Request
 from strawberry.types import Info
 
-from app.celery.count.tasks import task_likes_add, task_views_add
+from app.celery.count.tasks import task_likes_add
+from app.celery.count.tasks import task_views_add
 from app.celery.types import AddTaskTypes
-from app.services.count import likes, views
-from app.utils.loghandler import catch_exception, setup_logger
+from app.services.count import likes
+from app.services.count import views
+from app.utils.loghandler import catch_exception
+from app.utils.loghandler import setup_logger
 
 logger = setup_logger()
 
