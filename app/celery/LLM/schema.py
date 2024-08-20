@@ -63,17 +63,18 @@ class Mutation:
         print(task)
 
         return AddTaskTypes(task_id=task.id, status="Processing")
+
     # @strawberry.mutation
     # def comment(self, board_id: str, site: str, userid: str, comment: str) -> AddTaskType:
     #     task = task_board_comment_add.apply_async(board_id,site,userid,comment)
     #     return AddTaskType(task_id=task.id, status="Processing")
-        # try:
-        #
-        #     # 여기에 실제 데이터 생성 로직 추가
-        #     return Summary(board_id=board_id, site=site, GPTAnswer=board_summary(board_id, site),Tag=list(tag(board_id, site)))
-        # except Exception as e:
-        #     logger.exception(f"Error creating summary board: {e}")
-        #     raise HTTPException(status_code=500, detail="Internal server error")
+    # try:
+    #
+    #     # 여기에 실제 데이터 생성 로직 추가
+    #     return Summary(board_id=board_id, site=site, GPTAnswer=board_summary(board_id, site),Tag=list(tag(board_id, site)))
+    # except Exception as e:
+    #     logger.exception(f"Error creating summary board: {e}")
+    #     raise HTTPException(status_code=500, detail="Internal server error")
 
 
 @strawberry.type
@@ -85,9 +86,13 @@ class TaskStatusQuery:
         if task_result.state == "PENDING":
             return TaskStatusType(status=task_result.state)
         elif task_result.state != "FAILURE":
-            return TaskStatusType(status=task_result.state, result=str(task_result.result))
+            return TaskStatusType(
+                status=task_result.state, result=str(task_result.result)
+            )
         else:
-            return TaskStatusType(status=task_result.state, result=str(task_result.info))
+            return TaskStatusType(
+                status=task_result.state, result=str(task_result.info)
+            )
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)

@@ -10,9 +10,13 @@ from app.services.count.likes import get_likes
 from app.services.count.views import get_views
 from app.services.web_crawling.index import tag
 from app.services.board_comment.get import board_comment_get
-from app.services.web_crawling.pagination import get_pagination_real_time_best, get_pagination_daily_best
+from app.services.web_crawling.pagination import (
+    get_pagination_real_time_best,
+    get_pagination_daily_best,
+)
 from app.utils.loghandler import setup_logger, catch_exception
 import sys
+
 # Setup logger and exception hook
 logger = setup_logger()
 sys.excepthook = catch_exception
@@ -81,8 +85,7 @@ class Query:
             return get_pagination_daily_best(index)
         except Exception as e:
             logger.exception(f"Error getting daily data: {e}")
-            raise HTTPException(
-                status_code=500, detail="Internal server error")
+            raise HTTPException(status_code=500, detail="Internal server error")
 
     @strawberry.field
     def realtime_pagination(self, index: int = 0) -> List[RealTime]:
@@ -90,8 +93,7 @@ class Query:
             return get_pagination_real_time_best(index)
         except Exception as e:
             logger.exception(f"Error getting realtime data: {e}")
-            raise HTTPException(
-                status_code=500, detail="Internal server error")
+            raise HTTPException(status_code=500, detail="Internal server error")
 
     @strawberry.field
     def comment(self, board_id: str, site: str) -> Comment:
@@ -102,8 +104,7 @@ class Query:
             return Comment(board_id=board_id, site=site, Comments=str(comments))
         except Exception as e:
             logger.exception(f"Error creating summary board: {e}")
-            raise HTTPException(
-                status_code=500, detail="Internal server error")
+            raise HTTPException(status_code=500, detail="Internal server error")
 
     @strawberry.field
     def get_like(self, board_id: str, site: str) -> Likes:

@@ -6,6 +6,7 @@ import requests
 from app.config import Config
 from colorama import Fore, Style, init
 from app.db.mongo_controller import MongoController
+
 # from app.celery.Logging.tasks import task_send_to_slack,task_record_db
 init(autoreset=True)  # colorama 초기화
 
@@ -26,11 +27,11 @@ class SlackWebhookHandler(logging.Handler):
 
     def create_payload(self, record):
         color_map = {
-            "DEBUG": "#808080",   # Gray
-            "INFO": "#00FF00",    # Green
+            "DEBUG": "#808080",  # Gray
+            "INFO": "#00FF00",  # Green
             "WARNING": "#FFFF00",  # Yellow
-            "ERROR": "#FF0000",   # Red
-            "CRITICAL": "#8B0000"  # Dark Red
+            "ERROR": "#FF0000",  # Red
+            "CRITICAL": "#8B0000",  # Dark Red
         }
         try:
             payload = {
@@ -42,35 +43,31 @@ class SlackWebhookHandler(logging.Handler):
                             {
                                 "title": "MESSAGE",
                                 "value": record.message,
-                                "short": False
+                                "short": False,
                             },
                             {
                                 "title": "TYPE",
                                 "value": str(record.exc_info[0]),
-                                "short": True
+                                "short": True,
                             },
                             {
                                 "title": "VALUE",
                                 "value": str(record.exc_info[1]),
-                                "short": True
+                                "short": True,
                             },
                             {
                                 "title": "TRACEBACK",
                                 "value": str(record.exc_info[2]),
-                                "short": True
+                                "short": True,
                             },
-                            {
-                                "title": "FILE",
-                                "value": record.filename,
-                                "short": True
-                            },
+                            {"title": "FILE", "value": record.filename, "short": True},
                             {
                                 "title": "ERROR LINE",
                                 "value": record.lineno,
-                                "short": True
-                            }
+                                "short": True,
+                            },
                         ],
-                        "footer": str(record.__dict__)
+                        "footer": str(record.__dict__),
                     }
                 ]
             }
@@ -84,32 +81,25 @@ class SlackWebhookHandler(logging.Handler):
                             {
                                 "title": "MESSAGE",
                                 "value": record.message,
-                                "short": False
+                                "short": False,
                             },
-                            {
-                                "title": "FILE",
-                                "value": record.filename,
-                                "short": True
-                            },
+                            {"title": "FILE", "value": record.filename, "short": True},
                             {
                                 "title": "ERROR LINE",
                                 "value": record.lineno,
-                                "short": True
-                            }
+                                "short": True,
+                            },
                         ],
-                        "footer": str(record.__dict__)
+                        "footer": str(record.__dict__),
                     }
                 ]
             }
         return payload
 
     def send_to_slack(self, payload):
-        headers = {
-            "Content-Type": "application/json"
-        }
+        headers = {"Content-Type": "application/json"}
         try:
-            response = requests.post(
-                self.webhook_url, json=payload, headers=headers)
+            response = requests.post(self.webhook_url, json=payload, headers=headers)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"Error sending log to Slack: {e}")
@@ -120,7 +110,7 @@ class SlackWebhookHandler(logging.Handler):
             "INFO": Fore.GREEN,
             "WARNING": Fore.YELLOW,
             "ERROR": Fore.RED,
-            "CRITICAL": Fore.RED + Style.BRIGHT
+            "CRITICAL": Fore.RED + Style.BRIGHT,
         }
         # Default to white if level not found
         color = color_map.get(level, Fore.WHITE)
@@ -146,7 +136,7 @@ class DBLOGHandler(logging.Handler):
             "INFO": Fore.GREEN,
             "WARNING": Fore.YELLOW,
             "ERROR": Fore.RED,
-            "CRITICAL": Fore.RED + Style.BRIGHT
+            "CRITICAL": Fore.RED + Style.BRIGHT,
         }
         # Default to white if level not found
         color = color_map.get(level, Fore.WHITE)
@@ -194,5 +184,4 @@ def catch_exception(exc_type, exc_value, exc_traceback):
         logger = setup_logger()
     else:
         logger = logging.getLogger("")
-    logger.error("Unexpected exception.", exc_info=(
-        exc_type, exc_value, exc_traceback))
+    logger.error("Unexpected exception.", exc_info=(exc_type, exc_value, exc_traceback))
