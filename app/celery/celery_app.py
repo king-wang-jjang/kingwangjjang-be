@@ -49,9 +49,9 @@ def setup_task_logger(logger: logging.Logger, *args, **kwargs):
     """
 
     :param logger: logging.Logger:
-    :param logger: logging.Logger: 
-    :param *args: 
-    :param **kwargs: 
+    :param logger: logging.Logger:
+    :param *args:
+    :param **kwargs:
 
     """
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
@@ -65,9 +65,9 @@ def after_setup_task_logger(logger: logging.Logger, *args, **kwargs):
     """
 
     :param logger: logging.Logger:
-    :param logger: logging.Logger: 
-    :param *args: 
-    :param **kwargs: 
+    :param logger: logging.Logger:
+    :param *args:
+    :param **kwargs:
 
     """
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
@@ -78,7 +78,7 @@ def after_setup_task_logger(logger: logging.Logger, *args, **kwargs):
 def on_celery_setup_logging(**kwargs):
     """
 
-    :param **kwargs: 
+    :param **kwargs:
 
     """
     pass
