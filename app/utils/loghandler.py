@@ -9,6 +9,7 @@ from app.db.mongo_controller import MongoController
 # from app.celery.Logging.tasks import task_send_to_slack,task_record_db
 init(autoreset=True)  # colorama 초기화
 
+
 class SlackWebhookHandler(logging.Handler):
     def __init__(self):
         super().__init__()
@@ -27,9 +28,9 @@ class SlackWebhookHandler(logging.Handler):
         color_map = {
             "DEBUG": "#808080",   # Gray
             "INFO": "#00FF00",    # Green
-            "WARNING": "#FFFF00", # Yellow
+            "WARNING": "#FFFF00",  # Yellow
             "ERROR": "#FF0000",   # Red
-            "CRITICAL": "#8B0000" # Dark Red
+            "CRITICAL": "#8B0000"  # Dark Red
         }
         try:
             payload = {
@@ -107,7 +108,8 @@ class SlackWebhookHandler(logging.Handler):
             "Content-Type": "application/json"
         }
         try:
-            response = requests.post(self.webhook_url, json=payload, headers=headers)
+            response = requests.post(
+                self.webhook_url, json=payload, headers=headers)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"Error sending log to Slack: {e}")
@@ -120,8 +122,11 @@ class SlackWebhookHandler(logging.Handler):
             "ERROR": Fore.RED,
             "CRITICAL": Fore.RED + Style.BRIGHT
         }
-        color = color_map.get(level, Fore.WHITE)  # Default to white if level not found
+        # Default to white if level not found
+        color = color_map.get(level, Fore.WHITE)
         print(f"{color}{message}")
+
+
 class DBLOGHandler(logging.Handler):
     def __init__(self):
         super().__init__()
@@ -135,7 +140,6 @@ class DBLOGHandler(logging.Handler):
         else:
             self.print_colored_log(log_entry, record.levelname)
 
-
     def print_colored_log(self, message, level):
         color_map = {
             "DEBUG": Fore.LIGHTBLACK_EX,
@@ -144,7 +148,8 @@ class DBLOGHandler(logging.Handler):
             "ERROR": Fore.RED,
             "CRITICAL": Fore.RED + Style.BRIGHT
         }
-        color = color_map.get(level, Fore.WHITE)  # Default to white if level not found
+        # Default to white if level not found
+        color = color_map.get(level, Fore.WHITE)
         print(f"{color}{message}")
 
     def record_db(self, record):
@@ -182,10 +187,12 @@ def setup_logger():
         log.setLevel(logging.DEBUG)
         return log
 
+
 def catch_exception(exc_type, exc_value, exc_traceback):
     # 로깅 모듈을 이용해 로거를 미리 등록해놔야 합니다.
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
         logger = setup_logger()
     else:
         logger = logging.getLogger("")
-    logger.error("Unexpected exception.", exc_info=(exc_type, exc_value, exc_traceback))
+    logger.error("Unexpected exception.", exc_info=(
+        exc_type, exc_value, exc_traceback))

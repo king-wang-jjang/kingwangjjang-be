@@ -6,7 +6,7 @@ from app.celery.types import TaskStatusType
 from app.celery.types import AddTaskTypes
 
 from app.celery.comment.tasks import task_board_comment_add
-from typing import List, Optional,Dict
+from typing import List, Optional, Dict
 from datetime import datetime
 
 
@@ -20,6 +20,7 @@ class Daily:
     create_time: datetime
     GPTAnswer: Optional[str] = None
 
+
 @strawberry.type
 class RealTime:
     board_id: str
@@ -29,17 +30,23 @@ class RealTime:
     url: str
     create_time: datetime
     GPTAnswer: Optional[str] = None
+
+
 @strawberry.type
 class Summary:
     board_id: str
     site: str
-    GPTAnswer : str
-    Tag : List[str]
+    GPTAnswer: str
+    Tag: List[str]
+
+
 @strawberry.type
 class Comment:
     board_id: str
     site: str
-    Comments : List[Dict]
+    Comments: List[Dict]
+
+
 @strawberry.type
 class Query:
     @strawberry.field
@@ -47,16 +54,14 @@ class Query:
         return "Hello, World!"
 
 
-
 @strawberry.type
 class Mutation:
 
-
     @strawberry.mutation
     def comment(self, board_id: str, site: str, userid: str, comment: str) -> AddTaskTypes:
-        task = task_board_comment_add.apply_async(board_id,site,userid,comment)
+        task = task_board_comment_add.apply_async(
+            board_id, site, userid, comment)
         return AddTaskTypes(task_id=task.id, status="Processing")
-
 
 
 @strawberry.type
@@ -71,5 +76,7 @@ class TaskStatusQuery:
             return TaskStatusType(status=task_result.state, result=str(task_result.result))
         else:
             return TaskStatusType(status=task_result.state, result=str(task_result.info))
+
+
 schema = strawberry.Schema(query=Query, mutation=Mutation)
 task_status_schema = strawberry.Schema(query=TaskStatusQuery)
