@@ -31,6 +31,7 @@ sys.excepthook = catch_exception
 
 class IPFilterMiddleware(BaseHTTPMiddleware):
     """ """
+
     async def dispatch(self, request: Request, call_next):
         if request.url.path.startswith("/proxy"):
             if request.client.host != "127.0.0.1":

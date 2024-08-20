@@ -10,6 +10,7 @@ router = APIRouter()
 
 class Router:
     """ """
+
     def __init__(self):
         pass
 
@@ -29,8 +30,8 @@ async def forward_request(request: Request, base_url: str, path: str):
 
 
 @router.api_route(
-    "/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"]
-)
+    "/{path:path}",
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
 async def proxy(request: Request, path: str):
     base_url = "http://localhost:8000/proxy"
 
