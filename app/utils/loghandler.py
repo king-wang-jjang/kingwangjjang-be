@@ -25,7 +25,7 @@ class SlackWebhookHandler(logging.Handler):
     def emit(self, record):
         """
 
-        :param record: 
+        :param record:
 
         """
         log_entry = self.format(record)
@@ -38,7 +38,7 @@ class SlackWebhookHandler(logging.Handler):
     def create_payload(self, record):
         """
 
-        :param record: 
+        :param record:
 
         """
         color_map = {
@@ -114,7 +114,7 @@ class SlackWebhookHandler(logging.Handler):
     def send_to_slack(self, payload):
         """
 
-        :param payload: 
+        :param payload:
 
         """
         headers = {"Content-Type": "application/json"}
@@ -127,8 +127,8 @@ class SlackWebhookHandler(logging.Handler):
     def print_colored_log(self, message, level):
         """
 
-        :param message: 
-        :param level: 
+        :param message:
+        :param level:
 
         """
         color_map = {
@@ -153,7 +153,7 @@ class DBLOGHandler(logging.Handler):
     def emit(self, record):
         """
 
-        :param record: 
+        :param record:
 
         """
         log_entry = self.format(record)
@@ -165,8 +165,8 @@ class DBLOGHandler(logging.Handler):
     def print_colored_log(self, message, level):
         """
 
-        :param message: 
-        :param level: 
+        :param message:
+        :param level:
 
         """
         color_map = {
@@ -183,7 +183,7 @@ class DBLOGHandler(logging.Handler):
     def record_db(self, record):
         """
 
-        :param record: 
+        :param record:
 
         """
         data = dict(record.__dict__)
@@ -225,9 +225,9 @@ def setup_logger():
 def catch_exception(exc_type, exc_value, exc_traceback):
     """
 
-    :param exc_type: 
-    :param exc_value: 
-    :param exc_traceback: 
+    :param exc_type:
+    :param exc_value:
+    :param exc_traceback:
 
     """
     # 로깅 모듈을 이용해 로거를 미리 등록해놔야 합니다.

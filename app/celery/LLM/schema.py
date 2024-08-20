@@ -70,8 +70,8 @@ class Mutation:
     def summary_board(self, board_id: str, site: str) -> AddTaskTypes:
         """
 
-        :param board_id: str: 
-        :param site: str: 
+        :param board_id: str:
+        :param site: str:
 
         """
         task = task_summary_board.apply_async((board_id, site))
@@ -99,7 +99,7 @@ class TaskStatusQuery:
     def task_status_llm(self, task_id: str) -> TaskStatusType:
         """
 
-        :param task_id: str: 
+        :param task_id: str:
 
         """
         task_result = task_summary_board.AsyncResult(task_id)

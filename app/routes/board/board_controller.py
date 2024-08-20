@@ -120,8 +120,8 @@ class Query:
     def comment(self, board_id: str, site: str) -> Comment:
         """
 
-        :param board_id: str: 
-        :param site: str: 
+        :param board_id: str:
+        :param site: str:
 
         """
         try:
@@ -137,8 +137,8 @@ class Query:
     def get_like(self, board_id: str, site: str) -> Likes:
         """
 
-        :param board_id: str: 
-        :param site: str: 
+        :param board_id: str:
+        :param site: str:
 
         """
         return Likes(board_id=board_id, site=site, NOWLIKE=get_likes(board_id, site))
@@ -147,8 +147,8 @@ class Query:
     def get_views(self, board_id: str, site: str) -> Views:
         """
 
-        :param board_id: str: 
-        :param site: str: 
+        :param board_id: str:
+        :param site: str:
 
         """
         return Views(board_id=board_id, site=site, NOWVIEW=get_views(board_id, site))
