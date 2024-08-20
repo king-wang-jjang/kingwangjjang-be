@@ -5,6 +5,9 @@ from datetime import datetime
 import logging
 import strawberry
 from strawberry.fastapi import GraphQLRouter
+
+from app.services.count.likes import get_likes
+from app.services.count.views import get_views
 from app.services.web_crawling.index import tag
 from app.services.board_comment.get import board_comment_get
 from app.services.web_crawling.pagination import get_pagination_real_time_best, get_pagination_daily_best
@@ -50,7 +53,16 @@ class Comment:
     board_id: str
     site: str
     Comments: str
-
+@strawberry.type
+class Likes:
+    board_id: str
+    site: str
+    NOWLIKE : int
+@strawberry.type
+class Views:
+    board_id: str
+    site: str
+    NOWVIEW : int
 @strawberry.type
 class Query:
     @strawberry.field
@@ -79,6 +91,13 @@ class Query:
         except Exception as e:
             logger.exception(f"Error creating summary board: {e}")
             raise HTTPException(status_code=500, detail="Internal server error")
+    @strawberry.field
+    def get_like(self, board_id: str, site: str) -> Likes:
+        return Likes(board_id=board_id, site=site, NOWLIKE=get_likes(board_id, site))
+
+    @strawberry.field
+    def get_views(self, board_id: str, site: str) -> Views:
+        return Views(board_id=board_id, site=site, NOWVIEW=get_views(board_id, site))
 
 # Initialize GraphQL schema and router
 schema = strawberry.Schema(query=Query)

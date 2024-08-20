@@ -2,15 +2,14 @@
 
 import strawberry
 from strawberry.types import Info
+from app.celery.types import TaskStatusType
+from app.celery.types import AddTaskTypes
 
 from app.celery.comment.tasks import task_board_comment_add
 from typing import List, Optional,Dict
 from datetime import datetime
 
-@strawberry.type
-class AddTaskType:
-    task_id: str
-    status: str
+
 @strawberry.type
 class Daily:
     board_id: str
@@ -54,14 +53,11 @@ class Mutation:
 
 
     @strawberry.mutation
-    def comment(self, board_id: str, site: str, userid: str, comment: str) -> AddTaskType:
+    def comment(self, board_id: str, site: str, userid: str, comment: str) -> AddTaskTypes:
         task = task_board_comment_add.apply_async(board_id,site,userid,comment)
-        return AddTaskType(task_id=task.id, status="Processing")
+        return AddTaskTypes(task_id=task.id, status="Processing")
 
-@strawberry.type
-class TaskStatusType:
-    status: str
-    result: str = None
+
 
 @strawberry.type
 class TaskStatusQuery:

@@ -2,15 +2,14 @@
 
 import strawberry
 from strawberry.types import Info
+from app.celery.types import TaskStatusType
+from app.celery.types import AddTaskTypes
 
 from app.celery.LLM.tasks import task_summary_board
 from typing import List, Optional,Dict
 from datetime import datetime
 
-@strawberry.type
-class AddTaskTypes:
-    task_id: str
-    status: str
+
 @strawberry.type
 class Daily:
     board_id: str
@@ -70,10 +69,7 @@ class Mutation:
         #     logger.exception(f"Error creating summary board: {e}")
         #     raise HTTPException(status_code=500, detail="Internal server error")
 
-@strawberry.type
-class TaskStatusType:
-    status: str
-    result: str = None
+
 
 @strawberry.type
 class TaskStatusQuery:
