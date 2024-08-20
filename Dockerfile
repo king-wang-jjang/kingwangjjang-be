@@ -13,8 +13,10 @@ RUN pip install poetry
 #poetry 관련 파일 복사
 COPY ./pyproject.toml ./poetry.lock* /app/
 
+RUN poetry cache clear --all pypi
+
 # 필요 라이브러리 설치
-RUN poetry install --no-root --no-dev
+RUN poetry lock --no-update && poetry install --only main
 
 #소스코드 복사
 COPY . .
