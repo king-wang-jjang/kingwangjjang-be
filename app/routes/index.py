@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Request, Response
 import httpx
+from fastapi import APIRouter, Request, Response
 
 from app.constants import COOKIES_KEY_NAME
 

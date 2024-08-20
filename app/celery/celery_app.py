@@ -1,12 +1,14 @@
-from celery import Celery
-from celery.schedules import crontab
-from celery.signals import setup_logging
-from celery.app.log import TaskFormatter
-from celery.signals import after_setup_logger, after_setup_task_logger
-from app.utils.loghandler import setup_logger
 import logging
+
 import celery.signals
+from celery import Celery
+from celery.app.log import TaskFormatter
+from celery.schedules import crontab
+from celery.signals import (after_setup_logger, after_setup_task_logger,
+                            setup_logging)
+
 from app.config import Config
+from app.utils.loghandler import setup_logger
 
 if Config.get_env("SERVER_RUN_MODE") == "TRUE":
     broker = "redis://172.26.0.13:6379/0"
