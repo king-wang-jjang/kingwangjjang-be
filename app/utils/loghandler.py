@@ -14,12 +14,18 @@ init(autoreset=True)  # colorama 초기화
 
 
 class SlackWebhookHandler(logging.Handler):
+    """ """
     def __init__(self):
         super().__init__()
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
             self.webhook_url = Config().get_env("WEBHOOK_URL")
 
     def emit(self, record):
+        """
+
+        :param record: 
+
+        """
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
             payload = self.create_payload(record)
@@ -28,6 +34,11 @@ class SlackWebhookHandler(logging.Handler):
             self.print_colored_log(log_entry, record.levelname)
 
     def create_payload(self, record):
+        """
+
+        :param record: 
+
+        """
         color_map = {
             "DEBUG": "#808080",  # Gray
             "INFO": "#00FF00",  # Green
@@ -99,6 +110,11 @@ class SlackWebhookHandler(logging.Handler):
         return payload
 
     def send_to_slack(self, payload):
+        """
+
+        :param payload: 
+
+        """
         headers = {"Content-Type": "application/json"}
         try:
             response = requests.post(self.webhook_url, json=payload, headers=headers)
@@ -107,6 +123,12 @@ class SlackWebhookHandler(logging.Handler):
             print(f"Error sending log to Slack: {e}")
 
     def print_colored_log(self, message, level):
+        """
+
+        :param message: 
+        :param level: 
+
+        """
         color_map = {
             "DEBUG": Fore.LIGHTBLACK_EX,
             "INFO": Fore.GREEN,
@@ -120,12 +142,18 @@ class SlackWebhookHandler(logging.Handler):
 
 
 class DBLOGHandler(logging.Handler):
+    """ """
     def __init__(self):
         super().__init__()
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
             self.db_controller = MongoController()
 
     def emit(self, record):
+        """
+
+        :param record: 
+
+        """
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
             self.record_db(record)
@@ -133,6 +161,12 @@ class DBLOGHandler(logging.Handler):
             self.print_colored_log(log_entry, record.levelname)
 
     def print_colored_log(self, message, level):
+        """
+
+        :param message: 
+        :param level: 
+
+        """
         color_map = {
             "DEBUG": Fore.LIGHTBLACK_EX,
             "INFO": Fore.GREEN,
@@ -145,6 +179,11 @@ class DBLOGHandler(logging.Handler):
         print(f"{color}{message}")
 
     def record_db(self, record):
+        """
+
+        :param record: 
+
+        """
         data = dict(record.__dict__)
         data["server"] = Config().get_env("SERVER_TYPE")
         # Remove non-serializable types or convert them to string
@@ -155,6 +194,7 @@ class DBLOGHandler(logging.Handler):
 
 
 def setup_logger():
+    """ """
     logger = logging.getLogger("slack_logger")
     logger.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
 
@@ -181,6 +221,13 @@ def setup_logger():
 
 
 def catch_exception(exc_type, exc_value, exc_traceback):
+    """
+
+    :param exc_type: 
+    :param exc_value: 
+    :param exc_traceback: 
+
+    """
     # 로깅 모듈을 이용해 로거를 미리 등록해놔야 합니다.
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
         logger = setup_logger()

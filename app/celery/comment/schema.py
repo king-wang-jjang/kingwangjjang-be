@@ -12,6 +12,7 @@ from app.celery.types import AddTaskTypes, TaskStatusType
 
 @strawberry.type
 class Daily:
+    """ """
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -23,6 +24,7 @@ class Daily:
 
 @strawberry.type
 class RealTime:
+    """ """
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -34,6 +36,7 @@ class RealTime:
 
 @strawberry.type
 class Summary:
+    """ """
     board_id: str
     site: str
     GPTAnswer: str
@@ -42,6 +45,7 @@ class Summary:
 
 @strawberry.type
 class Comment:
+    """ """
     board_id: str
     site: str
     Comments: List[Dict]
@@ -49,26 +53,43 @@ class Comment:
 
 @strawberry.type
 class Query:
+    """ """
     @strawberry.field
     def hellos(self) -> str:
+        """ """
         return "Hello, World!"
 
 
 @strawberry.type
 class Mutation:
+    """ """
 
     @strawberry.mutation
     def comment(
         self, board_id: str, site: str, userid: str, comment: str
     ) -> AddTaskTypes:
+        """
+
+        :param board_id: str: 
+        :param site: str: 
+        :param userid: str: 
+        :param comment: str: 
+
+        """
         task = task_board_comment_add.apply_async(board_id, site, userid, comment)
         return AddTaskTypes(task_id=task.id, status="Processing")
 
 
 @strawberry.type
 class TaskStatusQuery:
+    """ """
     @strawberry.field
     def task_status_comment(self, task_id: str) -> TaskStatusType:
+        """
+
+        :param task_id: str: 
+
+        """
         task_result = task_board_comment_add.AsyncResult(task_id)
 
         if task_result.state == "PENDING":
