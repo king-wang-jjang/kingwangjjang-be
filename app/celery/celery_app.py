@@ -51,6 +51,7 @@ def setup_task_logger(logger: logging.Logger, *args, **kwargs):
     """
 
     :param logger: logging.Logger:
+    :param logger: logging.Logger:
     :param *args:
     :param **kwargs:
 
@@ -65,6 +66,7 @@ def setup_task_logger(logger: logging.Logger, *args, **kwargs):
 def after_setup_task_logger(logger: logging.Logger, *args, **kwargs):
     """
 
+    :param logger: logging.Logger:
     :param logger: logging.Logger:
     :param *args:
     :param **kwargs:
