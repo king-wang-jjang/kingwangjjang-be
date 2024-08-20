@@ -20,12 +20,14 @@ async def forward_request(request: Request, base_url: str, path: str):
             url=url,
             headers=dict(request.headers),
             cookies=request.cookies,
-            data=await request.body()
+            data=await request.body(),
         )
     return response
 
 
-@router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
+@router.api_route(
+    "/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"]
+)
 async def proxy(request: Request, path: str):
     base_url = "http://localhost:8000/proxy"
 
@@ -34,5 +36,5 @@ async def proxy(request: Request, path: str):
     return Response(
         content=response.content,
         status_code=response.status_code,
-        headers=dict(response.headers)
+        headers=dict(response.headers),
     )

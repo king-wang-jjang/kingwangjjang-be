@@ -7,6 +7,7 @@ from app.utils.loghandler import setup_logger
 import logging
 import celery.signals
 from app.config import Config
+
 if Config.get_env("SERVER_RUN_MODE") == "TRUE":
     broker = "redis://172.26.0.13:6379/0"
 else:
@@ -22,13 +23,12 @@ celery_app.conf.update(
     task_routes={
         "app.celery.tasks.task_realtime_to_db": {"queue": "crawling_queue"},
         # "app.celery.tasks.task_daily_to_db": {"queue": "crawling_queue"},
-
     },
     result_expires=3600,
     beat_schedule={
-        'realtime-to-db-every-5-minutes': {
-            'task': 'app.celery.tasks.task_realtime_to_db',
-            'schedule': crontab(minute='*/5'),  # Every 5 minutes
+        "realtime-to-db-every-5-minutes": {
+            "task": "app.celery.tasks.task_realtime_to_db",
+            "schedule": crontab(minute="*/5"),  # Every 5 minutes
         },
         # 'daily-to-db-every-5-minutes': {
         #     'task': 'app.celery.tasks.task_daily_to_db',
