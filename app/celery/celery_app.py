@@ -45,6 +45,13 @@ celery_app.conf.update(
 
 @after_setup_logger.connect
 def setup_task_logger(logger: logging.Logger, *args, **kwargs):
+    """
+
+    :param logger: logging.Logger: 
+    :param *args: 
+    :param **kwargs: 
+
+    """
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
         logger.addHandler(setup_logger())
     # for handler in logger.handlers:
@@ -53,12 +60,24 @@ def setup_task_logger(logger: logging.Logger, *args, **kwargs):
 
 @after_setup_task_logger.connect
 def after_setup_task_logger(logger: logging.Logger, *args, **kwargs):
+    """
+
+    :param logger: logging.Logger: 
+    :param *args: 
+    :param **kwargs: 
+
+    """
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
         logger.addHandler(setup_logger())
 
 
 @celery.signals.setup_logging.connect
 def on_celery_setup_logging(**kwargs):
+    """
+
+    :param **kwargs: 
+
+    """
     pass
 
 
