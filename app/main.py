@@ -1,30 +1,37 @@
+import logging
 import os
 import sys
 
+import uvicorn
+from fastapi import FastAPI
+from fastapi import HTTPException
+from fastapi import Request
+from middlewares import cors_middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from strawberry.fastapi import GraphQLRouter
+from utils import lifespan
 
+from app.celery.schema import schema
+from app.celery.schema import task_status_schema
+from app.config import Config
+from app.middlewares import static_middleware
+from app.routes import index
+from app.routes.page import page_controller
+from app.routes.path import ApiPaths
+from app.routes.user import user_controller
+from app.utils.loghandler import catch_exception
+from app.utils.loghandler import setup_logger
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append("/app")
-from utils import lifespan
 # from routes.auth import auth_controller
-from app.routes.page import page_controller
-from app.routes.user import user_controller
 # from routes.board import board_controller
-from app.utils.loghandler import setup_logger
-from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi import FastAPI, Request, HTTPException
-from app.utils.loghandler import catch_exception
-import sys
 sys.excepthook = catch_exception
 
-import uvicorn
-from middlewares import cors_middleware
-import logging
-from app.config import Config
-from app.routes import index
-from app.routes.path import ApiPaths
-from app.middlewares import static_middleware
+
 class IPFilterMiddleware(BaseHTTPMiddleware):
+    """ """
+
     async def dispatch(self, request: Request, call_next):
         if request.url.path.startswith("/proxy"):
             if request.client.host != "127.0.0.1":
@@ -33,6 +40,7 @@ class IPFilterMiddleware(BaseHTTPMiddleware):
         else:
             response = await call_next(request)
         return response
+
 
 app = FastAPI(lifespan=lifespan.lifespan)
 app.add_middleware(IPFilterMiddleware)
@@ -43,14 +51,12 @@ if Config.get_env("SERVER_RUN_MODE") == "TRUE":
 cors_middleware.add(app)
 # static_middleware.add(app)
 # app.include_router(auth_controller.router)
-app.include_router(page_controller.router,prefix=ApiPaths.PROXY)
-app.include_router(user_controller.router,prefix=ApiPaths.PROXY)
+app.include_router(page_controller.router, prefix=ApiPaths.PROXY)
+app.include_router(user_controller.router, prefix=ApiPaths.PROXY)
 # app.include_router(board_controller.router)
 
 # ---------------------------------------------------
 # -- LLM 할 때 사용될 예정 --
-from strawberry.fastapi import GraphQLRouter
-from app.celery.schema import schema,task_status_schema
 graphql_app = GraphQLRouter(schema)
 task_status_app = GraphQLRouter(task_status_schema)
 
@@ -60,5 +66,5 @@ app.include_router(index.router)
 
 # ---------------------------------------------------
 
-if __name__ == '__main__':
-    uvicorn.run("main:app", host='0.0.0.0', port=8000,reload=True)
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
