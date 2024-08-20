@@ -1,10 +1,12 @@
 import logging
-from logging import handlers
 import os
 import sys
+from logging import handlers
+
 import requests
-from app.config import Config
 from colorama import Fore, Style, init
+
+from app.config import Config
 from app.db.mongo_controller import MongoController
 
 # from app.celery.Logging.tasks import task_send_to_slack,task_record_db

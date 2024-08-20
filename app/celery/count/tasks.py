@@ -1,9 +1,10 @@
 # app/tasks.py
 
-from ..celery_app import celery_app
 from app.services.count import likes, views
+
 from ...services.count.likes import add_likes
 from ...services.count.views import add_views
+from ..celery_app import celery_app
 
 
 @celery_app.task

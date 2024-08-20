@@ -1,21 +1,20 @@
+import logging
+import sys
+from datetime import datetime
+from typing import Dict, List, Optional
+
+import strawberry
 from fastapi import APIRouter, FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List, Optional, Dict
-from datetime import datetime
-import logging
-import strawberry
 from strawberry.fastapi import GraphQLRouter
 
+from app.services.board_comment.get import board_comment_get
 from app.services.count.likes import get_likes
 from app.services.count.views import get_views
 from app.services.web_crawling.index import tag
-from app.services.board_comment.get import board_comment_get
 from app.services.web_crawling.pagination import (
-    get_pagination_real_time_best,
-    get_pagination_daily_best,
-)
-from app.utils.loghandler import setup_logger, catch_exception
-import sys
+    get_pagination_daily_best, get_pagination_real_time_best)
+from app.utils.loghandler import catch_exception, setup_logger
 
 # Setup logger and exception hook
 logger = setup_logger()

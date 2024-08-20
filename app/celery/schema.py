@@ -1,11 +1,11 @@
-import app.celery.LLM.schema
+import strawberry
+from strawberry import Schema
+from strawberry.tools import merge_types
+
 import app.celery.comment.schema
 import app.celery.count.schema
+import app.celery.LLM.schema
 import app.routes.board.board_controller
-from strawberry import Schema
-import strawberry
-
-from strawberry.tools import merge_types
 
 Query = merge_types(
     "Query",
