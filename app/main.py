@@ -60,8 +60,8 @@ app.include_router(user_controller.router, prefix=ApiPaths.PROXY)
 graphql_app = GraphQLRouter(schema)
 task_status_app = GraphQLRouter(task_status_schema)
 
-app.include_router(graphql_app, prefix=ApiPaths.GRAPHQL_WITH_PROXY)
-app.include_router(task_status_app, prefix=ApiPaths.STATUS_WITH_PROXY)
+app.include_router(graphql_app, prefix=ApiPaths.GRAPHQL)
+app.include_router(task_status_app, prefix=ApiPaths.STATUS)
 app.include_router(index.router)
 
 # ---------------------------------------------------
