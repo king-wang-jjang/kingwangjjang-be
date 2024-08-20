@@ -1,8 +1,9 @@
 import app.celery.LLM.schema
 import app.celery.comment.schema
+import app.routes.board.board_controller
 from strawberry import Schema
 from strawberry.tools import merge_types
-Query = merge_types("Query", (app.celery.LLM.schema.Query, app.celery.comment.schema.Query))
+Query = merge_types("Query", (app.celery.LLM.schema.Query, app.celery.comment.schema.Query, app.routes.board.board_controller.Query))
 status_query = merge_types("Query", (app.celery.LLM.schema.TaskStatusQuery, app.celery.comment.schema.TaskStatusType))
 Mutation = merge_types("Mutation", (app.celery.LLM.schema.Mutation, app.celery.comment.schema.Mutation))
 schema = Schema(query=Query, mutation=Mutation)

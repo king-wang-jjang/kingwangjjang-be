@@ -146,10 +146,17 @@ class DBLOGHandler(logging.Handler):
         }
         color = color_map.get(level, Fore.WHITE)  # Default to white if level not found
         print(f"{color}{message}")
+
     def record_db(self, record):
         data = dict(record.__dict__)
         data["server"] = Config().get_env("SERVER_TYPE")
+        # Remove non-serializable types or convert them to string
+        for key, value in data.items():
+            if isinstance(value, Exception):
+                data[key] = str(value)
         self.db_controller.insert_one("log", data)
+
+
 def setup_logger():
     logger = logging.getLogger("slack_logger")
     logger.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
