@@ -75,6 +75,7 @@ class Summary:
 @strawberry.type
 class Query:
     """ """
+
     @strawberry.field
     def hello2(self) -> str:
         """ """
