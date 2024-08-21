@@ -1,7 +1,7 @@
 # 우리가 설치한 authlib. fastapi는 starlette 기반이므로 fastapi도 starlette을 사용하는 것 같다.
 import os
-from authlib.integrations.starlette_client import OAuth
 
+from authlib.integrations.starlette_client import OAuth
 # docs에서는 사용하지 않는 거지만 HTMLResponse가 있어야 내가 원하는 형태로 돌려줄 수 있다.
 from starlette.responses import HTMLResponse
 

@@ -1,7 +1,5 @@
 import httpx
-from fastapi import APIRouter
-from fastapi import Request
-from fastapi import Response
+from fastapi import APIRouter, Request, Response
 
 from app.constants import COOKIES_KEY_NAME
 from app.utils.oauth import oauth

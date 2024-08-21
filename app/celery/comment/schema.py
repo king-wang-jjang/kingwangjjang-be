@@ -1,15 +1,13 @@
 # app/schema.py
 from datetime import datetime
-from typing import Dict
-from typing import List
-from typing import Optional
+from typing import Dict, List, Optional
 
 import strawberry
 from strawberry.types import Info
 
-from app.celery.comment.tasks import task_board_comment_add, task_board_reply_add
-from app.celery.types import AddTaskTypes
-from app.celery.types import TaskStatusType
+from app.celery.comment.tasks import (task_board_comment_add,
+                                      task_board_reply_add)
+from app.celery.types import AddTaskTypes, TaskStatusType
 
 
 @strawberry.type

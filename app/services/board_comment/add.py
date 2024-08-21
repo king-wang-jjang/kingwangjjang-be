@@ -1,16 +1,15 @@
-import threading
+import datetime
 import logging
+import sys
+import threading
 
-from fastapi import FastAPI, Request, HTTPException, APIRouter
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pymongo import settings, MongoClient
+from fastapi.responses import JSONResponse
+from pymongo import MongoClient, settings
 
 from app.db.mongo_controller import MongoController
-
 from app.utils.loghandler import catch_exception
-import sys
-import datetime
 
 sys.excepthook = catch_exception
 db_controller = MongoController()
