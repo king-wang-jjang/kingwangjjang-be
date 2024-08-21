@@ -83,6 +83,10 @@ class Mutation:
         :param site: str:
         :param userid: str:
         :param comment: str:
+        :param board_id: str: 
+        :param site: str: 
+        :param userid: str: 
+        :param comment: str: 
 
         """
         task = task_board_comment_add.apply_async(
@@ -99,6 +103,15 @@ class Mutation:
     def reply(
         self, board_id: str, site: str, userid: str, parents_comment: str, reply: str
     ) -> AddTaskTypes:
+        """
+
+        :param board_id: str: 
+        :param site: str: 
+        :param userid: str: 
+        :param parents_comment: str: 
+        :param reply: str: 
+
+        """
         task = task_board_reply_add.apply_async(
             board_id, site, userid, parents_comment, reply
         )
@@ -115,6 +128,7 @@ class TaskStatusQuery:
 
         :param task_id: str:
         :param task_id: str:
+        :param task_id: str: 
 
         """
         task_result = task_board_comment_add.AsyncResult(task_id)
