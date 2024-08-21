@@ -5,6 +5,7 @@ from fastapi import Response
 
 from app.constants import COOKIES_KEY_NAME
 from app.utils.oauth import oauth
+
 router = APIRouter()
 
 
@@ -35,7 +36,8 @@ async def forward_request(request: Request, base_url: str, path: str, oauth):
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
 async def proxy(request: Request, path: str):
     base_url = "http://localhost:8000/proxy"
-    response = await forward_request(request, base_url, path, oauth.google.authorize_access_token(request))
+    response = await forward_request(
+        request, base_url, path, oauth.google.authorize_access_token(request))
 
     return Response(
         content=response.content,

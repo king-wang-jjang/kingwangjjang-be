@@ -103,6 +103,7 @@ class Query:
 
         :param index: int:  (Default value = 0)
         :param index: int:  (Default value = 0)
+        :param index: int:  (Default value = 0)
 
         """
         try:
@@ -118,6 +119,7 @@ class Query:
 
         :param index: int:  (Default value = 0)
         :param index: int:  (Default value = 0)
+        :param index: int:  (Default value = 0)
 
         """
         try:
@@ -131,6 +133,8 @@ class Query:
     def comment(self, board_id: str, site: str) -> Comment:
         """
 
+        :param board_id: str:
+        :param site: str:
         :param board_id: str:
         :param site: str:
         :param board_id: str:
@@ -157,6 +161,8 @@ class Query:
         :param site: str:
         :param board_id: str:
         :param site: str:
+        :param board_id: str:
+        :param site: str:
 
         """
         return Likes(board_id=board_id,
@@ -167,6 +173,8 @@ class Query:
     def get_views(self, board_id: str, site: str) -> Views:
         """
 
+        :param board_id: str:
+        :param site: str:
         :param board_id: str:
         :param site: str:
         :param board_id: str:
