@@ -15,6 +15,7 @@ from app.celery.types import TaskStatusType
 @strawberry.type
 class Daily:
     """ """
+
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -27,6 +28,7 @@ class Daily:
 @strawberry.type
 class RealTime:
     """ """
+
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -39,6 +41,7 @@ class RealTime:
 @strawberry.type
 class Summary:
     """ """
+
     board_id: str
     site: str
     GPTAnswer: str
@@ -48,6 +51,7 @@ class Summary:
 @strawberry.type
 class Comment:
     """ """
+
     board_id: str
     site: str
     Comments: List[Dict]
@@ -109,11 +113,13 @@ class TaskStatusQuery:
         if task_result.state == "PENDING":
             return TaskStatusType(status=task_result.state)
         elif task_result.state != "FAILURE":
-            return TaskStatusType(status=task_result.state,
-                                  result=str(task_result.result))
+            return TaskStatusType(
+                status=task_result.state, result=str(task_result.result)
+            )
         else:
-            return TaskStatusType(status=task_result.state,
-                                  result=str(task_result.info))
+            return TaskStatusType(
+                status=task_result.state, result=str(task_result.info)
+            )
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)

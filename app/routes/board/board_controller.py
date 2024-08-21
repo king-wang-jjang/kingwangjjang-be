@@ -33,6 +33,7 @@ router = APIRouter()
 @strawberry.type
 class Daily:
     """ """
+
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -45,6 +46,7 @@ class Daily:
 @strawberry.type
 class RealTime:
     """ """
+
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -57,6 +59,7 @@ class RealTime:
 @strawberry.type
 class Summary:
     """ """
+
     board_id: str
     site: str
     GPTAnswer: str
@@ -66,6 +69,7 @@ class Summary:
 @strawberry.type
 class Comment:
     """ """
+
     board_id: str
     site: str
     Comments: str
@@ -74,6 +78,7 @@ class Comment:
 @strawberry.type
 class Likes:
     """ """
+
     board_id: str
     site: str
     NOWLIKE: int
@@ -82,6 +87,7 @@ class Likes:
 @strawberry.type
 class Views:
     """ """
+
     board_id: str
     site: str
     NOWVIEW: int
@@ -102,8 +108,7 @@ class Query:
             return get_pagination_daily_best(index)
         except Exception as e:
             logger.exception(f"Error getting daily data: {e}")
-            raise HTTPException(status_code=500,
-                                detail="Internal server error")
+            raise HTTPException(status_code=500, detail="Internal server error")
 
     @strawberry.field
     def realtime_pagination(self, index: int = 0) -> List[RealTime]:
@@ -116,8 +121,7 @@ class Query:
             return get_pagination_real_time_best(index)
         except Exception as e:
             logger.exception(f"Error getting realtime data: {e}")
-            raise HTTPException(status_code=500,
-                                detail="Internal server error")
+            raise HTTPException(status_code=500, detail="Internal server error")
 
     @strawberry.field
     def comment(self, board_id: str, site: str) -> Comment:
@@ -131,13 +135,10 @@ class Query:
             comments = board_comment_get(board_id, site)
             if not comments:
                 comments = [{"none": "none"}]
-            return Comment(board_id=board_id,
-                           site=site,
-                           Comments=str(comments))
+            return Comment(board_id=board_id, site=site, Comments=str(comments))
         except Exception as e:
             logger.exception(f"Error creating summary board: {e}")
-            raise HTTPException(status_code=500,
-                                detail="Internal server error")
+            raise HTTPException(status_code=500, detail="Internal server error")
 
     @strawberry.field
     def get_like(self, board_id: str, site: str) -> Likes:
@@ -147,9 +148,7 @@ class Query:
         :param site: str:
 
         """
-        return Likes(board_id=board_id,
-                     site=site,
-                     NOWLIKE=get_likes(board_id, site))
+        return Likes(board_id=board_id, site=site, NOWLIKE=get_likes(board_id, site))
 
     @strawberry.field
     def get_views(self, board_id: str, site: str) -> Views:
@@ -159,9 +158,7 @@ class Query:
         :param site: str:
 
         """
-        return Views(board_id=board_id,
-                     site=site,
-                     NOWVIEW=get_views(board_id, site))
+        return Views(board_id=board_id, site=site, NOWVIEW=get_views(board_id, site))
 
 
 # Initialize GraphQL schema and router
