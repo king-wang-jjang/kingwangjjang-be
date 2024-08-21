@@ -3,19 +3,24 @@ import os
 import sys
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI
+from fastapi import HTTPException
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from strawberry.fastapi import GraphQLRouter
 
-from app.celery.schema import schema, task_status_schema
+from app.celery.schema import schema
+from app.celery.schema import task_status_schema
 from app.config import Config
-from app.middlewares import cors_middleware, static_middleware
+from app.middlewares import cors_middleware
+from app.middlewares import static_middleware
 from app.routes import index
 from app.routes.page import page_controller
 from app.routes.path import ApiPaths
 from app.routes.user import user_controller
 from app.utils import lifespan
-from app.utils.loghandler import catch_exception, setup_logger
+from app.utils.loghandler import catch_exception
+from app.utils.loghandler import setup_logger
 
 sys.path.append("~/PycharmProjects/kingwangjjang-be")
 sys.path.append("/app")

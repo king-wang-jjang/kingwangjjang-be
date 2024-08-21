@@ -1,8 +1,7 @@
 # app/tasks.py
-
-from app.services.board_comment.add import board_comment_add, board_reply_add
-
 from ..celery_app import celery_app
+from app.services.board_comment.add import board_comment_add
+from app.services.board_comment.add import board_reply_add
 
 
 @celery_app.task
