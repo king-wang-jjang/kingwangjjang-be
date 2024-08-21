@@ -1,32 +1,47 @@
 # app/schema.py
+import sys
+from datetime import datetime
+from typing import Dict
+from typing import List
+from typing import Optional
 
 import strawberry
+from fastapi import APIRouter
+from fastapi import FastAPI
+from fastapi import HTTPException
+from fastapi import Request
 from strawberry.types import Info
 
-from app.celery.count.tasks import task_likes_add,task_views_add
-from typing import List, Optional,Dict
-from datetime import datetime
-
+from app.celery.count.tasks import task_likes_add
+from app.celery.count.tasks import task_views_add
 from app.celery.types import AddTaskTypes
-from app.utils.loghandler import setup_logger
+from app.services.count import likes
+from app.services.count import views
 from app.utils.loghandler import catch_exception
-from fastapi import APIRouter, FastAPI, HTTPException, Request
-import sys
+from app.utils.loghandler import setup_logger
 
-from app.services.count import likes,views
 logger = setup_logger()
+
+
 @strawberry.type
 class Likes:
+    """ """
     board_id: str
     site: str
-    NOWLIKE : int
+    NOWLIKE: int
+
+
 @strawberry.type
 class Views:
+    """ """
     board_id: str
     site: str
-    NOWVIEW : int
+    NOWVIEW: int
+
+
 @strawberry.type
 class Daily:
+    """ """
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -34,9 +49,11 @@ class Daily:
     url: str
     create_time: datetime
     GPTAnswer: Optional[str] = None
+
 
 @strawberry.type
 class RealTime:
+    """ """
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -44,33 +61,52 @@ class RealTime:
     url: str
     create_time: datetime
     GPTAnswer: Optional[str] = None
+
+
 @strawberry.type
 class Summary:
+    """ """
     board_id: str
     site: str
-    GPTAnswer : str
-    Tag : List[str]
+    GPTAnswer: str
+    Tag: List[str]
+
 
 @strawberry.type
 class Query:
+    """ """
+
     @strawberry.field
     def hello2(self) -> str:
+        """ """
         return "Hello, World!"
-
 
 
 @strawberry.type
 class Mutation:
+    """ """
 
     @strawberry.field
     def likes_add(self, board_id: str, site: str) -> AddTaskTypes:
+        """
+
+        :param board_id: str:
+        :param site: str:
+
+        """
         task = task_likes_add.apply_async(board_id, site)
         return AddTaskTypes(task_id=task.id, status="Processing")
+
     @strawberry.field
     def views_add(self, board_id: str, site: str) -> AddTaskTypes:
+        """
+
+        :param board_id: str:
+        :param site: str:
+
+        """
         task = task_views_add.apply_async(board_id, site)
         return AddTaskTypes(task_id=task.id, status="Processing")
-
 
 
 # @strawberry.type

@@ -1,21 +1,34 @@
 import logging
-from logging import handlers
 import os
 import sys
+from logging import handlers
+
 import requests
+from colorama import Fore
+from colorama import init
+from colorama import Style
+
 from app.config import Config
-from colorama import Fore, Style, init
 from app.db.mongo_controller import MongoController
+
 # from app.celery.Logging.tasks import task_send_to_slack,task_record_db
 init(autoreset=True)  # colorama 초기화
 
+
 class SlackWebhookHandler(logging.Handler):
+    """ """
+
     def __init__(self):
         super().__init__()
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
             self.webhook_url = Config().get_env("WEBHOOK_URL")
 
     def emit(self, record):
+        """
+
+        :param record:
+
+        """
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
             payload = self.create_payload(record)
@@ -24,130 +37,169 @@ class SlackWebhookHandler(logging.Handler):
             self.print_colored_log(log_entry, record.levelname)
 
     def create_payload(self, record):
+        """
+
+        :param record:
+
+        """
         color_map = {
-            "DEBUG": "#808080",   # Gray
-            "INFO": "#00FF00",    # Green
-            "WARNING": "#FFFF00", # Yellow
-            "ERROR": "#FF0000",   # Red
-            "CRITICAL": "#8B0000" # Dark Red
+            "DEBUG": "#808080",  # Gray
+            "INFO": "#00FF00",  # Green
+            "WARNING": "#FFFF00",  # Yellow
+            "ERROR": "#FF0000",  # Red
+            "CRITICAL": "#8B0000",  # Dark Red
         }
         try:
             payload = {
-                "attachments": [
-                    {
-                        "color": color_map.get(record.levelname),
-                        "title": f"{record.levelname}!",
-                        "fields": [
-                            {
-                                "title": "MESSAGE",
-                                "value": record.message,
-                                "short": False
-                            },
-                            {
-                                "title": "TYPE",
-                                "value": str(record.exc_info[0]),
-                                "short": True
-                            },
-                            {
-                                "title": "VALUE",
-                                "value": str(record.exc_info[1]),
-                                "short": True
-                            },
-                            {
-                                "title": "TRACEBACK",
-                                "value": str(record.exc_info[2]),
-                                "short": True
-                            },
-                            {
-                                "title": "FILE",
-                                "value": record.filename,
-                                "short": True
-                            },
-                            {
-                                "title": "ERROR LINE",
-                                "value": record.lineno,
-                                "short": True
-                            }
-                        ],
-                        "footer": str(record.__dict__)
-                    }
-                ]
+                "attachments": [{
+                    "color":
+                    color_map.get(record.levelname),
+                    "title":
+                    f"{record.levelname}!",
+                    "fields": [
+                        {
+                            "title": "MESSAGE",
+                            "value": record.message,
+                            "short": False,
+                        },
+                        {
+                            "title": "TYPE",
+                            "value": str(record.exc_info[0]),
+                            "short": True,
+                        },
+                        {
+                            "title": "VALUE",
+                            "value": str(record.exc_info[1]),
+                            "short": True,
+                        },
+                        {
+                            "title": "TRACEBACK",
+                            "value": str(record.exc_info[2]),
+                            "short": True,
+                        },
+                        {
+                            "title": "FILE",
+                            "value": record.filename,
+                            "short": True
+                        },
+                        {
+                            "title": "ERROR LINE",
+                            "value": record.lineno,
+                            "short": True,
+                        },
+                    ],
+                    "footer":
+                    str(record.__dict__),
+                }]
             }
         except Exception as e:
             payload = {
-                "attachments": [
-                    {
-                        "color": color_map.get(record.levelname),
-                        "title": f"{record.levelname}! @everyone",
-                        "fields": [
-                            {
-                                "title": "MESSAGE",
-                                "value": record.message,
-                                "short": False
-                            },
-                            {
-                                "title": "FILE",
-                                "value": record.filename,
-                                "short": True
-                            },
-                            {
-                                "title": "ERROR LINE",
-                                "value": record.lineno,
-                                "short": True
-                            }
-                        ],
-                        "footer": str(record.__dict__)
-                    }
-                ]
+                "attachments": [{
+                    "color":
+                    color_map.get(record.levelname),
+                    "title":
+                    f"{record.levelname}! @everyone",
+                    "fields": [
+                        {
+                            "title": "MESSAGE",
+                            "value": record.message,
+                            "short": False,
+                        },
+                        {
+                            "title": "FILE",
+                            "value": record.filename,
+                            "short": True
+                        },
+                        {
+                            "title": "ERROR LINE",
+                            "value": record.lineno,
+                            "short": True,
+                        },
+                    ],
+                    "footer":
+                    str(record.__dict__),
+                }]
             }
         return payload
 
     def send_to_slack(self, payload):
-        headers = {
-            "Content-Type": "application/json"
-        }
+        """
+
+        :param payload:
+
+        """
+        headers = {"Content-Type": "application/json"}
         try:
-            response = requests.post(self.webhook_url, json=payload, headers=headers)
+            response = requests.post(self.webhook_url,
+                                     json=payload,
+                                     headers=headers)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"Error sending log to Slack: {e}")
 
     def print_colored_log(self, message, level):
+        """
+
+        :param message:
+        :param level:
+
+        """
         color_map = {
             "DEBUG": Fore.LIGHTBLACK_EX,
             "INFO": Fore.GREEN,
             "WARNING": Fore.YELLOW,
             "ERROR": Fore.RED,
-            "CRITICAL": Fore.RED + Style.BRIGHT
+            "CRITICAL": Fore.RED + Style.BRIGHT,
         }
-        color = color_map.get(level, Fore.WHITE)  # Default to white if level not found
+        # Default to white if level not found
+        color = color_map.get(level, Fore.WHITE)
         print(f"{color}{message}")
+
+
 class DBLOGHandler(logging.Handler):
+    """ """
+
     def __init__(self):
         super().__init__()
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
             self.db_controller = MongoController()
 
     def emit(self, record):
+        """
+
+        :param record:
+
+        """
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
             self.record_db(record)
         else:
             self.print_colored_log(log_entry, record.levelname)
 
-
     def print_colored_log(self, message, level):
+        """
+
+        :param message:
+        :param level:
+
+        """
         color_map = {
             "DEBUG": Fore.LIGHTBLACK_EX,
             "INFO": Fore.GREEN,
             "WARNING": Fore.YELLOW,
             "ERROR": Fore.RED,
-            "CRITICAL": Fore.RED + Style.BRIGHT
+            "CRITICAL": Fore.RED + Style.BRIGHT,
         }
-        color = color_map.get(level, Fore.WHITE)  # Default to white if level not found
+        # Default to white if level not found
+        color = color_map.get(level, Fore.WHITE)
         print(f"{color}{message}")
 
     def record_db(self, record):
+        """
+
+        :param record:
+
+        """
         data = dict(record.__dict__)
         data["server"] = Config().get_env("SERVER_TYPE")
         # Remove non-serializable types or convert them to string
@@ -158,6 +210,7 @@ class DBLOGHandler(logging.Handler):
 
 
 def setup_logger():
+    """ """
     logger = logging.getLogger("slack_logger")
     logger.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
 
@@ -182,10 +235,19 @@ def setup_logger():
         log.setLevel(logging.DEBUG)
         return log
 
+
 def catch_exception(exc_type, exc_value, exc_traceback):
+    """
+
+    :param exc_type:
+    :param exc_value:
+    :param exc_traceback:
+
+    """
     # 로깅 모듈을 이용해 로거를 미리 등록해놔야 합니다.
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
         logger = setup_logger()
     else:
         logger = logging.getLogger("")
-    logger.error("Unexpected exception.", exc_info=(exc_type, exc_value, exc_traceback))
+    logger.error("Unexpected exception.",
+                 exc_info=(exc_type, exc_value, exc_traceback))
