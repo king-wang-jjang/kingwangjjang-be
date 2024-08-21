@@ -72,8 +72,9 @@ class Mutation:
     """ """
 
     @strawberry.mutation
-    def comment(self, board_id: str, site: str, userid: str,
-                comment: str) -> AddTaskTypes:
+    def comment(
+        self, board_id: str, site: str, userid: str, comment: str
+    ) -> AddTaskTypes:
         """
 
         :param board_id: str:
@@ -86,8 +87,7 @@ class Mutation:
         :param comment: str:
 
         """
-        task = task_board_comment_add.apply_async(board_id, site, userid,
-                                                  comment)
+        task = task_board_comment_add.apply_async(board_id, site, userid, comment)
         return AddTaskTypes(task_id=task.id, status="Processing")
 
 
@@ -108,11 +108,13 @@ class TaskStatusQuery:
         if task_result.state == "PENDING":
             return TaskStatusType(status=task_result.state)
         elif task_result.state != "FAILURE":
-            return TaskStatusType(status=task_result.state,
-                                  result=str(task_result.result))
+            return TaskStatusType(
+                status=task_result.state, result=str(task_result.result)
+            )
         else:
-            return TaskStatusType(status=task_result.state,
-                                  result=str(task_result.info))
+            return TaskStatusType(
+                status=task_result.state, result=str(task_result.info)
+            )
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
