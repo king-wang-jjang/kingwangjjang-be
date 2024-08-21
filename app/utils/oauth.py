@@ -3,7 +3,7 @@ from authlib.integrations.starlette_client import OAuth
 # docs에서는 사용하지 않는 거지만 HTMLResponse가 있어야 내가 원하는 형태로 돌려줄 수 있다.
 from starlette.responses import HTMLResponse
 # 중요한 정보기 때문에 숨겨놓고 씁시다. google과 twitter에서 받아오시다.
-from config import Config
+from app.config import Config
 
 oauth = OAuth()
 

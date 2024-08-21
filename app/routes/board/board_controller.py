@@ -181,5 +181,3 @@ class Query:
 # Initialize GraphQL schema and router
 schema = strawberry.Schema(query=Query)
 graphql_app = GraphQLRouter(schema=schema)
-app.include_router(router)
-app.include_router(graphql_app, prefix="/graphql")

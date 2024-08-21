@@ -1,15 +1,16 @@
 import logging
 import os
 import sys
-
+sys.path.append("~/PycharmProjects/kingwangjjang-be")
+sys.path.append("/app")
 import uvicorn
 from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi import Request
-from middlewares import cors_middleware
+from app.middlewares import cors_middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from strawberry.fastapi import GraphQLRouter
-from utils import lifespan
+from app.utils import lifespan
 
 from app.celery.schema import schema
 from app.celery.schema import task_status_schema
@@ -22,8 +23,7 @@ from app.routes.user import user_controller
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append("/app")
+
 # from routes.auth import auth_controller
 # from routes.board import board_controller
 sys.excepthook = catch_exception
