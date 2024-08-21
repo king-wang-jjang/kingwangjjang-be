@@ -7,7 +7,7 @@ from typing import Optional
 import strawberry
 from strawberry.types import Info
 
-from app.celery.comment.tasks import task_board_comment_add,task_board_reply_add
+from app.celery.comment.tasks import task_board_comment_add, task_board_reply_add
 from app.celery.types import AddTaskTypes
 from app.celery.types import TaskStatusType
 
@@ -95,9 +95,12 @@ class Mutation:
         return AddTaskTypes(task_id=task.id, status="Processing")
 
     @strawberry.mutation
-    def reply(self, board_id: str, site: str, userid: str, parents_comment : str, reply : str) -> AddTaskTypes:
-        task = task_board_reply_add.apply_async(board_id, site, userid, parents_comment, reply)
+    def reply(self, board_id: str, site: str, userid: str, parents_comment: str, reply: str) -> AddTaskTypes:
+        task = task_board_reply_add.apply_async(
+            board_id, site, userid, parents_comment, reply)
         return AddTaskTypes(task_id=task.id, status="Processing")
+
+
 @strawberry.type
 class TaskStatusQuery:
     """ """
