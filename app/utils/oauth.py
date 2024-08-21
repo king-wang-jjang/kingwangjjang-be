@@ -17,18 +17,19 @@ SCOPES = [
     "https://www.googleapis.com/auth/userinfo.email",
 ]
 
-
 oauth.register(
     name="google",
     client_id=Config().get_env("GOOGLE_CLIENT_ID"),
     client_secret=Config().get_env("GOOGLE_CLIENT_SECRET"),
-    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+    server_metadata_url=
+    "https://accounts.google.com/.well-known/openid-configuration",
     client_kwargs={"scope": "openid email profile"},
 )
 
 oauth.register(
     name="kakao",
     client_id=Config().get_env("KAKAO_CLIENT_ID"),
-    server_metadata_url="https://kauth.kakao.com/.well-known/openid-configuration",
+    server_metadata_url=
+    "https://kauth.kakao.com/.well-known/openid-configuration",
     client_kwargs={"scope": "profile_nickname"},
 )

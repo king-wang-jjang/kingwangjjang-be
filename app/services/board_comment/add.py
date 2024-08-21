@@ -37,7 +37,10 @@ def board_comment_add(board_id, site, userid, comment):
             "reply": list(),
             "timestamp": datetime.datetime.now(),
         }
-        collection = db_controller.find("Comment", {"board_id": board_id, "site": site})
+        collection = db_controller.find("Comment", {
+            "board_id": board_id,
+            "site": site
+        })
         db_controller.insert_one("Comment", comment_data)
         return collection
     except Exception as e:
@@ -62,9 +65,11 @@ def board_reply_add(board_id, site, userid, reply, parrent_comment):
             "comment": reply,
             "timestamp": datetime.datetime.now(),
         }
-        replys = db_controller.find("Comment", {"_id": parrent_comment})["reply"]
+        replys = db_controller.find("Comment",
+                                    {"_id": parrent_comment})["reply"]
         replys.append(comment_data)
-        db_controller.update_one("Comment", {"_id": parrent_comment}, {"$set": replys})
+        db_controller.update_one("Comment", {"_id": parrent_comment},
+                                 {"$set": replys})
         return db_controller.find("Comment", {"_id": parrent_comment})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

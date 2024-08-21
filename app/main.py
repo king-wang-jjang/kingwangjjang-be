@@ -25,7 +25,6 @@ from app.utils.loghandler import setup_logger
 sys.path.append("~/PycharmProjects/kingwangjjang-be")
 sys.path.append("/app")
 
-
 # from routes.auth import auth_controller
 # from routes.board import board_controller
 sys.excepthook = catch_exception
