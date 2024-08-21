@@ -97,8 +97,8 @@ class Mutation:
 
         :param board_id: str:
         :param site: str:
-        :param board_id: str: 
-        :param site: str: 
+        :param board_id: str:
+        :param site: str:
 
         """
         task = task_likes_add.apply_async(board_id, site)
@@ -110,8 +110,8 @@ class Mutation:
 
         :param board_id: str:
         :param site: str:
-        :param board_id: str: 
-        :param site: str: 
+        :param board_id: str:
+        :param site: str:
 
         """
         task = task_views_add.apply_async(board_id, site)
