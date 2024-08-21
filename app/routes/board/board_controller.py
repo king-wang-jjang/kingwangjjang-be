@@ -135,8 +135,8 @@ class Query:
         :param site: str:
         :param board_id: str:
         :param site: str:
-        :param board_id: str: 
-        :param site: str: 
+        :param board_id: str:
+        :param site: str:
 
         """
         try:
@@ -156,8 +156,8 @@ class Query:
         :param site: str:
         :param board_id: str:
         :param site: str:
-        :param board_id: str: 
-        :param site: str: 
+        :param board_id: str:
+        :param site: str:
 
         """
         return Likes(board_id=board_id, site=site, NOWLIKE=get_likes(board_id, site))
@@ -170,8 +170,8 @@ class Query:
         :param site: str:
         :param board_id: str:
         :param site: str:
-        :param board_id: str: 
-        :param site: str: 
+        :param board_id: str:
+        :param site: str:
 
         """
         return Views(board_id=board_id, site=site, NOWVIEW=get_views(board_id, site))
