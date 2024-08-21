@@ -19,6 +19,7 @@ import uvicorn
 import logging
 import os
 import sys
+
 sys.path.append("~/PycharmProjects/kingwangjjang-be")
 sys.path.append("/app")
 

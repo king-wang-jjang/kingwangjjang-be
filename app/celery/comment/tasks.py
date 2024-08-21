@@ -10,5 +10,7 @@ def task_board_comment_add(board_id: str, site: str, userid: str, comment: str):
 
 
 @celery_app.task
-def task_board_reply_add(board_id: str, site: str, userid: str, parents_comment: str, reply: str):
+def task_board_reply_add(
+    board_id: str, site: str, userid: str, parents_comment: str, reply: str
+):
     return board_reply_add(board_id, site, userid, parents_comment, reply)
