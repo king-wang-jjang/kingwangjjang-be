@@ -140,7 +140,7 @@ class SlackWebhookHandler(logging.Handler):
     def print_colored_log(self, message, level):
         """
 
-        :param message:
+        :param message: param level:
         :param level:
 
         """
@@ -179,7 +179,7 @@ class DBLOGHandler(logging.Handler):
     def print_colored_log(self, message, level):
         """
 
-        :param message:
+        :param message: param level:
         :param level:
 
         """
@@ -239,9 +239,9 @@ def setup_logger():
 def catch_exception(exc_type, exc_value, exc_traceback):
     """
 
-    :param exc_type:
-    :param exc_value:
+    :param exc_type: param exc_value:
     :param exc_traceback:
+    :param exc_value:
 
     """
     # 로깅 모듈을 이용해 로거를 미리 등록해놔야 합니다.

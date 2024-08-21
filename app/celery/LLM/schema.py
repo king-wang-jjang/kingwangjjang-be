@@ -15,6 +15,7 @@ from app.celery.types import TaskStatusType
 @strawberry.type
 class Daily:
     """ """
+
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -27,6 +28,7 @@ class Daily:
 @strawberry.type
 class RealTime:
     """ """
+
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -39,6 +41,7 @@ class RealTime:
 @strawberry.type
 class Summary:
     """ """
+
     board_id: str
     site: str
     GPTAnswer: str
@@ -48,6 +51,7 @@ class Summary:
 @strawberry.type
 class Comment:
     """ """
+
     board_id: str
     site: str
     Comments: List[Dict]
@@ -71,6 +75,8 @@ class Mutation:
     def summary_board(self, board_id: str, site: str) -> AddTaskTypes:
         """
 
+        :param board_id: str:
+        :param site: str:
         :param board_id: str:
         :param site: str:
 
@@ -101,6 +107,7 @@ class TaskStatusQuery:
     def task_status_llm(self, task_id: str) -> TaskStatusType:
         """
 
+        :param task_id: str:
         :param task_id: str:
 
         """

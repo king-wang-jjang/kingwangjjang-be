@@ -33,6 +33,7 @@ router = APIRouter()
 @strawberry.type
 class Daily:
     """ """
+
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -45,6 +46,7 @@ class Daily:
 @strawberry.type
 class RealTime:
     """ """
+
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -57,6 +59,7 @@ class RealTime:
 @strawberry.type
 class Summary:
     """ """
+
     board_id: str
     site: str
     GPTAnswer: str
@@ -66,6 +69,7 @@ class Summary:
 @strawberry.type
 class Comment:
     """ """
+
     board_id: str
     site: str
     Comments: str
@@ -74,6 +78,7 @@ class Comment:
 @strawberry.type
 class Likes:
     """ """
+
     board_id: str
     site: str
     NOWLIKE: int
@@ -82,6 +87,7 @@ class Likes:
 @strawberry.type
 class Views:
     """ """
+
     board_id: str
     site: str
     NOWVIEW: int
@@ -95,6 +101,7 @@ class Query:
     def daily_pagination(self, index: int = 0) -> List[Daily]:
         """
 
+        :param index: int:  (Default value = 0)
         :param index: int:  (Default value = 0)
 
         """
@@ -110,6 +117,7 @@ class Query:
         """
 
         :param index: int:  (Default value = 0)
+        :param index: int:  (Default value = 0)
 
         """
         try:
@@ -123,6 +131,8 @@ class Query:
     def comment(self, board_id: str, site: str) -> Comment:
         """
 
+        :param board_id: str:
+        :param site: str:
         :param board_id: str:
         :param site: str:
 
@@ -145,6 +155,8 @@ class Query:
 
         :param board_id: str:
         :param site: str:
+        :param board_id: str:
+        :param site: str:
 
         """
         return Likes(board_id=board_id,
@@ -155,6 +167,8 @@ class Query:
     def get_views(self, board_id: str, site: str) -> Views:
         """
 
+        :param board_id: str:
+        :param site: str:
         :param board_id: str:
         :param site: str:
 

@@ -26,6 +26,7 @@ logger = setup_logger()
 @strawberry.type
 class Likes:
     """ """
+
     board_id: str
     site: str
     NOWLIKE: int
@@ -34,6 +35,7 @@ class Likes:
 @strawberry.type
 class Views:
     """ """
+
     board_id: str
     site: str
     NOWVIEW: int
@@ -42,6 +44,7 @@ class Views:
 @strawberry.type
 class Daily:
     """ """
+
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -54,6 +57,7 @@ class Daily:
 @strawberry.type
 class RealTime:
     """ """
+
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -66,6 +70,7 @@ class RealTime:
 @strawberry.type
 class Summary:
     """ """
+
     board_id: str
     site: str
     GPTAnswer: str
@@ -92,6 +97,8 @@ class Mutation:
 
         :param board_id: str:
         :param site: str:
+        :param board_id: str:
+        :param site: str:
 
         """
         task = task_likes_add.apply_async(board_id, site)
@@ -101,6 +108,8 @@ class Mutation:
     def views_add(self, board_id: str, site: str) -> AddTaskTypes:
         """
 
+        :param board_id: str:
+        :param site: str:
         :param board_id: str:
         :param site: str:
 
