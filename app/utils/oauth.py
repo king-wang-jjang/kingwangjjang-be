@@ -1,12 +1,8 @@
-# 우리가 설치한 authlib. fastapi는 starlette 기반이므로 fastapi도 starlette을 사용하는 것 같다.
-import os
-
 from authlib.integrations.starlette_client import OAuth
-from starlette.responses import HTMLResponse
-
 from app.config import Config
-# docs에서는 사용하지 않는 거지만 HTMLResponse가 있어야 내가 원하는 형태로 돌려줄 수 있다.
-# 중요한 정보기 때문에 숨겨놓고 씁시다. google과 twitter에서 받아오시다.
+import jwt
+import hashlib
+from datetime import datetime,timedelta
 
 oauth = OAuth()
 
@@ -21,15 +17,22 @@ oauth.register(
     name="google",
     client_id=Config().get_env("GOOGLE_CLIENT_ID"),
     client_secret=Config().get_env("GOOGLE_CLIENT_SECRET"),
-    server_metadata_url=
-    "https://accounts.google.com/.well-known/openid-configuration",
+    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
     client_kwargs={"scope": "openid email profile"},
 )
 
 oauth.register(
     name="kakao",
     client_id=Config().get_env("KAKAO_CLIENT_ID"),
-    server_metadata_url=
-    "https://kauth.kakao.com/.well-known/openid-configuration",
+    server_metadata_url="https://kauth.kakao.com/.well-known/openid-configuration",
     client_kwargs={"scope": "profile_nickname"},
 )
+
+
+class JWT():
+    def __init__(self):
+        self.secret_key = Config().get_env("JWT_SECRET_KEY")
+    def encode(self, payload):
+        return jwt.encode(payload, self.secret_key, algorithm='HS256')
+    def decode(self, token):
+        return jwt.decode(token, self.secret_key, algorithms=['HS256'])

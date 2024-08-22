@@ -25,7 +25,7 @@ from app.utils.loghandler import setup_logger
 sys.path.append("~/PycharmProjects/kingwangjjang-be")
 sys.path.append("/app")
 
-# from routes.auth import auth_controller
+from app.routes.auth import auth_controller
 # from routes.board import board_controller
 sys.excepthook = catch_exception
 
@@ -51,7 +51,7 @@ if Config.get_env("SERVER_RUN_MODE") == "TRUE":
     logging.getLogger("uvicorn.error").handlers = [logger.handlers[1]]
 cors_middleware.add(app)
 # static_middleware.add(app)
-# app.include_router(auth_controller.router)
+app.include_router(auth_controller.router)
 app.include_router(page_controller.router, prefix=ApiPaths.PROXY)
 app.include_router(user_controller.router, prefix=ApiPaths.PROXY)
 # app.include_router(board_controller.router)

@@ -9,11 +9,11 @@ from datetime import datetime
 import logging
 import strawberry
 from strawberry.fastapi import GraphQLRouter
-from services.web_crwaling.pagination import get_pagination_real_time_best,get_pagination_daily_best
-from services.web_crwaling.views import board_summary,tag
-from utils.loghandler import setup_logger
-from utils.loghandler import catch_exception
-from db.mongo_controller import MongoController
+# from services.web_crwaling.pagination import get_pagination_real_time_best,get_pagination_daily_best
+# from services.web_crwaling.views import board_summary,tag
+from app.utils.loghandler import setup_logger
+from app.utils.loghandler import catch_exception
+from app.db.mongo_controller import MongoController
 from typing import List, Optional
 from faker import Faker
 from faker.providers import address, company, date_time, phone_number, person
