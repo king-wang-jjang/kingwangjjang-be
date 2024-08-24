@@ -1,6 +1,10 @@
 import httpx
 from fastapi import APIRouter, Request, Response, HTTPException
 from app.utils.oauth import oauth,JWT
+import sys
+from app.utils.loghandler import setup_logger,catch_exception
+sys.excepthook = catch_exception
+logger = setup_logger()
 router = APIRouter()
 
 
@@ -38,7 +42,7 @@ async def proxy(request: Request, path: str) -> Response:
         # ID 토큰 검증
         try:
             token_data = JWT().decode(token)
-            print(token_data)
+            logger.debug(f"JWT token issued: {token_data}")
         except HTTPException as e:
             raise HTTPException(status_code=e.status_code, detail=e.detail)
 
