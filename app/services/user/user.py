@@ -1,26 +1,24 @@
-from fastapi import FastAPI
-from starlette.middleware.sessions import SessionMiddleware
-from starlette.requests import Request
-from utils.oauth import oauth
+import logging
+import random
+import string
+import sys
+from datetime import datetime
+from typing import List, Optional
+
+import strawberry
+from faker import Faker
+from faker.providers import address, company, date_time, person, phone_number
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from pydantic import BaseModel
-from typing import List, Optional
-from datetime import datetime
-import logging
-import strawberry
+from starlette.middleware.sessions import SessionMiddleware
+from starlette.requests import Request
 from strawberry.fastapi import GraphQLRouter
+from utils.oauth import oauth
 
+from app.db.mongo_controller import MongoController
 # from services.web_crwaling.pagination import get_pagination_real_time_best,get_pagination_daily_best
 # from services.web_crwaling.views import board_summary,tag
-from app.utils.loghandler import setup_logger
-from app.utils.loghandler import catch_exception
-from app.db.mongo_controller import MongoController
-from typing import List, Optional
-from faker import Faker
-from faker.providers import address, company, date_time, phone_number, person
-import string
-import random
-import sys
+from app.utils.loghandler import catch_exception, setup_logger
 
 sys.excepthook = catch_exception
 db_controller = MongoController()

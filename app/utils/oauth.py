@@ -1,8 +1,10 @@
-from authlib.integrations.starlette_client import OAuth
-from app.config import Config
-import jwt
 import hashlib
 from datetime import datetime, timedelta
+
+import jwt
+from authlib.integrations.starlette_client import OAuth
+
+from app.config import Config
 
 oauth = OAuth()
 

@@ -1,16 +1,14 @@
 import logging
 import os
 import sys
+import threading
 from logging import handlers
 
 import requests
-from colorama import Fore
-from colorama import init
-from colorama import Style
+from colorama import Fore, Style, init
 
 from app.config import Config
 from app.db.mongo_controller import MongoController
-import threading
 
 # from app.celery.Logging.tasks import task_send_to_slack,task_record_db
 init(autoreset=True)  # colorama 초기화
