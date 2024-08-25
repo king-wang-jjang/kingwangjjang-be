@@ -1,5 +1,6 @@
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime
+from datetime import timedelta
 
 import jwt
 from authlib.integrations.starlette_client import OAuth

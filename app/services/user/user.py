@@ -3,12 +3,20 @@ import random
 import string
 import sys
 from datetime import datetime
-from typing import List, Optional
+from typing import List
+from typing import Optional
 
 import strawberry
 from faker import Faker
-from faker.providers import address, company, date_time, person, phone_number
-from fastapi import APIRouter, FastAPI, HTTPException, Request
+from faker.providers import address
+from faker.providers import company
+from faker.providers import date_time
+from faker.providers import person
+from faker.providers import phone_number
+from fastapi import APIRouter
+from fastapi import FastAPI
+from fastapi import HTTPException
+from fastapi import Request
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
@@ -16,9 +24,10 @@ from strawberry.fastapi import GraphQLRouter
 from utils.oauth import oauth
 
 from app.db.mongo_controller import MongoController
+from app.utils.loghandler import catch_exception
+from app.utils.loghandler import setup_logger
 # from services.web_crwaling.pagination import get_pagination_real_time_best,get_pagination_daily_best
 # from services.web_crwaling.views import board_summary,tag
-from app.utils.loghandler import catch_exception, setup_logger
 
 sys.excepthook = catch_exception
 db_controller = MongoController()

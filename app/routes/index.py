@@ -1,10 +1,15 @@
 import sys
 
 import httpx
-from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi import APIRouter
+from fastapi import HTTPException
+from fastapi import Request
+from fastapi import Response
 
-from app.utils.loghandler import catch_exception, setup_logger
-from app.utils.oauth import JWT, oauth
+from app.utils.loghandler import catch_exception
+from app.utils.loghandler import setup_logger
+from app.utils.oauth import JWT
+from app.utils.oauth import oauth
 
 sys.excepthook = catch_exception
 logger = setup_logger()

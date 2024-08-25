@@ -5,7 +5,9 @@ import threading
 from logging import handlers
 
 import requests
-from colorama import Fore, Style, init
+from colorama import Fore
+from colorama import init
+from colorama import Style
 
 from app.config import Config
 from app.db.mongo_controller import MongoController
