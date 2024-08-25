@@ -1,7 +1,7 @@
 import logging
 import os
 import sys
-
+sys.path.append("/app") #내부 모듈이 임포트 되기전에 가장 먼저 임포트 되야함.
 import uvicorn
 from fastapi import FastAPI
 from fastapi import HTTPException
@@ -22,8 +22,7 @@ from app.utils import lifespan
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
 
-sys.path.append("~/PycharmProjects/kingwangjjang-be")
-sys.path.append("/app")
+
 
 from app.routes.auth import auth_controller
 # from routes.board import board_controller
