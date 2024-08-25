@@ -32,7 +32,8 @@ class SlackWebhookHandler(logging.Handler):
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
             payload = self.create_payload(record)
-            threading.Thread(target=self.send_to_slack, args=(payload,)).start()
+            threading.Thread(target=self.send_to_slack,
+                             args=(payload,)).start()
         else:
             self.print_colored_log(log_entry, record.levelname)
 
@@ -172,7 +173,7 @@ class DBLOGHandler(logging.Handler):
         """
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
-            threading.Thread(target=self.record_db,args=(record,)).start()
+            threading.Thread(target=self.record_db, args=(record,)).start()
         else:
             self.print_colored_log(log_entry, record.levelname)
 

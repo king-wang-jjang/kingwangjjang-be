@@ -2,7 +2,7 @@ from authlib.integrations.starlette_client import OAuth
 from app.config import Config
 import jwt
 import hashlib
-from datetime import datetime,timedelta
+from datetime import datetime, timedelta
 
 oauth = OAuth()
 
@@ -32,7 +32,9 @@ oauth.register(
 class JWT():
     def __init__(self):
         self.secret_key = Config().get_env("JWT_SECRET_KEY")
+
     def encode(self, payload):
         return jwt.encode(payload, self.secret_key, algorithm='HS256')
+
     def decode(self, token):
         return jwt.decode(token, self.secret_key, algorithms=['HS256'])

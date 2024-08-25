@@ -1,12 +1,11 @@
 import httpx
 from fastapi import APIRouter, Request, Response, HTTPException
-from app.utils.oauth import oauth,JWT
+from app.utils.oauth import oauth, JWT
 import sys
-from app.utils.loghandler import setup_logger,catch_exception
+from app.utils.loghandler import setup_logger, catch_exception
 sys.excepthook = catch_exception
 logger = setup_logger()
 router = APIRouter()
-
 
 
 async def forward_request(request: Request, base_url: str, path: str, token: str = None) -> httpx.Response:
@@ -45,7 +44,6 @@ async def proxy(request: Request, path: str) -> Response:
             logger.debug(f"JWT token issued: {token_data}")
         except HTTPException as e:
             raise HTTPException(status_code=e.status_code, detail=e.detail)
-
 
     # 요청을 프록시 서버로 전달
     response = await forward_request(request, base_url, path, token)
