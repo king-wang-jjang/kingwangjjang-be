@@ -40,7 +40,7 @@ class JWT:
     def encode(self, payload):
         """
 
-        :param payload: 
+        :param payload:
 
         """
         return jwt.encode(payload, self.secret_key, algorithm="HS256")
@@ -48,7 +48,7 @@ class JWT:
     def decode(self, token):
         """
 
-        :param token: 
+        :param token:
 
         """
         return jwt.decode(token, self.secret_key, algorithms=["HS256"])

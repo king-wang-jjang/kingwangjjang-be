@@ -37,8 +37,8 @@ fake = Faker("ko_KR")
 def add_user(email: str, name: str):
     """
 
-    :param email: str: 
-    :param name: str: 
+    :param email: str:
+    :param name: str:
 
     """
     return db_controller.insert_one(
@@ -49,7 +49,7 @@ def add_user(email: str, name: str):
 def get_user_by_email(email: str):
     """
 
-    :param email: str: 
+    :param email: str:
 
     """
     try:
@@ -61,7 +61,7 @@ def get_user_by_email(email: str):
 def get_user_by_id(id: str):
     """
 
-    :param id: str: 
+    :param id: str:
 
     """
     try:
