@@ -9,6 +9,7 @@ from datetime import datetime
 import logging
 import strawberry
 from strawberry.fastapi import GraphQLRouter
+
 # from services.web_crwaling.pagination import get_pagination_real_time_best,get_pagination_daily_best
 # from services.web_crwaling.views import board_summary,tag
 from app.utils.loghandler import setup_logger
@@ -20,24 +21,27 @@ from faker.providers import address, company, date_time, phone_number, person
 import string
 import random
 import sys
+
 sys.excepthook = catch_exception
 db_controller = MongoController()
-fake = Faker('ko_KR')
+fake = Faker("ko_KR")
 
 
 def add_user(email: str, name: str):
-    return db_controller.insert_one('user', {'email': email, 'name': name, 'nick': fake.user_name(), 'role': "user"}).inserted_id
+    return db_controller.insert_one(
+        "user", {"email": email, "name": name, "nick": fake.user_name(), "role": "user"}
+    ).inserted_id
 
 
 def get_user_by_email(email: str):
     try:
-        return db_controller.find('user', {'email': email})[0]
+        return db_controller.find("user", {"email": email})[0]
     except:
         return None
 
 
 def get_user_by_id(id: str):
     try:
-        return db_controller.find('user', {'_id': id})[0]
+        return db_controller.find("user", {"_id": id})[0]
     except:
         return None

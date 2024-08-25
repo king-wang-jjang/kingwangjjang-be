@@ -3,16 +3,21 @@ from fastapi import APIRouter, Request, Response, HTTPException
 from app.utils.oauth import oauth, JWT
 import sys
 from app.utils.loghandler import setup_logger, catch_exception
+
 sys.excepthook = catch_exception
 logger = setup_logger()
 router = APIRouter()
 
 
-async def forward_request(request: Request, base_url: str, path: str, token: str = None) -> httpx.Response:
+async def forward_request(
+    request: Request, base_url: str, path: str, token: str = None
+) -> httpx.Response:
     """프록시 서버로 요청을 전달합니다."""
     url = f"{base_url}/{path}"
     headers = dict(request.headers)
-    if not request.url.path.startswith("/callback") and not request.url.path.startswith("/login"):
+    if not request.url.path.startswith("/callback") and not request.url.path.startswith(
+        "/login"
+    ):
         headers["Authorization"] = f"Bearer {token}"
 
     async with httpx.AsyncClient() as client:
@@ -28,14 +33,15 @@ async def forward_request(request: Request, base_url: str, path: str, token: str
 
 
 @router.api_route(
-    "/{path:path}",
-    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"]
+    "/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"]
 )
 async def proxy(request: Request, path: str) -> Response:
     """프록시 요청을 처리합니다."""
     base_url = "http://localhost:8000/proxy"
     token = None
-    if not request.url.path.startswith("/callback") and not request.url.path.startswith("/login"):
+    if not request.url.path.startswith("/callback") and not request.url.path.startswith(
+        "/login"
+    ):
         token = request.headers.get("Authorization").split("Bearer ")[1]
 
         # ID 토큰 검증

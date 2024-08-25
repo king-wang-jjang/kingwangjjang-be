@@ -5,8 +5,7 @@ from app.services.board_comment.add import board_reply_add
 
 
 @celery_app.task
-def task_board_comment_add(board_id: str, site: str, userid: str,
-                           comment: str):
+def task_board_comment_add(board_id: str, site: str, userid: str, comment: str):
     """
 
     :param board_id: str:
@@ -19,8 +18,9 @@ def task_board_comment_add(board_id: str, site: str, userid: str,
 
 
 @celery_app.task
-def task_board_reply_add(board_id: str, site: str, userid: str,
-                         parents_comment: str, reply: str):
+def task_board_reply_add(
+    board_id: str, site: str, userid: str, parents_comment: str, reply: str
+):
     """
 
     :param board_id: str:
