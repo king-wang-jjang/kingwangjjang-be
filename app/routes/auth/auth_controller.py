@@ -23,7 +23,6 @@ from app.utils.oauth import oauth
 # from .google_service import auth_via_google,login_via_google
 # from .kakao_service import auth_via_google,login_via_google
 
-
 app = FastAPI()
 router = APIRouter()
 

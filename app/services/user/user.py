@@ -41,9 +41,12 @@ def add_user(email: str, name: str):
     :param name: str:
 
     """
-    return db_controller.insert_one(
-        "user", {"email": email, "name": name, "nick": fake.user_name(), "role": "user"}
-    ).inserted_id
+    return db_controller.insert_one("user", {
+        "email": email,
+        "name": name,
+        "nick": fake.user_name(),
+        "role": "user"
+    }).inserted_id
 
 
 def get_user_by_email(email: str):

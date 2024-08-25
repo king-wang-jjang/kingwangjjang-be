@@ -33,7 +33,8 @@ class SlackWebhookHandler(logging.Handler):
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
             payload = self.create_payload(record)
-            threading.Thread(target=self.send_to_slack, args=(payload,)).start()
+            threading.Thread(target=self.send_to_slack,
+                             args=(payload, )).start()
         else:
             self.print_colored_log(log_entry, record.levelname)
 
@@ -52,64 +53,74 @@ class SlackWebhookHandler(logging.Handler):
         }
         try:
             payload = {
-                "attachments": [
-                    {
-                        "color": color_map.get(record.levelname),
-                        "title": f"{record.levelname}!",
-                        "fields": [
-                            {
-                                "title": "MESSAGE",
-                                "value": record.message,
-                                "short": False,
-                            },
-                            {
-                                "title": "TYPE",
-                                "value": str(record.exc_info[0]),
-                                "short": True,
-                            },
-                            {
-                                "title": "VALUE",
-                                "value": str(record.exc_info[1]),
-                                "short": True,
-                            },
-                            {
-                                "title": "TRACEBACK",
-                                "value": str(record.exc_info[2]),
-                                "short": True,
-                            },
-                            {"title": "FILE", "value": record.filename, "short": True},
-                            {
-                                "title": "ERROR LINE",
-                                "value": record.lineno,
-                                "short": True,
-                            },
-                        ],
-                        "footer": str(record.__dict__),
-                    }
-                ]
+                "attachments": [{
+                    "color":
+                    color_map.get(record.levelname),
+                    "title":
+                    f"{record.levelname}!",
+                    "fields": [
+                        {
+                            "title": "MESSAGE",
+                            "value": record.message,
+                            "short": False,
+                        },
+                        {
+                            "title": "TYPE",
+                            "value": str(record.exc_info[0]),
+                            "short": True,
+                        },
+                        {
+                            "title": "VALUE",
+                            "value": str(record.exc_info[1]),
+                            "short": True,
+                        },
+                        {
+                            "title": "TRACEBACK",
+                            "value": str(record.exc_info[2]),
+                            "short": True,
+                        },
+                        {
+                            "title": "FILE",
+                            "value": record.filename,
+                            "short": True
+                        },
+                        {
+                            "title": "ERROR LINE",
+                            "value": record.lineno,
+                            "short": True,
+                        },
+                    ],
+                    "footer":
+                    str(record.__dict__),
+                }]
             }
         except Exception as e:
             payload = {
-                "attachments": [
-                    {
-                        "color": color_map.get(record.levelname),
-                        "title": f"{record.levelname}! @everyone",
-                        "fields": [
-                            {
-                                "title": "MESSAGE",
-                                "value": record.message,
-                                "short": False,
-                            },
-                            {"title": "FILE", "value": record.filename, "short": True},
-                            {
-                                "title": "ERROR LINE",
-                                "value": record.lineno,
-                                "short": True,
-                            },
-                        ],
-                        "footer": str(record.__dict__),
-                    }
-                ]
+                "attachments": [{
+                    "color":
+                    color_map.get(record.levelname),
+                    "title":
+                    f"{record.levelname}! @everyone",
+                    "fields": [
+                        {
+                            "title": "MESSAGE",
+                            "value": record.message,
+                            "short": False,
+                        },
+                        {
+                            "title": "FILE",
+                            "value": record.filename,
+                            "short": True
+                        },
+                        {
+                            "title": "ERROR LINE",
+                            "value": record.lineno,
+                            "short": True,
+                        },
+                    ],
+                    "footer":
+                    str(record.__dict__),
+                }]
             }
         return payload
 
@@ -121,7 +132,9 @@ class SlackWebhookHandler(logging.Handler):
         """
         headers = {"Content-Type": "application/json"}
         try:
-            response = requests.post(self.webhook_url, json=payload, headers=headers)
+            response = requests.post(self.webhook_url,
+                                     json=payload,
+                                     headers=headers)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"Error sending log to Slack: {e}")
@@ -161,7 +174,7 @@ class DBLOGHandler(logging.Handler):
         """
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
-            threading.Thread(target=self.record_db, args=(record,)).start()
+            threading.Thread(target=self.record_db, args=(record, )).start()
         else:
             self.print_colored_log(log_entry, record.levelname)
 
@@ -238,4 +251,5 @@ def catch_exception(exc_type, exc_value, exc_traceback):
         logger = setup_logger()
     else:
         logger = logging.getLogger("")
-    logger.error("Unexpected exception.", exc_info=(exc_type, exc_value, exc_traceback))
+    logger.error("Unexpected exception.",
+                 exc_info=(exc_type, exc_value, exc_traceback))
