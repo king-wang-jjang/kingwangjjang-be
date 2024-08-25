@@ -18,10 +18,10 @@ db_controller = MongoController()
 def board_comment_add(board_id, site, userid, comment):
     """
 
-    :param board_id:
-    :param site:
-    :param userid:
-    :param comment:
+    :param board_id: param site:
+    :param userid: param comment:
+    :param site: 
+    :param comment: 
 
     """
     try:
@@ -43,11 +43,11 @@ def board_comment_add(board_id, site, userid, comment):
 def board_reply_add(board_id, site, userid, reply, parrent_comment):
     """
 
-    :param board_id:
-    :param site:
-    :param userid:
-    :param reply:
-    :param parrent_comment:
+    :param board_id: param site:
+    :param userid: param reply:
+    :param parrent_comment: 
+    :param site: 
+    :param reply: 
 
     """
     try:

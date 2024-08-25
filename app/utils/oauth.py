@@ -32,11 +32,22 @@ oauth.register(
 
 
 class JWT:
+    """ """
     def __init__(self):
         self.secret_key = Config().get_env("JWT_SECRET_KEY")
 
     def encode(self, payload):
+        """
+
+        :param payload: 
+
+        """
         return jwt.encode(payload, self.secret_key, algorithm="HS256")
 
     def decode(self, token):
+        """
+
+        :param token: 
+
+        """
         return jwt.decode(token, self.secret_key, algorithms=["HS256"])

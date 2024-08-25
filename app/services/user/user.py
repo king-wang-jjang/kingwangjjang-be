@@ -26,12 +26,23 @@ fake = Faker("ko_KR")
 
 
 def add_user(email: str, name: str):
+    """
+
+    :param email: str: 
+    :param name: str: 
+
+    """
     return db_controller.insert_one(
         "user", {"email": email, "name": name, "nick": fake.user_name(), "role": "user"}
     ).inserted_id
 
 
 def get_user_by_email(email: str):
+    """
+
+    :param email: str: 
+
+    """
     try:
         return db_controller.find("user", {"email": email})[0]
     except:
@@ -39,6 +50,11 @@ def get_user_by_email(email: str):
 
 
 def get_user_by_id(id: str):
+    """
+
+    :param id: str: 
+
+    """
     try:
         return db_controller.find("user", {"_id": id})[0]
     except:
