@@ -8,6 +8,7 @@ import strawberry
 from strawberry.types import Info
 
 from app.celery.comment.tasks import task_board_comment_add
+from app.celery.comment.tasks import task_board_reply_add
 from app.celery.types import AddTaskTypes
 from app.celery.types import TaskStatusType
 
@@ -84,10 +85,35 @@ class Mutation:
         :param site: str:
         :param userid: str:
         :param comment: str:
+        :param board_id: str:
+        :param site: str:
+        :param userid: str:
+        :param comment: str:
 
         """
-        task = task_board_comment_add.apply_async(board_id, site, userid,
-                                                  comment)
+        task = task_board_comment_add.apply_async(
+            kwargs={
+                "board_id": board_id,
+                "site": site,
+                "userid": userid,
+                "comment": comment,
+            })
+        return AddTaskTypes(task_id=task.id, status="Processing")
+
+    @strawberry.mutation
+    def reply(self, board_id: str, site: str, userid: str,
+              parents_comment: str, reply: str) -> AddTaskTypes:
+        """
+
+        :param board_id: str:
+        :param site: str:
+        :param userid: str:
+        :param parents_comment: str:
+        :param reply: str:
+
+        """
+        task = task_board_reply_add.apply_async(board_id, site, userid,
+                                                parents_comment, reply)
         return AddTaskTypes(task_id=task.id, status="Processing")
 
 
@@ -99,6 +125,7 @@ class TaskStatusQuery:
     def task_status_comment(self, task_id: str) -> TaskStatusType:
         """
 
+        :param task_id: str:
         :param task_id: str:
         :param task_id: str:
 

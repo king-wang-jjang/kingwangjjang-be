@@ -10,7 +10,7 @@ from colorama import Style
 
 from app.config import Config
 from app.db.mongo_controller import MongoController
-
+import threading
 # from app.celery.Logging.tasks import task_send_to_slack,task_record_db
 init(autoreset=True)  # colorama 초기화
 
@@ -32,7 +32,7 @@ class SlackWebhookHandler(logging.Handler):
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
             payload = self.create_payload(record)
-            self.send_to_slack(payload)
+            threading.Thread(target=self.send_to_slack, args=(payload,)).start()
         else:
             self.print_colored_log(log_entry, record.levelname)
 
@@ -172,7 +172,7 @@ class DBLOGHandler(logging.Handler):
         """
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
-            self.record_db(record)
+            threading.Thread(target=self.record_db,args=(record,)).start()
         else:
             self.print_colored_log(log_entry, record.levelname)
 
@@ -212,11 +212,10 @@ class DBLOGHandler(logging.Handler):
 def setup_logger():
     """ """
     logger = logging.getLogger("slack_logger")
-    logger.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
 
     # 슬랙 웹훅 핸들러 추가
     slack_handler = SlackWebhookHandler()
-    slack_handler.setLevel(logging.ERROR)  # ERROR 레벨까지 모든 로그를 처리
+    slack_handler.setLevel(logging.DEBUG)  # ERROR 레벨까지 모든 로그를 처리
     # DB 웹훅 핸들러 추가
     db_handler = DBLOGHandler()
     db_handler.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
@@ -227,6 +226,7 @@ def setup_logger():
     # 핸들러를 로거에 추가
     logger.addHandler(slack_handler)
     logger.addHandler(db_handler)
+    logger.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
         return logger
     else:

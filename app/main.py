@@ -1,30 +1,30 @@
 import logging
 import os
 import sys
-
+sys.path.append("/app") #내부 모듈이 임포트 되기전에 가장 먼저 임포트 되야함.
 import uvicorn
 from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi import Request
-from middlewares import cors_middleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from strawberry.fastapi import GraphQLRouter
-from utils import lifespan
 
 from app.celery.schema import schema
 from app.celery.schema import task_status_schema
 from app.config import Config
+from app.middlewares import cors_middleware
 from app.middlewares import static_middleware
 from app.routes import index
 from app.routes.page import page_controller
 from app.routes.path import ApiPaths
 from app.routes.user import user_controller
+from app.utils import lifespan
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append("/app")
-# from routes.auth import auth_controller
+
+
+from app.routes.auth import auth_controller
 # from routes.board import board_controller
 sys.excepthook = catch_exception
 
@@ -50,7 +50,7 @@ if Config.get_env("SERVER_RUN_MODE") == "TRUE":
     logging.getLogger("uvicorn.error").handlers = [logger.handlers[1]]
 cors_middleware.add(app)
 # static_middleware.add(app)
-# app.include_router(auth_controller.router)
+app.include_router(auth_controller.router)
 app.include_router(page_controller.router, prefix=ApiPaths.PROXY)
 app.include_router(user_controller.router, prefix=ApiPaths.PROXY)
 # app.include_router(board_controller.router)
