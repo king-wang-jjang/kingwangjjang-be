@@ -101,7 +101,7 @@ class Mutation:
         :param site: str:
 
         """
-        return Likes(board_id, site,add_likes(board_id,site))
+        return Likes(board_id, site, add_likes(board_id, site))
 
     @strawberry.field
     def views_add(self, board_id: str, site: str) -> Views:
@@ -113,7 +113,7 @@ class Mutation:
         :param site: str:
 
         """
-        return Views(board_id, site,add_views(board_id,site))
+        return Views(board_id, site, add_views(board_id, site))
 
 
 # @strawberry.type

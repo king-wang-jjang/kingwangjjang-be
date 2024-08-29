@@ -20,7 +20,7 @@ status_query = merge_types(
     "Query",
     (app.celery.LLM.schema.TaskStatusQuery,
      )
-     # app.celery.comment.schema.TaskStatusQuery),
+    # app.celery.comment.schema.TaskStatusQuery),
 )
 Mutation = merge_types(
     "Mutation",

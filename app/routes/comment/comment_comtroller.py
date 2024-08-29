@@ -91,7 +91,7 @@ class Mutation:
 
         """
 
-        return Comment(board_id=board_id, site=site, comments = board_comment_add(board_id, site, userid, comment))
+        return Comment(board_id=board_id, site=site, comments=board_comment_add(board_id, site, userid, comment))
 
     # @strawberry.mutation
     # def reply(self, board_id: str, site: str, userid: str,
@@ -109,8 +109,6 @@ class Mutation:
     #                                             parents_comment, reply)
     #     return AddTaskTypes(task_id=task.id, status="Processing")
     #
-
-
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
