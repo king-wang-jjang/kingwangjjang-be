@@ -99,8 +99,8 @@ class Mutation:
         :param site: str:
         :param board_id: str:
         :param site: str:
-        :param board_id: str: 
-        :param site: str: 
+        :param board_id: str:
+        :param site: str:
 
         """
         return Likes(board_id, site, add_likes(board_id, site))
@@ -113,8 +113,8 @@ class Mutation:
         :param site: str:
         :param board_id: str:
         :param site: str:
-        :param board_id: str: 
-        :param site: str: 
+        :param board_id: str:
+        :param site: str:
 
         """
         return Views(board_id, site, add_views(board_id, site))
