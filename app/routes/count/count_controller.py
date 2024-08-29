@@ -1,4 +1,4 @@
-# app/schema.py
+# app/count_controller.py
 import sys
 from datetime import datetime
 from typing import Dict
@@ -12,8 +12,8 @@ from fastapi import HTTPException
 from fastapi import Request
 from strawberry.types import Info
 
-from app.celery.count.tasks import task_likes_add
-from app.celery.count.tasks import task_views_add
+from app.services.count.likes import add_likes
+from app.services.count.views import add_views
 from app.celery.types import AddTaskTypes
 from app.services.count import likes
 from app.services.count import views
@@ -92,7 +92,7 @@ class Mutation:
     """ """
 
     @strawberry.field
-    def likes_add(self, board_id: str, site: str) -> AddTaskTypes:
+    def likes_add(self, board_id: str, site: str) -> Likes:
         """
 
         :param board_id: str:
@@ -101,11 +101,10 @@ class Mutation:
         :param site: str:
 
         """
-        task = task_likes_add.apply_async(board_id, site)
-        return AddTaskTypes(task_id=task.id, status="Processing")
+        return Likes(board_id, site,add_likes(board_id,site))
 
     @strawberry.field
-    def views_add(self, board_id: str, site: str) -> AddTaskTypes:
+    def views_add(self, board_id: str, site: str) -> Views:
         """
 
         :param board_id: str:
@@ -114,8 +113,7 @@ class Mutation:
         :param site: str:
 
         """
-        task = task_views_add.apply_async(board_id, site)
-        return AddTaskTypes(task_id=task.id, status="Processing")
+        return Views(board_id, site,add_views(board_id,site))
 
 
 # @strawberry.type
