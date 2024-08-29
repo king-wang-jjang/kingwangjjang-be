@@ -84,6 +84,10 @@ class Mutation:
         :param site: str:
         :param userid: str:
         :param comment: str:
+        :param board_id: str: 
+        :param site: str: 
+        :param userid: str: 
+        :param comment: str: 
 
         """
 
