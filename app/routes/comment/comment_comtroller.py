@@ -72,8 +72,7 @@ class Mutation:
     """ """
 
     @strawberry.mutation
-    def comment(self, board_id: str, site: str, userid: str,
-                comment: str) -> Comment:
+    def comment(self, board_id: str, site: str, userid: str, comment: str) -> Comment:
         """
 
         :param board_id: str:
@@ -91,7 +90,11 @@ class Mutation:
 
         """
 
-        return Comment(board_id=board_id, site=site, comments=board_comment_add(board_id, site, userid, comment))
+        return Comment(
+            board_id=board_id,
+            site=site,
+            comments=board_comment_add(board_id, site, userid, comment),
+        )
 
     # @strawberry.mutation
     # def reply(self, board_id: str, site: str, userid: str,
