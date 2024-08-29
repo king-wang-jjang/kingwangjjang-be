@@ -72,7 +72,8 @@ class Mutation:
     """ """
 
     @strawberry.mutation
-    def comment(self, board_id: str, site: str, userid: str, comment: str) -> Comment:
+    def comment(self, board_id: str, site: str, userid: str,
+                comment: str) -> Comment:
         """
 
         :param board_id: str:
