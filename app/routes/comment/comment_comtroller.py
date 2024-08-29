@@ -1,15 +1,12 @@
 # app/count_controller.py
 from datetime import datetime
-from typing import Dict
-from typing import List
-from typing import Optional
+from typing import Dict, List, Optional
 
 import strawberry
 from strawberry.types import Info
 
+from app.celery.types import AddTaskTypes, TaskStatusType
 from app.services.board_comment.add import board_comment_add
-from app.celery.types import AddTaskTypes
-from app.celery.types import TaskStatusType
 
 
 @strawberry.type

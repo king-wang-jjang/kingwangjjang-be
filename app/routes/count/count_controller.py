@@ -1,24 +1,17 @@
 # app/count_controller.py
 import sys
 from datetime import datetime
-from typing import Dict
-from typing import List
-from typing import Optional
+from typing import Dict, List, Optional
 
 import strawberry
-from fastapi import APIRouter
-from fastapi import FastAPI
-from fastapi import HTTPException
-from fastapi import Request
+from fastapi import APIRouter, FastAPI, HTTPException, Request
 from strawberry.types import Info
 
+from app.celery.types import AddTaskTypes
+from app.services.count import likes, views
 from app.services.count.likes import add_likes
 from app.services.count.views import add_views
-from app.celery.types import AddTaskTypes
-from app.services.count import likes
-from app.services.count import views
-from app.utils.loghandler import catch_exception
-from app.utils.loghandler import setup_logger
+from app.utils.loghandler import catch_exception, setup_logger
 
 logger = setup_logger()
 
