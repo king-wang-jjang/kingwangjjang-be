@@ -1,20 +1,11 @@
 import datetime
-import logging
 import sys
-import threading
 
-from fastapi import APIRouter
-from fastapi import FastAPI
 from fastapi import HTTPException
-from fastapi import Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from pymongo import MongoClient
-from pymongo import settings
 
 from app.db.mongo_controller import MongoController
 from app.utils.loghandler import catch_exception
-
+from bson.objectid import ObjectId
 sys.excepthook = catch_exception
 db_controller = MongoController()
 
@@ -66,10 +57,10 @@ def board_reply_add(board_id, site, userid, reply, parrent_comment):
             "timestamp": datetime.datetime.now(),
         }
         replys = db_controller.find("Comment",
-                                    {"_id": parrent_comment})["reply"]
-        replys.append(comment_data)
-        db_controller.update_one("Comment", {"_id": parrent_comment},
+                                    {"_id": ObjectId(parrent_comment)})[0]
+        replys["reply"].append(comment_data)
+        db_controller.update_one("Comment", {"_id": ObjectId(parrent_comment)},
                                  {"$set": replys})
-        return db_controller.find("Comment", {"_id": parrent_comment})
+        return db_controller.find("Comment", {"_id": ObjectId(parrent_comment)})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

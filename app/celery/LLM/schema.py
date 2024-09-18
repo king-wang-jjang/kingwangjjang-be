@@ -57,15 +57,6 @@ class Comment:
     Comments: List[Dict]
 
 
-@strawberry.type
-class Query:
-    """ """
-
-    @strawberry.field
-    def hello(self) -> str:
-        """ """
-        return "Hello, World!"
-
 
 @strawberry.type
 class Mutation:
@@ -123,5 +114,3 @@ class TaskStatusQuery:
                                   result=str(task_result.info))
 
 
-schema = strawberry.Schema(query=Query, mutation=Mutation)
-task_status_schema = strawberry.Schema(query=TaskStatusQuery)
