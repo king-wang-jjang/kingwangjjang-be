@@ -9,6 +9,7 @@ from strawberry.types import Info
 
 from app.services.board_comment.add import board_comment_add
 from app.services.board_comment.add import board_reply_add
+from bson.objectid import ObjectId
 
 from app.celery.types import AddTaskTypes
 from app.celery.types import TaskStatusType
@@ -20,14 +21,16 @@ class ReplyEntry:
     user_id: str
     comment: str
     timestamp: str
+    _id : str
+
 @strawberry.type
 class CommentEntry:
-    """CommentEntry represents a single comment in the Comments list"""
+    _id: str
     board_id: str
     site: str
     user_id: str
     comment: str
-    reply: List[ReplyEntry]  # 답글을 ReplyEntry 리스트로 저장
+    reply: str
     timestamp: str
 
 # 답글(Reply) 엔트리 정의
@@ -79,15 +82,11 @@ class BoardComment:
 @strawberry.type
 class BoardReply:
     """ """
-
-    replies: List[ReplyEntry]  # Dict의 타입을 명시적으로 지정
-
+    replies: List[ReplyEntry]  # Use a specific Strawberry type
 
 @strawberry.type
 class Mutation:
     """ """
-
-
     @strawberry.mutation
     def comment(self, board_id: str, site: str, userid: str,
                 comment: str) -> BoardComment:
@@ -104,7 +103,7 @@ class Mutation:
 
     @strawberry.mutation
     def reply(self, board_id: str, site: str, userid: str,
-              parents_comment: str, reply: str) -> BoardReply:
+              parents_comment: str, reply: str) -> CommentEntry:
         """
 
         :param board_id: str:
@@ -114,7 +113,12 @@ class Mutation:
         :param reply: str:
 
         """
-        return BoardReply(replies=board_reply_add(board_id=board_id, site=site, userid=userid,
-                                                  parrent_comment=parents_comment, reply=reply))
-
-
+        reply_dicts = board_reply_add(
+            board_id=board_id, site=site, userid=userid,
+            parrent_comment=parents_comment, reply=reply
+        )
+        # Convert each dict to a ReplyEntry instance
+        return CommentEntry(_id=reply_dicts[0]["_id"], board_id=reply_dicts[0]["board_id"],
+                            user_id=reply_dicts[0]["user_id"], comment=reply_dicts[0]["comment"],
+                            reply=str(reply_dicts[0]["reply"]), timestamp=reply_dicts[0]["timestamp"],
+                            site=reply_dicts[0]["site"])

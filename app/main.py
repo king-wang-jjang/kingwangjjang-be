@@ -54,7 +54,7 @@ cors_middleware.add(app)
 # static_middleware.add(app)
 app.include_router(auth_controller.router)
 app.include_router(page_controller.router, prefix=ApiPaths.PROXY)
-app.include_router(user_controller.router, prefix=ApiPaths.PROXY)
+# app.include_router(user_controller.router, prefix=ApiPaths.PROXY)
 # app.include_router(board_controller.router)
 
 # ---------------------------------------------------
