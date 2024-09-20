@@ -1,10 +1,12 @@
 # app/count_controller.py
 from datetime import datetime
-from typing import List, Optional
+from typing import List
+from typing import Optional
 
 import strawberry
 
-from app.services.board_comment.add import board_comment_add, board_reply_add
+from app.services.board_comment.add import board_comment_add
+from app.services.board_comment.add import board_reply_add
 
 
 @strawberry.type

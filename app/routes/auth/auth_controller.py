@@ -1,20 +1,27 @@
 import logging
 import sys
-# from .google_service import auth_via_google,login_via_google
-# from .kakao_service import auth_via_google,login_via_google
-from datetime import datetime, timedelta
-from typing import List, Optional
+from datetime import datetime
+from datetime import timedelta
+from typing import List
+from typing import Optional
 
 import strawberry
-from fastapi import APIRouter, FastAPI, HTTPException, Request
+from fastapi import APIRouter
+from fastapi import FastAPI
+from fastapi import HTTPException
+from fastapi import Request
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.requests import Request
 from strawberry.fastapi import GraphQLRouter
 
 from app.config import Config
-from app.services.user.user import add_user, get_user_by_email
-from app.utils.oauth import JWT, oauth
+from app.services.user.user import add_user
+from app.services.user.user import get_user_by_email
+from app.utils.oauth import JWT
+from app.utils.oauth import oauth
+# from .google_service import auth_via_google,login_via_google
+# from .kakao_service import auth_via_google,login_via_google
 
 app = FastAPI()
 router = APIRouter()
