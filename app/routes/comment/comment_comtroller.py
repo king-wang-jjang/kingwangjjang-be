@@ -1,18 +1,10 @@
 # app/count_controller.py
 from datetime import datetime
-from typing import Dict
 from typing import List
 from typing import Optional
-
 import strawberry
-from strawberry.types import Info
-
 from app.services.board_comment.add import board_comment_add
 from app.services.board_comment.add import board_reply_add
-from bson.objectid import ObjectId
-
-from app.celery.types import AddTaskTypes
-from app.celery.types import TaskStatusType
 @strawberry.type
 class ReplyEntry:
     """ReplyEntry represents a reply to a comment"""
