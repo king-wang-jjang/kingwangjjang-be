@@ -9,14 +9,11 @@ import app.routes.board.board_controller
 
 Query = merge_types(
     "Query",
-    (
-        app.routes.board.board_controller.Query,
-    ),
+    (app.routes.board.board_controller.Query,),
 )
 status_query = merge_types(
     "Query",
-    (app.celery.LLM.schema.TaskStatusQuery,
-     )
+    (app.celery.LLM.schema.TaskStatusQuery,),
     # app.celery.comment.schema.TaskStatusQuery),
 )
 Mutation = merge_types(

@@ -14,6 +14,7 @@ from typing import List, Optional
 from app.config import Config
 from app.utils.oauth import oauth, JWT
 import sys
+
 # from .google_service import auth_via_google,login_via_google
 # from .kakao_service import auth_via_google,login_via_google
 from datetime import datetime, timedelta
@@ -27,14 +28,14 @@ async def login_via_google(request: Request):
     if Config().get_env("SERVER_RUN_MODE") == "TRUE":
         redirect_uri = "https://api.top1.kr/callback/google"
     else:
-        redirect_uri = request.url_for('auth_via_google')
+        redirect_uri = request.url_for("auth_via_google")
     return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
 @router.get("/callback/google")
 async def auth_via_google(request: Request):
     token = await oauth.google.authorize_access_token(request)
-    user = token['userinfo']
+    user = token["userinfo"]
 
     if not get_user_by_email(user["email"]) == None:
         data = get_user_by_email(user["email"])
