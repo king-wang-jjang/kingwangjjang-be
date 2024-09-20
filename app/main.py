@@ -27,7 +27,6 @@ sys.path.append("/app")  # 내부 모듈이 임포트 되기전에 가장 먼저
 # 내부 모듈이 임포트 되기전에 가장 먼저 임포트 되야함.
 sys.path.append("/Users/jason/pycharm/kingwangjjang-bes")
 
-
 # from routes.board import board_controller
 sys.excepthook = catch_exception
 
