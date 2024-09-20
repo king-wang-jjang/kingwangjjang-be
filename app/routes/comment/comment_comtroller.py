@@ -21,6 +21,7 @@ class ReplyEntry:
 
 @strawberry.type
 class CommentEntry:
+    """ """
     _id: str
     board_id: str
     site: str
@@ -97,6 +98,10 @@ class Mutation:
         :param site: str:
         :param userid: str:
         :param comment: str:
+        :param board_id: str: 
+        :param site: str: 
+        :param userid: str: 
+        :param comment: str: 
 
         """
 
@@ -113,6 +118,11 @@ class Mutation:
         :param userid: str:
         :param parents_comment: str:
         :param reply: str:
+        :param board_id: str: 
+        :param site: str: 
+        :param userid: str: 
+        :param parents_comment: str: 
+        :param reply: str: 
 
         """
         reply_dicts = board_reply_add(

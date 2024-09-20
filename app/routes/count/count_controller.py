@@ -41,6 +41,8 @@ class Mutation:
         :param site: str:
         :param board_id: str:
         :param site: str:
+        :param board_id: str: 
+        :param site: str: 
 
         """
         return BoardLikes(
@@ -55,6 +57,8 @@ class Mutation:
         :param site: str:
         :param board_id: str:
         :param site: str:
+        :param board_id: str: 
+        :param site: str: 
 
         """
         return BoardViews(
