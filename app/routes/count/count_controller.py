@@ -42,7 +42,7 @@ class Mutation:
         :param site: str:
 
         """
-        return BoardLikes(board_id=board_id, site=site,NOWLIKE=add_likes(board_id,site))
+        return BoardLikes(board_id=board_id, site=site, NOWLIKE=add_likes(board_id, site))
 
     @strawberry.field
     def views_add(self, board_id: str, site: str) -> BoardViews:
@@ -54,6 +54,4 @@ class Mutation:
         :param site: str:
 
         """
-        return BoardViews(board_id=board_id, site=site,NOWVIEW=add_views(board_id,site))
-
-
+        return BoardViews(board_id=board_id, site=site, NOWVIEW=add_views(board_id, site))

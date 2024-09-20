@@ -166,8 +166,8 @@ class Query:
 
         """
         return Like(board_id=board_id,
-                     site=site,
-                     NOWLIKE=get_likes(board_id, site))
+                    site=site,
+                    NOWLIKE=get_likes(board_id, site))
 
     @strawberry.field
     def get_views(self, board_id: str, site: str) -> View:
@@ -182,8 +182,8 @@ class Query:
 
         """
         return View(board_id=board_id,
-                     site=site,
-                     NOWVIEW=get_views(board_id, site))
+                    site=site,
+                    NOWVIEW=get_views(board_id, site))
 
 
 # Initialize GraphQL schema and router

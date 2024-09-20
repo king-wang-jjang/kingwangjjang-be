@@ -5,6 +5,8 @@ from typing import Optional
 import strawberry
 from app.services.board_comment.add import board_comment_add
 from app.services.board_comment.add import board_reply_add
+
+
 @strawberry.type
 class ReplyEntry:
     """ReplyEntry represents a reply to a comment"""
@@ -13,7 +15,8 @@ class ReplyEntry:
     user_id: str
     comment: str
     timestamp: str
-    _id : str
+    _id: str
+
 
 @strawberry.type
 class CommentEntry:
@@ -75,6 +78,7 @@ class BoardComment:
 class BoardReply:
     """ """
     replies: List[ReplyEntry]  # Use a specific Strawberry type
+
 
 @strawberry.type
 class Mutation:
