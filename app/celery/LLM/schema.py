@@ -69,8 +69,8 @@ class Mutation:
         :param site: str:
         :param board_id: str:
         :param site: str:
-        :param board_id: str: 
-        :param site: str: 
+        :param board_id: str:
+        :param site: str:
 
         """
         task = task_summary_board.apply_async((board_id, site))
@@ -101,7 +101,7 @@ class TaskStatusQuery:
 
         :param task_id: str:
         :param task_id: str:
-        :param task_id: str: 
+        :param task_id: str:
 
         """
         task_result = task_summary_board.AsyncResult(task_id)
