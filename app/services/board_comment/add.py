@@ -1,11 +1,11 @@
 import datetime
 import sys
 
+from bson.objectid import ObjectId
 from fastapi import HTTPException
 
 from app.db.mongo_controller import MongoController
 from app.utils.loghandler import catch_exception
-from bson.objectid import ObjectId
 
 sys.excepthook = catch_exception
 db_controller = MongoController()

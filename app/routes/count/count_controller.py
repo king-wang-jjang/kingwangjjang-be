@@ -1,8 +1,9 @@
 # app/count_controller.py
 from datetime import datetime
-from typing import List
-from typing import Optional
+from typing import List, Optional
+
 import strawberry
+
 from app.services.count.likes import add_likes
 from app.services.count.views import add_views
 from app.utils.loghandler import setup_logger
