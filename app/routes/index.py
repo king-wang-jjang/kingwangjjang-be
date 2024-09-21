@@ -44,7 +44,7 @@ async def proxy(request: Request, path: str) -> Response:
             token_data = JWT().decode(token)
             logger.debug(f"JWT token issued: {token_data}")
         except HTTPException as e:
-            raise HTTPException(status_code=e.status_code, detail=e.detail)
+            raise HTTPException(status_code=401, detail="Failed to verify your JWT token.")
 
 
     # 요청을 프록시 서버로 전달
