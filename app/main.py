@@ -2,6 +2,8 @@ import logging
 import os
 import sys
 sys.path.append("/app") #내부 모듈이 임포트 되기전에 가장 먼저 임포트 되야함.
+sys.path.append("/Users/jason/pycharm/kingwangjjang-bes") #내부 모듈이 임포트 되기전에 가장 먼저 임포트 되야함.
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi import HTTPException
@@ -52,7 +54,7 @@ cors_middleware.add(app)
 # static_middleware.add(app)
 app.include_router(auth_controller.router)
 app.include_router(page_controller.router, prefix=ApiPaths.PROXY)
-app.include_router(user_controller.router, prefix=ApiPaths.PROXY)
+# app.include_router(user_controller.router, prefix=ApiPaths.PROXY)
 # app.include_router(board_controller.router)
 
 # ---------------------------------------------------

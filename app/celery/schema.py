@@ -10,10 +10,7 @@ import app.routes.board.board_controller
 Query = merge_types(
     "Query",
     (
-        app.celery.LLM.schema.Query,
-        app.routes.comment.comment_comtroller.Query,
         app.routes.board.board_controller.Query,
-        app.routes.count.count_controller.Query,
     ),
 )
 status_query = merge_types(

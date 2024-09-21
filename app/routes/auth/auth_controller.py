@@ -16,7 +16,7 @@ from app.utils.oauth import oauth,JWT
 import sys
 # from .google_service import auth_via_google,login_via_google
 # from .kakao_service import auth_via_google,login_via_google
-
+from datetime import datetime, timedelta
 
 app = FastAPI()
 router = APIRouter()
@@ -37,6 +37,7 @@ async def auth_via_google(request: Request):
     if not get_user_by_email(user["email"]) == None:
         data =  get_user_by_email(user["email"])
         data["_id"] = str(data["_id"])
+        data["exp"] = datetime.utcnow() + timedelta(days=3)
         data["jwt"] = JWT().encode(data)
         return data
     else:

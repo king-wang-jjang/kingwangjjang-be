@@ -76,7 +76,7 @@ class Comment:
 
 
 @strawberry.type
-class Likes:
+class Like:
     """ """
 
     board_id: str
@@ -85,7 +85,7 @@ class Likes:
 
 
 @strawberry.type
-class Views:
+class View:
     """ """
 
     board_id: str
@@ -154,7 +154,7 @@ class Query:
                                 detail="Internal server error")
 
     @strawberry.field
-    def get_like(self, board_id: str, site: str) -> Likes:
+    def get_like(self, board_id: str, site: str) -> Like:
         """
 
         :param board_id: str:
@@ -165,12 +165,12 @@ class Query:
         :param site: str:
 
         """
-        return Likes(board_id=board_id,
+        return Like(board_id=board_id,
                      site=site,
                      NOWLIKE=get_likes(board_id, site))
 
     @strawberry.field
-    def get_views(self, board_id: str, site: str) -> Views:
+    def get_views(self, board_id: str, site: str) -> View:
         """
 
         :param board_id: str:
@@ -181,7 +181,7 @@ class Query:
         :param site: str:
 
         """
-        return Views(board_id=board_id,
+        return View(board_id=board_id,
                      site=site,
                      NOWVIEW=get_views(board_id, site))
 
