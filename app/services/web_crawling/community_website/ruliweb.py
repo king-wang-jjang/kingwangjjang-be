@@ -30,8 +30,7 @@ class Ruliweb(AbstractCommunityWebsite):
 
         except Exception as e:
             logger.info("ruliweb error:", e)
-            return None
-    
+
     def get_daily_best(self):
         '''
         ppomppu daily post
