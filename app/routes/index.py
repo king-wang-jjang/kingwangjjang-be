@@ -1,3 +1,5 @@
+import logging
+
 import httpx
 from fastapi import APIRouter, Request, Response, HTTPException
 from app.utils.oauth import oauth,JWT
@@ -37,13 +39,17 @@ async def proxy(request: Request, path: str) -> Response:
     base_url = "http://localhost:8000/proxy"
     token = None
     if not request.url.path.startswith("/callback") and not request.url.path.startswith("/login"):
-        token = request.headers.get("Authorization").split("Bearer ")[1]
-
+        try:
+            token = request.headers.get("Authorization").split("Bearer ")[1]
+        except HTTPException as e:
+            logger.debug("Can't find token on your Requests")
+            raise HTTPException(status_code=401, detail="Can't find token on your Requests")
         # ID 토큰 검증
         try:
             token_data = JWT().decode(token)
             logger.debug(f"JWT token issued: {token_data}")
         except HTTPException as e:
+            logger.debug("Failed to verify your JWT token.")
             raise HTTPException(status_code=401, detail="Failed to verify your JWT token.")
 
 
