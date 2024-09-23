@@ -22,6 +22,7 @@ logger = setup_logger()
 
 
 class Ruliweb(AbstractCommunityWebsite):
+    """ """
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime("%Y%m%d")
         self.db_controller = MongoController()
@@ -37,10 +38,11 @@ class Ruliweb(AbstractCommunityWebsite):
             logger.info("ruliweb error:", e)
 
     def get_daily_best(self):
-        """
-        ppomppu daily post
-
+        """ppomppu daily post
+        
         :return: {rank: { {title: string, url: string}[]} }
+
+
         """
         global tag_obj_id
         num = 1
@@ -128,9 +130,15 @@ class Ruliweb(AbstractCommunityWebsite):
         return data
 
     def get_real_time_best(self):
+        """ """
         pass
 
     def get_board_contents(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         abs_path = f"./{self.yyyymmdd}/{board_id}"
         self.download_path = os.path.abspath(abs_path)
         headers = {
@@ -173,6 +181,11 @@ class Ruliweb(AbstractCommunityWebsite):
         return content_list
 
     def save_img(self, url):
+        """
+
+        :param url: 
+
+        """
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
 

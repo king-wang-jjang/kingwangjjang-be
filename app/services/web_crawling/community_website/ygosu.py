@@ -19,6 +19,7 @@ logger = setup_logger()
 
 
 class Ygosu(AbstractCommunityWebsite):
+    """ """
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime("%Y%m%d")
         self.db_controller = MongoController()
@@ -34,10 +35,11 @@ class Ygosu(AbstractCommunityWebsite):
             logger.info("Dcinside error:", e)
 
     def get_daily_best(self):
-        """
-        ygosu RealTimeBest post
-
+        """ygosu RealTimeBest post
+        
         :return: {rank: { {title: string, url: string}[]} }
+
+
         """
         req = requests.get("https://ygosu.com/board/best_article/?type=daily")
         soup = BeautifulSoup(req.text, "html.parser")
@@ -120,10 +122,11 @@ class Ygosu(AbstractCommunityWebsite):
         logger.info({"already exists post": already_exists_post})
 
     def get_real_time_best(self):
-        """
-        ygosu RealTimeBest post
-
+        """ygosu RealTimeBest post
+        
         :return: {rank: { {title: string, url: string}[]} }
+
+
         """
         req = requests.get("https://ygosu.com/board/real_article")
         soup = BeautifulSoup(req.text, "html.parser")
@@ -206,6 +209,11 @@ class Ygosu(AbstractCommunityWebsite):
         logger.info({"already exists post": already_exists_post})
 
     def get_board_contents(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         abs_path = f"./{self.yyyymmdd}/{board_id}"
         self.download_path = os.path.abspath(abs_path)
         daily_instance = self.db_controller.find(
@@ -246,6 +254,11 @@ class Ygosu(AbstractCommunityWebsite):
         return content_list
 
     def save_img(self, url):
+        """
+
+        :param url: 
+
+        """
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
 

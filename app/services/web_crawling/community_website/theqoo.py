@@ -27,6 +27,7 @@ logger = setup_logger()
 
 
 class Theqoo(AbstractCommunityWebsite):
+    """ """
     g_headers = [
         {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -48,9 +49,11 @@ class Theqoo(AbstractCommunityWebsite):
             logger.info("Theqoo error:", e)
 
     def get_daily_best(self):
+        """ """
         pass
 
     def get_real_time_best(self):
+        """ """
         req = requests.get("https://theqoo.net/hot", headers=self.g_headers[0])
         html_content = req.text
         soup = BeautifulSoup(html_content, "html.parser")
@@ -141,6 +144,11 @@ class Theqoo(AbstractCommunityWebsite):
             logger.info({"already exists post": already_exists_post})
 
     def get_board_contents(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         abs_path = f"./{self.yyyymmdd}/{board_id}"
         self.download_path = os.path.abspath(abs_path)
         # self.set_driver_options()
@@ -192,9 +200,7 @@ class Theqoo(AbstractCommunityWebsite):
     # 속도 개선 작업 (20s -> 2s)
     # https://www.notion.so/2-850bc2d1d98145bebcc89f3596798f05?pvs=4
     def set_driver_options(self):
-        """
-        :option: download path
-        """
+        """:option: download path"""
         chrome_options = Options()
         prefs = {"download.default_directory": self.download_path}
         chrome_options.add_experimental_option("prefs", prefs)
@@ -221,6 +227,11 @@ class Theqoo(AbstractCommunityWebsite):
             return True
 
     def save_img(self, url):
+        """
+
+        :param url: 
+
+        """
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
 

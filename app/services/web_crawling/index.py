@@ -32,6 +32,12 @@ router = APIRouter()
 
 
 def tag(board_id: str, site: str):
+    """
+
+    :param board_id: str: 
+    :param site: str: 
+
+    """
     global board_semaphores
     semaphore_label = site + board_id
 
@@ -108,6 +114,12 @@ def tag(board_id: str, site: str):
 
 
 def board_summary(board_id: str, site: str):
+    """
+
+    :param board_id: str: 
+    :param site: str: 
+
+    """
     global board_semaphores
     semaphore_label = site + board_id
 
@@ -198,6 +210,7 @@ async def board_summary_rest(request: Request):
 
 
 def get_real_time_best():
+    """ """
     CrawllerList = [Ygosu(), Ppomppu(), Theqoo(), Instiz(), Ruliweb()]
     for i in CrawllerList:
         try:
@@ -208,6 +221,7 @@ def get_real_time_best():
 
 
 def get_daily_best():
+    """ """
     CrawllerList = [Ygosu(), Ppomppu(), Theqoo(), Instiz(), Ruliweb()]
     for i in CrawllerList:
         try:

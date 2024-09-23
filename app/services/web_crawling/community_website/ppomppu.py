@@ -21,6 +21,7 @@ logger = setup_logger()
 
 
 class Ppomppu(AbstractCommunityWebsite):
+    """ """
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime("%Y%m%d")
         self.db_controller = MongoController()
@@ -36,13 +37,15 @@ class Ppomppu(AbstractCommunityWebsite):
             logger.info("Dcinside error:", e)
 
     def get_daily_best(self):
+        """ """
         pass
 
     def get_real_time_best(self):
-        """
-        ppomppu daily post
-
+        """ppomppu daily post
+        
         :return: {rank: { {title: string, url: string}[]} }
+
+
         """
         num = 1
         _url = f"https://www.ppomppu.co.kr/hot.php?id=&page={num}&category=999&search_type=&keyword=&page_num=&del_flag=&bbs_list_category=0"
@@ -134,6 +137,11 @@ class Ppomppu(AbstractCommunityWebsite):
         return data
 
     def extract_id_and_no_from_url(self, url):
+        """
+
+        :param url: 
+
+        """
         pattern = r"id=([^&]*)&no=([^&]*)"
         match = re.search(pattern, url)
         if match:
@@ -144,6 +152,11 @@ class Ppomppu(AbstractCommunityWebsite):
             return None
 
     def get_board_contents(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         abs_path = f"./{self.yyyymmdd}/{board_id}"
         self.download_path = os.path.abspath(abs_path)
         headers = {
@@ -186,6 +199,11 @@ class Ppomppu(AbstractCommunityWebsite):
         return content_list
 
     def save_img(self, url):
+        """
+
+        :param url: 
+
+        """
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
 

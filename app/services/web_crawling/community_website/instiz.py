@@ -20,6 +20,7 @@ logger = setup_logger()
 
 
 class Instiz(AbstractCommunityWebsite):
+    """ """
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime("%Y%m%d")
         self.db_controller = MongoController()
@@ -35,13 +36,15 @@ class Instiz(AbstractCommunityWebsite):
             logger.info("Instiz error:", e)
 
     def get_daily_best(self):
+        """ """
         pass
 
     def get_real_time_best(self):
-        """
-        ppomppu daily post
-
+        """ppomppu daily post
+        
         :return: {rank: { {title: string, url: string}[]} }
+
+
         """
         _url = f"https://www.instiz.net/"
         response = requests.get(_url)
@@ -143,6 +146,11 @@ class Instiz(AbstractCommunityWebsite):
         logger.info({"already exists post": already_exists_post})
 
     def extract_time(self, url):
+        """
+
+        :param url: 
+
+        """
         response = requests.get(url)
         soup = BeautifulSoup(response.text, "html.parser")
         try:
@@ -151,6 +159,11 @@ class Instiz(AbstractCommunityWebsite):
             return None
 
     def get_board_contents(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         abs_path = f"./{self.yyyymmdd}/{board_id}"
         self.download_path = os.path.abspath(abs_path)
         headers = {
@@ -193,6 +206,11 @@ class Instiz(AbstractCommunityWebsite):
         return content_list
 
     def save_img(self, url):
+        """
+
+        :param url: 
+
+        """
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
 
