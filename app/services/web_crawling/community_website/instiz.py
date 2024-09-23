@@ -27,8 +27,7 @@ class Instiz(AbstractCommunityWebsite):
 
         except Exception as e:
             logger.info("Instiz error:", e)
-            return None
-    
+
     def get_daily_best(self):
         pass        
 

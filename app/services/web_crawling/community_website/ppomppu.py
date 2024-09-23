@@ -28,8 +28,7 @@ class Ppomppu(AbstractCommunityWebsite):
 
         except Exception as e:
             logger.info("Dcinside error:", e)
-            return None
-    
+
     def get_daily_best(self):
         pass        
 

@@ -28,8 +28,7 @@ class Ygosu(AbstractCommunityWebsite):
 
         except Exception as e:
             logger.info("Dcinside error:", e)
-            return None
-    
+
     def get_daily_best(self):
         '''
         ygosu RealTimeBest post 
@@ -58,44 +57,44 @@ class Ygosu(AbstractCommunityWebsite):
                 for board_id in url_parts:
                     if board_id.isdigit():
                         break
-                try:
-                    existing_instance = self.db_controller.find('Daily', {'board_id': board_id, 'site': 'ygosu'}) # 이미 있는 Board는 넘기기
-                    if existing_instance:
-                        already_exists_post.append(board_id)
-                        continue
-                    else:
-                        gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_YGOSU})
-                        if gpt_exists:
-                            gpt_obj_id = gpt_exists[0]['_id']
-                        else :
-                            gpt_obj = self.db_controller.insert_one('GPT', {
-                                'board_id': board_id,
-                                'site': SITE_YGOSU,
-                                'answer': DEFAULT_GPT_ANSWER
-                            })
-                            gpt_obj_id = gpt_obj.inserted_id
-                        tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_YGOSU})
-                        if tag_exists:
-                            tag_obj_id = tag_exists[0]['_id']
+                    try:
+                        existing_instance = self.db_controller.find('Daily', {'board_id': board_id, 'site': 'ygosu'}) # 이미 있는 Board는 넘기기
+                        if existing_instance:
+                            already_exists_post.append(board_id)
+                            continue
                         else:
-                            tag_obj = self.db_controller.insert_one('TAG', {
+                            gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_YGOSU})
+                            if gpt_exists:
+                                gpt_obj_id = gpt_exists[0]['_id']
+                            else :
+                                gpt_obj = self.db_controller.insert_one('GPT', {
+                                    'board_id': board_id,
+                                    'site': SITE_YGOSU,
+                                    'answer': DEFAULT_GPT_ANSWER
+                                })
+                                gpt_obj_id = gpt_obj.inserted_id
+                            tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_YGOSU})
+                            if tag_exists:
+                                tag_obj_id = tag_exists[0]['_id']
+                            else:
+                                tag_obj = self.db_controller.insert_one('TAG', {
+                                    'board_id': board_id,
+                                    'site': SITE_YGOSU,
+                                    'Tag': DEFAULT_TAG
+                                })
+                                tag_obj_id = tag_obj.inserted_id
+                            self.db_controller.insert_one('Daily', {
                                 'board_id': board_id,
                                 'site': SITE_YGOSU,
-                                'Tag': DEFAULT_TAG
+                                'rank': rank,
+                                'title': title,
+                                'url': url,
+                                'create_time': target_datetime,
+                                'GPTAnswer': gpt_obj_id,
+                                'Tag': tag_obj_id
                             })
-                            tag_obj_id = tag_obj.inserted_id
-                        self.db_controller.insert_one('Daily', {
-                            'board_id': board_id,
-                            'site': SITE_YGOSU,
-                            'rank': rank,
-                            'title': title,
-                            'url': url,
-                            'create_time': target_datetime,
-                            'GPTAnswer': gpt_obj_id,
-                            'Tag': tag_obj_id
-                        })
-                except Exception as e:
-                    logger.error(e)
+                    except Exception as e:
+                        logger.error(e)
                     
         logger.info({"already exists post": already_exists_post})
 
@@ -128,45 +127,45 @@ class Ygosu(AbstractCommunityWebsite):
                 for board_id in url_parts:
                     if board_id.isdigit():
                         break
-                try:
-                    existing_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': SITE_YGOSU})
-                    if existing_instance:
-                        already_exists_post.append(board_id)
-                        continue
-                    else:
-                        gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_YGOSU})
-                        if gpt_exists:
-                            gpt_obj_id = gpt_exists[0]['_id']
-                        else :
-                            gpt_obj = self.db_controller.insert_one('GPT', {
-                                'board_id': board_id,
-                                'site': SITE_YGOSU,
-                                'answer': DEFAULT_GPT_ANSWER
-                            })
-                            gpt_obj_id = gpt_obj.inserted_id
-                        tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_YGOSU})
-                        if tag_exists:
-                            tag_obj_id = gpt_exists[0]['_id']
+                    try:
+                        existing_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': SITE_YGOSU})
+                        if existing_instance:
+                            already_exists_post.append(board_id)
+                            continue
                         else:
-                            tag_obj = self.db_controller.insert_one('TAG', {
+                            gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_YGOSU})
+                            if gpt_exists:
+                                gpt_obj_id = gpt_exists[0]['_id']
+                            else :
+                                gpt_obj = self.db_controller.insert_one('GPT', {
+                                    'board_id': board_id,
+                                    'site': SITE_YGOSU,
+                                    'answer': DEFAULT_GPT_ANSWER
+                                })
+                                gpt_obj_id = gpt_obj.inserted_id
+                            tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_YGOSU})
+                            if tag_exists:
+                                tag_obj_id = gpt_exists[0]['_id']
+                            else:
+                                tag_obj = self.db_controller.insert_one('TAG', {
+                                    'board_id': board_id,
+                                    'site': SITE_YGOSU,
+                                    'Tag': DEFAULT_TAG
+                                })
+                                tag_obj_id = tag_obj.inserted_id
+                            self.db_controller.insert_one('RealTime', {
                                 'board_id': board_id,
                                 'site': SITE_YGOSU,
-                                'Tag': DEFAULT_TAG
-                            })
-                            tag_obj_id = tag_obj.inserted_id
-                        self.db_controller.insert_one('RealTime', {
-                            'board_id': board_id,
-                            'site': SITE_YGOSU,
-                            'title': title,
-                            'url': url,
-                            'create_time': target_datetime,
-                            'GPTAnswer': gpt_obj_id,
-                            'Tag': tag_obj_id
+                                'title': title,
+                                'url': url,
+                                'create_time': target_datetime,
+                                'GPTAnswer': gpt_obj_id,
+                                'Tag': tag_obj_id
 
-                        })
-                except Exception as e:
-                    logger.error(e)
-                    
+                            })
+                    except Exception as e:
+                        logger.error(e)
+
         logger.info({"already exists post": already_exists_post})
 
     def get_board_contents(self, board_id):

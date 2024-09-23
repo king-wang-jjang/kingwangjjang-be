@@ -62,6 +62,8 @@ def tag(board_id: str, site: str):
             crawler_instance = Instiz()
         elif site == SITE_RULIWEB:
             crawler_instance = Ruliweb()
+        else:
+            crawler_instance = None
         json_contents = crawler_instance.get_board_contents(board_id)
 
         str_contents = ''
@@ -122,6 +124,8 @@ def board_summary(board_id: str, site: str):
             crawler_instance = Instiz()
         elif site == SITE_RULIWEB:
             crawler_instance = Ruliweb()
+        else:
+            crawler_instance = None
         json_contents = crawler_instance.get_board_contents(board_id)
 
         str_contents = ''
@@ -161,7 +165,7 @@ async def board_summary_rest(request: Request):
     #     dcincideCrwaller = Dcinside()
     #     dcincideCrwaller.get_real_time_best()
 
-        return JSONResponse(content={'response': "성공하는 루트 추가해야함"})
+        # return JSONResponse(content={'response': "성공하는 루트 추가해야함"})
 
 
 def get_real_time_best():

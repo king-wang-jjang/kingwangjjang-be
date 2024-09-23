@@ -10,11 +10,13 @@ services:
     networks:
       kingwangjjang-network:
         ipv4_address: 172.26.0.10
+    restart: unless-stopped
   redis:
     image: redis:latest
     networks:
       kingwangjjang-network:
         ipv4_address: 172.26.0.13
+    restart: unless-stopped
 
 networks:
   kingwangjjang-network:
