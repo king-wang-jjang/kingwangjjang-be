@@ -3,10 +3,7 @@ from datetime import datetime
 from typing import Dict
 from typing import List
 from typing import Optional
-
 import strawberry
-from strawberry.types import Info
-
 from app.celery.LLM.tasks import task_summary_board
 from app.celery.types import AddTaskTypes
 from app.celery.types import TaskStatusType
