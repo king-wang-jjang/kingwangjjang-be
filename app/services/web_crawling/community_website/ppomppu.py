@@ -1,19 +1,19 @@
-from app.utils.loghandler import setup_logger
-import os
-from app.constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU, DEFAULT_TAG
-from app.config import Config
-import re
-from bs4 import BeautifulSoup
-import requests
-from datetime import datetime
-from app.db.mongo_controller import MongoController
-from app.services.web_crawling.community_website.community_website import (
-    AbstractCommunityWebsite,
-)
-from app.utils import FTPClient
 import logging
-from app.utils.loghandler import catch_exception
+import os
+import re
 import sys
+from datetime import datetime
+
+import requests
+from bs4 import BeautifulSoup
+
+from app.config import Config
+from app.constants import DEFAULT_GPT_ANSWER, DEFAULT_TAG, SITE_PPOMPPU
+from app.db.mongo_controller import MongoController
+from app.services.web_crawling.community_website.community_website import \
+    AbstractCommunityWebsite
+from app.utils import FTPClient
+from app.utils.loghandler import catch_exception, setup_logger
 
 sys.excepthook = catch_exception
 

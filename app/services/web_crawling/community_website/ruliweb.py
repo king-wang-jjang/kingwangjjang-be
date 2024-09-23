@@ -1,21 +1,20 @@
-from app.constants import DEFAULT_GPT_ANSWER, SITE_RULIWEB, DEFAULT_TAG
-from app.utils.loghandler import setup_logger
-import os
-from app.config import Config
 import logging
-from app.utils import FTPClient
-from app.services.web_crawling.community_website.community_website import (
-    AbstractCommunityWebsite,
-)
-from app.db.mongo_controller import MongoController
+import os
 import re
-from bs4 import BeautifulSoup
-import requests
+import sys
 from datetime import datetime
 
+import requests
+from bs4 import BeautifulSoup
 from pygments.lexers import q
-from app.utils.loghandler import catch_exception
-import sys
+
+from app.config import Config
+from app.constants import DEFAULT_GPT_ANSWER, DEFAULT_TAG, SITE_RULIWEB
+from app.db.mongo_controller import MongoController
+from app.services.web_crawling.community_website.community_website import \
+    AbstractCommunityWebsite
+from app.utils import FTPClient
+from app.utils.loghandler import catch_exception, setup_logger
 
 sys.excepthook = catch_exception
 
