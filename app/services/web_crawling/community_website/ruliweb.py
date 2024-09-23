@@ -26,6 +26,7 @@ logger = setup_logger()
 
 class Ruliweb(AbstractCommunityWebsite):
     """ """
+
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime("%Y%m%d")
         self.db_controller = MongoController()
@@ -75,15 +76,19 @@ class Ruliweb(AbstractCommunityWebsite):
 
                 try:
                     existing_instance = self.db_controller.find(
-                        "Daily", {"board_id": board_id, "site": SITE_RULIWEB}
-                    )
+                        "Daily", {
+                            "board_id": board_id,
+                            "site": SITE_RULIWEB
+                        })
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
                     else:
                         gpt_exists = self.db_controller.find(
-                            "GPT", {"board_id": board_id, "site": SITE_RULIWEB}
-                        )
+                            "GPT", {
+                                "board_id": board_id,
+                                "site": SITE_RULIWEB
+                            })
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]["_id"]
                         else:
@@ -97,8 +102,10 @@ class Ruliweb(AbstractCommunityWebsite):
                             )
                             gpt_obj_id = gpt_obj.inserted_id
                         tag_exists = self.db_controller.find(
-                            "TAG", {"board_id": board_id, "site": SITE_RULIWEB}
-                        )
+                            "TAG", {
+                                "board_id": board_id,
+                                "site": SITE_RULIWEB
+                            })
                         if tag_exists:
                             tag_obj_id = tag_exists[0]["_id"]
                         else:
@@ -145,11 +152,13 @@ class Ruliweb(AbstractCommunityWebsite):
         abs_path = f"./{self.yyyymmdd}/{board_id}"
         self.download_path = os.path.abspath(abs_path)
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
         }
-        daily_instance = self.db_controller.find(
-            "Daily", {"board_id": board_id, "site": "ruliweb"}
-        )
+        daily_instance = self.db_controller.find("Daily", {
+            "board_id": board_id,
+            "site": "ruliweb"
+        })
         content_list = []
         if daily_instance:
             response = requests.get(daily_instance[0]["url"], headers=headers)
@@ -164,10 +173,13 @@ class Ruliweb(AbstractCommunityWebsite):
                         img_tag = p.find("img")
                         img_url = "https:" + img_tag["src"]
                         try:
-                            img_txt = super().img_to_text(self.save_img(img_url))
-                            content_list.append(
-                                {"type": "image", "url": img_url, "content": img_txt}
-                            )
+                            img_txt = super().img_to_text(
+                                self.save_img(img_url))
+                            content_list.append({
+                                "type": "image",
+                                "url": img_url,
+                                "content": img_txt
+                            })
                         except Exception as e:
                             logger.info(f"ruliweb Error {e}")
                     elif p.find("video"):
@@ -178,7 +190,10 @@ class Ruliweb(AbstractCommunityWebsite):
                         except Exception as e:
                             logger.info(f"ruliweb Error {e}")
                     else:
-                        content_list.append({"type": "text", "content": p.text.strip()})
+                        content_list.append({
+                            "type": "text",
+                            "content": p.text.strip()
+                        })
             else:
                 logger.info("Failed to retrieve the webpage")
         return content_list

@@ -33,7 +33,8 @@ class Theqoo(AbstractCommunityWebsite):
     """ """
     g_headers = [
         {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
     ]
 
@@ -68,12 +69,8 @@ class Theqoo(AbstractCommunityWebsite):
                 p_element = elements[2]
                 a_element = elements[2]
                 time_element = elements[3]
-                if (
-                    p_element
-                    and a_element
-                    and time_element
-                    and not "공지" in elements[0].get_text(strip=True)
-                ):
+                if (p_element and a_element and time_element
+                        and not "공지" in elements[0].get_text(strip=True)):
                     title = p_element.get_text(strip=True)
                     # print(elements)
                     url = "https://theqoo.net" + a_element.find("a")["href"]
@@ -87,21 +84,24 @@ class Theqoo(AbstractCommunityWebsite):
                     now = datetime.now()
                     hour, minute = map(int, time_text.split(":"))
                     # 시간 설정 및 datetime 객체 생성
-                    target_datetime = datetime(
-                        now.year, now.month, now.day, hour, minute
-                    )
+                    target_datetime = datetime(now.year, now.month, now.day,
+                                               hour, minute)
 
                     try:
                         existing_instance = self.db_controller.find(
-                            "RealTime", {"board_id": board_id, "site": SITE_THEQOO}
-                        )
+                            "RealTime", {
+                                "board_id": board_id,
+                                "site": SITE_THEQOO
+                            })
                         if existing_instance:
                             already_exists_post.append(board_id)
                             continue
                         else:
                             gpt_exists = self.db_controller.find(
-                                "GPT", {"board_id": board_id, "site": SITE_THEQOO}
-                            )
+                                "GPT", {
+                                    "board_id": board_id,
+                                    "site": SITE_THEQOO
+                                })
                             if gpt_exists:
                                 gpt_obj_id = gpt_exists[0]["_id"]
                             else:
@@ -115,8 +115,10 @@ class Theqoo(AbstractCommunityWebsite):
                                 )
                                 gpt_obj_id = gpt_obj.inserted_id
                             tag_exists = self.db_controller.find(
-                                "TAG", {"board_id": board_id, "site": SITE_THEQOO}
-                            )
+                                "TAG", {
+                                    "board_id": board_id,
+                                    "site": SITE_THEQOO
+                                })
                             if tag_exists:
                                 tag_obj_id = tag_exists[0]["_id"]
                             else:
@@ -167,11 +169,9 @@ class Theqoo(AbstractCommunityWebsite):
 
         write_div = soup.find("div", class_="rd_body clear")
 
-        find_all = (
-            write_div.find_all(["p"])
-            if len(write_div.find_all(["p"])) > len(write_div.find_all(["div"]))
-            else write_div.find_all(["div"])
-        )
+        find_all = (write_div.find_all(
+            ["p"]) if len(write_div.find_all(["p"])) > len(
+                write_div.find_all(["div"])) else write_div.find_all(["div"]))
 
         for element in find_all:
             text_content = element.text.strip()
@@ -212,7 +212,8 @@ class Theqoo(AbstractCommunityWebsite):
         # chrome_options.add_argument('--incognito')
         chrome_options.add_argument("--disable-setuid-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
+        chrome_options.add_experimental_option("excludeSwitches",
+                                               ["enable-logging"])
 
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
@@ -222,8 +223,7 @@ class Theqoo(AbstractCommunityWebsite):
         try:
             self.driver.get("https://www.theqoo.com/")
             WebDriverWait(self.driver, 5).until(
-                EC.presence_of_element_located((By.XPATH, "//body"))
-            )
+                EC.presence_of_element_located((By.XPATH, "//body")))
         except Exception as e:
             logger.info("Theqoo Error", e)
         finally:
@@ -249,13 +249,12 @@ class Theqoo(AbstractCommunityWebsite):
         self.driver.execute_script(script)
 
         WebDriverWait(self.driver, 5).until(
-            lambda x: len(os.listdir(self.download_path)) > initial_file_count
-        )
+            lambda x: len(os.listdir(self.download_path)) > initial_file_count)
 
         # 가장 최근에 다운로드된 파일 찾기
         files = os.listdir(self.download_path)
-        newest_file = max(
-            files, key=lambda x: os.path.getctime(os.path.join(self.download_path, x))
-        )
+        newest_file = max(files,
+                          key=lambda x: os.path.getctime(
+                              os.path.join(self.download_path, x)))
 
         return self.download_path + "/" + newest_file

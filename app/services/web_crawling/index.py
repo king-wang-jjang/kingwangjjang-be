@@ -62,9 +62,10 @@ def tag(board_id: str, site: str):
         )
 
     try:
-        realtime_object = db_controller.find(
-            "RealTime", {"board_id": board_id, "site": site}
-        )[0]
+        realtime_object = db_controller.find("RealTime", {
+            "board_id": board_id,
+            "site": site
+        })[0]
         TAG_Object_id = realtime_object["Tag"]
         TAG_object = db_controller.find("Tag", {"_id": TAG_Object_id})[0]
 
@@ -96,18 +97,18 @@ def tag(board_id: str, site: str):
         # GPT 요약
         chatGPT = Tagsplit()
         logger.info(
-            "URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id
-        )
+            "URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" +
+            board_id)
         response = chatGPT.call(content=str_contents)
 
         # Update answer
         if TAG_object:
-            db_controller.update_one(
-                "GPT", {"_id": TAG_Object_id}, {"$set": {"answer": response}}
-            )
+            db_controller.update_one("GPT", {"_id": TAG_Object_id},
+                                     {"$set": {
+                                         "answer": response
+                                     }})
             logger.info(
-                f"{TAG_Object_id} site: {site} board_id: {board_id}문서 업데이트 완료"
-            )
+                f"{TAG_Object_id} site: {site} board_id: {board_id}문서 업데이트 완료")
         else:
             logger.error(
                 f"{TAG_Object_id} site: {site} board_id: {board_id}해당 ObjectId로 문서를 찾을 수 없습니다."
@@ -144,9 +145,10 @@ def board_summary(board_id: str, site: str):
         )
 
     try:
-        realtime_object = db_controller.find(
-            "RealTime", {"board_id": board_id, "site": site}
-        )[0]
+        realtime_object = db_controller.find("RealTime", {
+            "board_id": board_id,
+            "site": site
+        })[0]
         GPT_Object_id = realtime_object["GPTAnswer"]
         GPT_object = db_controller.find("GPT", {"_id": GPT_Object_id})[0]
 
@@ -178,18 +180,18 @@ def board_summary(board_id: str, site: str):
         # GPT 요약
         chatGPT = LLM()
         logger.info(
-            "URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id
-        )
+            "URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" +
+            board_id)
         response = chatGPT.call(content=str_contents)
 
         # Update answer
         if GPT_object:
-            db_controller.update_one(
-                "GPT", {"_id": GPT_Object_id}, {"$set": {"answer": response}}
-            )
+            db_controller.update_one("GPT", {"_id": GPT_Object_id},
+                                     {"$set": {
+                                         "answer": response
+                                     }})
             logger.info(
-                f"{GPT_Object_id} site: {site} board_id: {board_id}문서 업데이트 완료"
-            )
+                f"{GPT_Object_id} site: {site} board_id: {board_id}문서 업데이트 완료")
         else:
             logger.error(
                 f"{GPT_Object_id} site: {site} board_id: {board_id}해당 ObjectId로 문서를 찾을 수 없습니다."

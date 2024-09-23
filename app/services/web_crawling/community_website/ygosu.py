@@ -23,6 +23,7 @@ logger = setup_logger()
 
 class Ygosu(AbstractCommunityWebsite):
     """ """
+
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime("%Y%m%d")
         self.db_controller = MongoController()
@@ -70,15 +71,20 @@ class Ygosu(AbstractCommunityWebsite):
                         existing_instance = self.db_controller.find(
                             # 이미 있는 Board는 넘기기
                             "Daily",
-                            {"board_id": board_id, "site": "ygosu"},
+                            {
+                                "board_id": board_id,
+                                "site": "ygosu"
+                            },
                         )
                         if existing_instance:
                             already_exists_post.append(board_id)
                             continue
                         else:
                             gpt_exists = self.db_controller.find(
-                                "GPT", {"board_id": board_id, "site": SITE_YGOSU}
-                            )
+                                "GPT", {
+                                    "board_id": board_id,
+                                    "site": SITE_YGOSU
+                                })
                             if gpt_exists:
                                 gpt_obj_id = gpt_exists[0]["_id"]
                             else:
@@ -92,8 +98,10 @@ class Ygosu(AbstractCommunityWebsite):
                                 )
                                 gpt_obj_id = gpt_obj.inserted_id
                             tag_exists = self.db_controller.find(
-                                "TAG", {"board_id": board_id, "site": SITE_YGOSU}
-                            )
+                                "TAG", {
+                                    "board_id": board_id,
+                                    "site": SITE_YGOSU
+                                })
                             if tag_exists:
                                 tag_obj_id = tag_exists[0]["_id"]
                             else:
@@ -143,30 +151,34 @@ class Ygosu(AbstractCommunityWebsite):
 
                 title = tit_element.get_text(strip=True)
                 create_time = create_time_element.get_text(strip=True)
-                if (
-                    create_time == "" or ":" not in create_time
-                ):  # 광고 및 공지 제외 및 금일만 추출
+                if (create_time == ""
+                        or ":" not in create_time):  # 광고 및 공지 제외 및 금일만 추출
                     continue
 
                 url = tit_element["href"]
                 url_parts = url.split("/")
                 now = datetime.now()
                 hour, minute, second = map(int, create_time.split(":"))
-                target_datetime = datetime(now.year, now.month, now.day, hour, minute)
+                target_datetime = datetime(now.year, now.month, now.day, hour,
+                                           minute)
                 for board_id in url_parts:
                     if board_id.isdigit():
                         break
                     try:
                         existing_instance = self.db_controller.find(
-                            "RealTime", {"board_id": board_id, "site": SITE_YGOSU}
-                        )
+                            "RealTime", {
+                                "board_id": board_id,
+                                "site": SITE_YGOSU
+                            })
                         if existing_instance:
                             already_exists_post.append(board_id)
                             continue
                         else:
                             gpt_exists = self.db_controller.find(
-                                "GPT", {"board_id": board_id, "site": SITE_YGOSU}
-                            )
+                                "GPT", {
+                                    "board_id": board_id,
+                                    "site": SITE_YGOSU
+                                })
                             if gpt_exists:
                                 gpt_obj_id = gpt_exists[0]["_id"]
                             else:
@@ -180,8 +192,10 @@ class Ygosu(AbstractCommunityWebsite):
                                 )
                                 gpt_obj_id = gpt_obj.inserted_id
                             tag_exists = self.db_controller.find(
-                                "TAG", {"board_id": board_id, "site": SITE_YGOSU}
-                            )
+                                "TAG", {
+                                    "board_id": board_id,
+                                    "site": SITE_YGOSU
+                                })
                             if tag_exists:
                                 tag_obj_id = gpt_exists[0]["_id"]
                             else:
@@ -219,9 +233,10 @@ class Ygosu(AbstractCommunityWebsite):
         """
         abs_path = f"./{self.yyyymmdd}/{board_id}"
         self.download_path = os.path.abspath(abs_path)
-        daily_instance = self.db_controller.find(
-            "RealTime", {"board_id": board_id, "site": "ygosu"}
-        )
+        daily_instance = self.db_controller.find("RealTime", {
+            "board_id": board_id,
+            "site": "ygosu"
+        })
         content_list = []
         if daily_instance:
             response = requests.get(daily_instance[0]["url"])
@@ -237,10 +252,13 @@ class Ygosu(AbstractCommunityWebsite):
                         img_tag = p.find("img")
                         img_url = img_tag["src"]
                         try:
-                            img_txt = super().img_to_text(self.save_img(img_url))
-                            content_list.append(
-                                {"type": "image", "url": img_url, "content": img_txt}
-                            )
+                            img_txt = super().img_to_text(
+                                self.save_img(img_url))
+                            content_list.append({
+                                "type": "image",
+                                "url": img_url,
+                                "content": img_txt
+                            })
                         except Exception as e:
                             logger.info(f"Ygosu Error {e}")
                     elif p.find("video"):
@@ -251,7 +269,10 @@ class Ygosu(AbstractCommunityWebsite):
                         except Exception as e:
                             logger.info(f"Ygosu Error {e}")
                     else:
-                        content_list.append({"type": "text", "content": p.text.strip()})
+                        content_list.append({
+                            "type": "text",
+                            "content": p.text.strip()
+                        })
             else:
                 logger.info("Failed to retrieve the webpage")
         return content_list

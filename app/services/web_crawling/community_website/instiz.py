@@ -24,6 +24,7 @@ logger = setup_logger()
 
 class Instiz(AbstractCommunityWebsite):
     """ """
+
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime("%Y%m%d")
         self.db_controller = MongoController()
@@ -57,9 +58,7 @@ class Instiz(AbstractCommunityWebsite):
 
         result = []
         for tr in soup.find_all("a", class_="rank_href"):
-            title_element = tr.find(
-                "span",
-            )
+            title_element = tr.find("span", )
             # create_time_element = tr.find('td', class_='board_date')
             # create_time = create_time_element.get_text(strip=True)
             link_element = tr
@@ -74,9 +73,8 @@ class Instiz(AbstractCommunityWebsite):
                     cmt = tr.find("span", "cmt").get_text(strip=True)
                 except Exception as e:
                     cmt = ""
-                title = (
-                    tr.get_text(strip=True).replace(rank + cate, "").replace(cmt, "")
-                )
+                title = (tr.get_text(strip=True).replace(rank + cate,
+                                                         "").replace(cmt, ""))
 
                 # print(title)
                 domain = "https://instiz.co.kr"
@@ -86,8 +84,7 @@ class Instiz(AbstractCommunityWebsite):
                 date_format = "%Y-%m-%dT%H:%M"
                 try:
                     target_datetime = datetime.strptime(
-                        self.extract_time(url), date_format
-                    )
+                        self.extract_time(url), date_format)
                 except Exception as e:
                     continue
                 # contents_url = domain + url
@@ -95,15 +92,19 @@ class Instiz(AbstractCommunityWebsite):
 
                 try:
                     existing_instance = self.db_controller.find(
-                        "RealTime", {"board_id": board_id, "site": SITE_INSTIZ}
-                    )
+                        "RealTime", {
+                            "board_id": board_id,
+                            "site": SITE_INSTIZ
+                        })
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
                     else:
                         gpt_exists = self.db_controller.find(
-                            "GPT", {"board_id": board_id, "site": SITE_INSTIZ}
-                        )
+                            "GPT", {
+                                "board_id": board_id,
+                                "site": SITE_INSTIZ
+                            })
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]["_id"]
                         else:
@@ -117,8 +118,10 @@ class Instiz(AbstractCommunityWebsite):
                             )
                             gpt_obj_id = gpt_obj.inserted_id
                         tag_exists = self.db_controller.find(
-                            "TAG", {"board_id": board_id, "site": SITE_INSTIZ}
-                        )
+                            "TAG", {
+                                "board_id": board_id,
+                                "site": SITE_INSTIZ
+                            })
                         if tag_exists:
                             tag_obj_id = tag_exists[0]["_id"]
                         else:
@@ -157,7 +160,9 @@ class Instiz(AbstractCommunityWebsite):
         response = requests.get(url)
         soup = BeautifulSoup(response.text, "html.parser")
         try:
-            return soup.find("span", {"itemprop": "datePublished"}).get("content")
+            return soup.find("span", {
+                "itemprop": "datePublished"
+            }).get("content")
         except Exception as e:
             return None
 
@@ -170,11 +175,13 @@ class Instiz(AbstractCommunityWebsite):
         abs_path = f"./{self.yyyymmdd}/{board_id}"
         self.download_path = os.path.abspath(abs_path)
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
         }
-        daily_instance = self.db_controller.find(
-            "RealTime", {"board_id": board_id, "site": "instiz"}
-        )
+        daily_instance = self.db_controller.find("RealTime", {
+            "board_id": board_id,
+            "site": "instiz"
+        })
         content_list = []
         if daily_instance:
             response = requests.get(daily_instance[0]["url"], headers=headers)
@@ -189,10 +196,13 @@ class Instiz(AbstractCommunityWebsite):
                         img_tag = p.find("img")
                         img_url = "https:" + img_tag["src"]
                         try:
-                            img_txt = super().img_to_text(self.save_img(img_url))
-                            content_list.append(
-                                {"type": "image", "url": img_url, "content": img_txt}
-                            )
+                            img_txt = super().img_to_text(
+                                self.save_img(img_url))
+                            content_list.append({
+                                "type": "image",
+                                "url": img_url,
+                                "content": img_txt
+                            })
                         except Exception as e:
                             logger.info(f"Instiz Error {e}")
                     elif p.find("video"):
@@ -203,7 +213,10 @@ class Instiz(AbstractCommunityWebsite):
                         except Exception as e:
                             logger.info(f"Instiz Error {e}")
                     else:
-                        content_list.append({"type": "text", "content": p.text.strip()})
+                        content_list.append({
+                            "type": "text",
+                            "content": p.text.strip()
+                        })
             else:
                 logger.info("Failed to retrieve the webpage")
         return content_list
