@@ -1,3 +1,11 @@
+from app.constants import DEFAULT_GPT_ANSWER, SITE_RULIWEB, DEFAULT_TAG
+from app.utils.loghandler import setup_logger
+import os
+from app.config import Config
+import logging
+from app.utils import FTPClient
+from app.services.web_crawling.community_website.community_website import AbstractCommunityWebsite
+from app.db.mongo_controller import MongoController
 import re
 from bs4 import BeautifulSoup
 import requests
@@ -7,25 +15,19 @@ from pygments.lexers import q
 from app.utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
-from app.db.mongo_controller import MongoController
-from app.services.web_crawling.community_website.community_website import AbstractCommunityWebsite
-from app.utils import FTPClient
-import logging
-from app.config import Config
-from app.constants import DEFAULT_GPT_ANSWER, SITE_RULIWEB,DEFAULT_TAG
-import os
-from app.utils.loghandler import setup_logger
 
 logger = setup_logger()
+
+
 class Ruliweb(AbstractCommunityWebsite):
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
         self.db_controller = MongoController()
         try:
             self.ftp_client = FTPClient.FTPClient(
-                                server_address=Config().get_env('FTP_HOST'),
-                                username=Config().get_env('FTP_USERNAME'),
-                                password=Config().get_env('FTP_PASSWORD'))
+                server_address=Config().get_env('FTP_HOST'),
+                username=Config().get_env('FTP_USERNAME'),
+                password=Config().get_env('FTP_PASSWORD'))
             super().__init__(self.yyyymmdd, self.ftp_client)
 
         except Exception as e:
@@ -63,15 +65,15 @@ class Ruliweb(AbstractCommunityWebsite):
                 # contents_url = domain + url
                 contents_url = url
 
-
                 try:
                     existing_instance = self.db_controller.find('Daily',
-                                                                  {'board_id': board_id, 'site': SITE_RULIWEB})
+                                                                {'board_id': board_id, 'site': SITE_RULIWEB})
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
                     else:
-                        gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_RULIWEB})
+                        gpt_exists = self.db_controller.find(
+                            'GPT', {'board_id': board_id, 'site': SITE_RULIWEB})
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
                         else:
@@ -81,7 +83,8 @@ class Ruliweb(AbstractCommunityWebsite):
                                 'answer': DEFAULT_GPT_ANSWER
                             })
                             gpt_obj_id = gpt_obj.inserted_id
-                        tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_RULIWEB})
+                        tag_exists = self.db_controller.find(
+                            'TAG', {'board_id': board_id, 'site': SITE_RULIWEB})
                         if tag_exists:
                             tag_obj_id = tag_exists[0]['_id']
                         else:
@@ -111,15 +114,15 @@ class Ruliweb(AbstractCommunityWebsite):
 
     def get_real_time_best(self):
         pass
-    
 
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
-        self.download_path = os.path.abspath(abs_path) 
+        self.download_path = os.path.abspath(abs_path)
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
         }
-        daily_instance = self.db_controller.find('Daily', {'board_id': board_id, 'site': 'ruliweb'})
+        daily_instance = self.db_controller.find(
+            'Daily', {'board_id': board_id, 'site': 'ruliweb'})
         content_list = []
         if daily_instance:
             response = requests.get(daily_instance[0]['url'], headers=headers)
@@ -135,7 +138,7 @@ class Ruliweb(AbstractCommunityWebsite):
                         img_url = "https:" + img_tag['src']
                         try:
                             img_txt = super().img_to_text(self.save_img(img_url))
-                            content_list.append({'type': 'image', 'url': img_url, 
+                            content_list.append({'type': 'image', 'url': img_url,
                                                 'content': img_txt})
                         except Exception as e:
                             logger.info(f'ruliweb Error {e}')
@@ -146,13 +149,13 @@ class Ruliweb(AbstractCommunityWebsite):
                             self.save_img(video_url)
                         except Exception as e:
                             logger.info(f'ruliweb Error {e}')
-                    else: 
-                        content_list.append({'type': 'text', 'content': p.text.strip()})
+                    else:
+                        content_list.append(
+                            {'type': 'text', 'content': p.text.strip()})
             else:
                 logger.info("Failed to retrieve the webpage")
         return content_list
-    
-            
+
     def save_img(self, url):
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
@@ -160,8 +163,10 @@ class Ruliweb(AbstractCommunityWebsite):
         response = requests.get(url)
         img_name = os.path.basename(url)
         # 이미지를 파일로 저장
-        with open(os.path.join( self.download_path, img_name), 'wb') as f:
+        with open(os.path.join(self.download_path, img_name), 'wb') as f:
             f.write(response.content)
 
         return self.download_path + "/" + img_name
+
+
 Ruliweb().get_daily_best()

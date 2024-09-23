@@ -1,3 +1,10 @@
+from app.utils.loghandler import setup_logger
+import logging
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium import webdriver
 from datetime import datetime
 import os
 from bs4 import BeautifulSoup
@@ -5,7 +12,7 @@ import requests
 
 from app.db.mongo_controller import MongoController
 from app.services.web_crawling.community_website.community_website import AbstractCommunityWebsite
-from app.constants import DEFAULT_GPT_ANSWER, SITE_THEQOO,DEFAULT_TAG
+from app.constants import DEFAULT_GPT_ANSWER, SITE_THEQOO, DEFAULT_TAG
 from app.utils import FTPClient
 from app.config import Config
 from app.utils.loghandler import catch_exception
@@ -13,31 +20,25 @@ import sys
 sys.excepthook = catch_exception
 
 # selenium
-from selenium import webdriver
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-import logging
-from app.utils.loghandler import setup_logger
 
 logger = setup_logger()
 
+
 class Theqoo(AbstractCommunityWebsite):
     g_headers = [
-            {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
-        ]
-    
+        {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
+    ]
+
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
         self.db_controller = MongoController()
         try:
             self.ftp_client = FTPClient.FTPClient(
-                                server_address=Config().get_env('FTP_HOST'),
-                                username=Config().get_env('FTP_USERNAME'),
-                                password=Config().get_env('FTP_PASSWORD'))
+                server_address=Config().get_env('FTP_HOST'),
+                username=Config().get_env('FTP_USERNAME'),
+                password=Config().get_env('FTP_PASSWORD'))
             super().__init__(self.yyyymmdd, self.ftp_client)
-            
+
         except Exception as e:
             logger.info("Theqoo error:", e)
 
@@ -63,32 +64,36 @@ class Theqoo(AbstractCommunityWebsite):
 
                     board_id = url.split('hot/')[-1]
                     time_text = time_element.get_text(strip=True)
-                    if(time_text.find('-') > 0):
+                    if (time_text.find('-') > 0):
                         break  # 오늘 것만 추가 (이전 글은 제외 (DB에서 확인))
 
                     # 시간 13:40 -> 2024.01.29 13:40 로 수정
                     now = datetime.now()
                     hour, minute = map(int, time_text.split(':'))
                     # 시간 설정 및 datetime 객체 생성
-                    target_datetime = datetime(now.year, now.month, now.day, hour, minute)
+                    target_datetime = datetime(
+                        now.year, now.month, now.day, hour, minute)
 
                     try:
-                        existing_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': SITE_THEQOO})
+                        existing_instance = self.db_controller.find(
+                            'RealTime', {'board_id': board_id, 'site': SITE_THEQOO})
                         if existing_instance:
                             already_exists_post.append(board_id)
                             continue
                         else:
-                            gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_THEQOO})
+                            gpt_exists = self.db_controller.find(
+                                'GPT', {'board_id': board_id, 'site': SITE_THEQOO})
                             if gpt_exists:
                                 gpt_obj_id = gpt_exists[0]['_id']
-                            else :
+                            else:
                                 gpt_obj = self.db_controller.insert_one('GPT', {
                                     'board_id': board_id,
                                     'site': SITE_THEQOO,
                                     'answer': DEFAULT_GPT_ANSWER
                                 })
                                 gpt_obj_id = gpt_obj.inserted_id
-                            tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_THEQOO})
+                            tag_exists = self.db_controller.find(
+                                'TAG', {'board_id': board_id, 'site': SITE_THEQOO})
                             if tag_exists:
                                 tag_obj_id = tag_exists[0]['_id']
                             else:
@@ -114,7 +119,7 @@ class Theqoo(AbstractCommunityWebsite):
 
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
-        self.download_path = os.path.abspath(abs_path) 
+        self.download_path = os.path.abspath(abs_path)
         # self.set_driver_options()
 
         _url = "https://theqoo.net/hot/" + board_id
@@ -133,7 +138,7 @@ class Theqoo(AbstractCommunityWebsite):
             if len(write_div.find_all(['p'])) > len(write_div.find_all(['div']))
             else write_div.find_all(['div'])
         )
-     
+
         for element in find_all:
             text_content = element.text.strip()
             content_list.append({'type': 'text', 'content': text_content})
@@ -142,7 +147,7 @@ class Theqoo(AbstractCommunityWebsite):
             #     image_url = img_tag['src']
             #     try:
             #         img_txt = super().img_to_text(self.save_img(image_url))
-            #         content_list.append({'type': 'image', 'url': image_url, 
+            #         content_list.append({'type': 'image', 'url': image_url,
             #                             'content': img_txt})
             #     except Exception as e:
             #         logger.info(f'Theqoo Error {e}')
@@ -155,7 +160,7 @@ class Theqoo(AbstractCommunityWebsite):
             #         content_list.append({'type': 'video', 'url': video_url})
         # 업로드
         # self.ftp_client.ftp_upload_folder(local_directory=self.download_path, remote_directory=board_id)
-        
+
         # 업로드 후 삭제
         # shutil.rmtree(self.download_path)
 
@@ -175,13 +180,14 @@ class Theqoo(AbstractCommunityWebsite):
         # chrome_options.add_argument('--incognito')
         chrome_options.add_argument('--disable-setuid-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_experimental_option('excludeSwitches',['enable-logging'])
+        chrome_options.add_experimental_option(
+            'excludeSwitches', ['enable-logging'])
 
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
 
         self.driver = webdriver.Chrome(options=chrome_options)
-        
+
         try:
             self.driver.get("https://www.theqoo.com/")
             WebDriverWait(self.driver, 5).until(
@@ -191,7 +197,7 @@ class Theqoo(AbstractCommunityWebsite):
             logger.info('Theqoo Error', e)
         finally:
             return True
-    
+
     def save_img(self, url):
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
@@ -205,13 +211,14 @@ class Theqoo(AbstractCommunityWebsite):
             link.click();
         '''
         self.driver.execute_script(script)
-        
+
         WebDriverWait(self.driver, 5).until(
             lambda x: len(os.listdir(self.download_path)) > initial_file_count
         )
 
         # 가장 최근에 다운로드된 파일 찾기
         files = os.listdir(self.download_path)
-        newest_file = max(files, key=lambda x: os.path.getctime(os.path.join(self.download_path, x)))
+        newest_file = max(files, key=lambda x: os.path.getctime(
+            os.path.join(self.download_path, x)))
 
         return self.download_path + "/" + newest_file

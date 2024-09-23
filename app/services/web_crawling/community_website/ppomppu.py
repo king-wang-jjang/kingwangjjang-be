@@ -1,3 +1,7 @@
+from app.utils.loghandler import setup_logger
+import os
+from app.constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU, DEFAULT_TAG
+from app.config import Config
 import re
 from bs4 import BeautifulSoup
 import requests
@@ -9,28 +13,26 @@ import logging
 from app.utils.loghandler import catch_exception
 import sys
 sys.excepthook = catch_exception
-from app.config import Config
-from app.constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU, DEFAULT_TAG
-import os
-from app.utils.loghandler import setup_logger
 
 logger = setup_logger()
+
+
 class Ppomppu(AbstractCommunityWebsite):
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
         self.db_controller = MongoController()
         try:
             self.ftp_client = FTPClient.FTPClient(
-                                server_address=Config().get_env('FTP_HOST'),
-                                username=Config().get_env('FTP_USERNAME'),
-                                password=Config().get_env('FTP_PASSWORD'))
+                server_address=Config().get_env('FTP_HOST'),
+                username=Config().get_env('FTP_USERNAME'),
+                password=Config().get_env('FTP_PASSWORD'))
             super().__init__(self.yyyymmdd, self.ftp_client)
 
         except Exception as e:
             logger.info("Dcinside error:", e)
 
     def get_daily_best(self):
-        pass        
+        pass
 
     def get_real_time_best(self):
         '''
@@ -51,41 +53,44 @@ class Ppomppu(AbstractCommunityWebsite):
             title_element = tr.find('a', class_='title')
             create_time_element = tr.find('td', class_='board_date')
             create_time = create_time_element.get_text(strip=True)
-            # create_time = create_time_element.text.strip()  
-            
+            # create_time = create_time_element.text.strip()
 
             if title_element:
-                # title = title_element.text.strip()  
+                # title = title_element.text.strip()
                 title = title_element.get_text(strip=True)
                 domain = "https://ppomppu.co.kr"
                 url = title_element['href']
                 # url_parts = url.split("/")
                 board_id = self.extract_id_and_no_from_url(url)
                 hour, minute, second = map(int, create_time.split(":"))
-                target_datetime = datetime(now.year, now.month, now.day, hour, minute)
+                target_datetime = datetime(
+                    now.year, now.month, now.day, hour, minute)
                 # contents_url = domain + url
                 contents_url = domain + url
 
-                if ("/" in create_time): 
+                if ("/" in create_time):
                     break
 
                 try:
-                    existing_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': SITE_PPOMPPU})
+                    existing_instance = self.db_controller.find(
+                        'RealTime', {'board_id': board_id, 'site': SITE_PPOMPPU})
                     if existing_instance:
                         already_exists_post.append(board_id)
                         continue
                     else:
-                        gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_PPOMPPU})
+                        gpt_exists = self.db_controller.find(
+                            'GPT', {'board_id': board_id, 'site': SITE_PPOMPPU})
                         if gpt_exists:
                             gpt_obj_id = gpt_exists[0]['_id']
-                        else :
+                        else:
                             gpt_obj = self.db_controller.insert_one('GPT', {
                                 'board_id': board_id,
                                 'site': SITE_PPOMPPU,
                                 'answer': DEFAULT_GPT_ANSWER
                             })
                             gpt_obj_id = gpt_obj.inserted_id
-                        tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_PPOMPPU})
+                        tag_exists = self.db_controller.find(
+                            'TAG', {'board_id': board_id, 'site': SITE_PPOMPPU})
                         if tag_exists:
                             tag_obj_id = tag_exists[0]['_id']
                         else:
@@ -102,17 +107,17 @@ class Ppomppu(AbstractCommunityWebsite):
                             'url': contents_url,
                             'create_time': target_datetime,
                             'GPTAnswer': gpt_obj_id,
-                            'Tag' : tag_obj_id
+                            'Tag': tag_obj_id
                         })
                 except Exception as e:
                     logger.info(e)
-                    
+
         logger.info({"already exists post": already_exists_post})
-        
+
         data = {"rank": {i + 1: item for i, item in enumerate(result)}}
 
         return data
-    
+
     def extract_id_and_no_from_url(self, url):
         pattern = r"id=([^&]*)&no=([^&]*)"
         match = re.search(pattern, url)
@@ -122,15 +127,15 @@ class Ppomppu(AbstractCommunityWebsite):
             return no_value
         else:
             return None
-        
 
     def get_board_contents(self, board_id):
         abs_path = f'./{self.yyyymmdd}/{board_id}'
-        self.download_path = os.path.abspath(abs_path) 
+        self.download_path = os.path.abspath(abs_path)
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
         }
-        daily_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': 'ppomppu'})
+        daily_instance = self.db_controller.find(
+            'RealTime', {'board_id': board_id, 'site': 'ppomppu'})
         content_list = []
         if daily_instance:
             response = requests.get(daily_instance[0]['url'], headers=headers)
@@ -146,7 +151,7 @@ class Ppomppu(AbstractCommunityWebsite):
                         img_url = "https:" + img_tag['src']
                         try:
                             img_txt = super().img_to_text(self.save_img(img_url))
-                            content_list.append({'type': 'image', 'url': img_url, 
+                            content_list.append({'type': 'image', 'url': img_url,
                                                 'content': img_txt})
                         except Exception as e:
                             logger.info(f'Ppomppu Error {e}')
@@ -157,13 +162,13 @@ class Ppomppu(AbstractCommunityWebsite):
                             self.save_img(video_url)
                         except Exception as e:
                             logger.info(f'Ppomppu Error {e}')
-                    else: 
-                        content_list.append({'type': 'text', 'content': p.text.strip()})
+                    else:
+                        content_list.append(
+                            {'type': 'text', 'content': p.text.strip()})
             else:
                 logger.info("Failed to retrieve the webpage")
         return content_list
-    
-            
+
     def save_img(self, url):
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
@@ -171,7 +176,7 @@ class Ppomppu(AbstractCommunityWebsite):
         response = requests.get(url)
         img_name = os.path.basename(url)
         # 이미지를 파일로 저장
-        with open(os.path.join( self.download_path, img_name), 'wb') as f:
+        with open(os.path.join(self.download_path, img_name), 'wb') as f:
             f.write(response.content)
 
         return self.download_path + "/" + img_name

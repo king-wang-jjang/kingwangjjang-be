@@ -54,7 +54,6 @@ class Comment:
     Comments: List[Dict]
 
 
-
 @strawberry.type
 class Mutation:
     """ """
@@ -109,5 +108,3 @@ class TaskStatusQuery:
         else:
             return TaskStatusType(status=task_result.state,
                                   result=str(task_result.info))
-
-

@@ -17,7 +17,7 @@ from app.services.web_crawling.community_website.dcinside import Dcinside
 from app.utils.llm import LLM
 from app.utils.tag_split import Tagsplit
 
-from app.constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU,SITE_THEQOO,SITE_INSTIZ,SITE_RULIWEB
+from app.constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU, SITE_PPOMPPU, SITE_THEQOO, SITE_INSTIZ, SITE_RULIWEB
 from app.utils.loghandler import setup_logger
 from app.utils.loghandler import catch_exception
 import sys
@@ -30,6 +30,8 @@ board_semaphores = {}
 db_controller = MongoController()
 
 router = APIRouter()
+
+
 def tag(board_id: str, site: str):
     global board_semaphores
     semaphore_label = site + board_id
@@ -40,10 +42,12 @@ def tag(board_id: str, site: str):
     semaphore = board_semaphores[semaphore_label]
     acquired = semaphore.acquire(timeout=1)
     if not acquired:
-        raise HTTPException(status_code=429, detail='요청을 이미 처리하고 있습니다. 잠시 후 다시 선택해주세요.')
+        raise HTTPException(
+            status_code=429, detail='요청을 이미 처리하고 있습니다. 잠시 후 다시 선택해주세요.')
 
     try:
-        realtime_object = db_controller.find('RealTime', {'board_id': board_id, 'site': site})[0]
+        realtime_object = db_controller.find(
+            'RealTime', {'board_id': board_id, 'site': site})[0]
         TAG_Object_id = realtime_object['Tag']
         TAG_object = db_controller.find('Tag', {'_id': TAG_Object_id})[0]
 
@@ -74,7 +78,8 @@ def tag(board_id: str, site: str):
 
         # GPT 요약
         chatGPT = Tagsplit()
-        logger.info("URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
+        logger.info(
+            "URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
         response = chatGPT.call(content=str_contents)
 
         # Update answer
@@ -82,9 +87,11 @@ def tag(board_id: str, site: str):
             db_controller.update_one('GPT',
                                      {'_id': TAG_Object_id},
                                      {'$set': {'answer': response}})
-            logger.info(f"{TAG_Object_id} site: {site} board_id: {board_id}문서 업데이트 완료")
+            logger.info(
+                f"{TAG_Object_id} site: {site} board_id: {board_id}문서 업데이트 완료")
         else:
-            logger.error(f"{TAG_Object_id} site: {site} board_id: {board_id}해당 ObjectId로 문서를 찾을 수 없습니다.")
+            logger.error(
+                f"{TAG_Object_id} site: {site} board_id: {board_id}해당 ObjectId로 문서를 찾을 수 없습니다.")
             return JSONResponse(content={"detail": "해당 ObjectId로 문서를 찾을 수 없습니다."}, status_code=404)
 
         return response
@@ -102,10 +109,12 @@ def board_summary(board_id: str, site: str):
     semaphore = board_semaphores[semaphore_label]
     acquired = semaphore.acquire(timeout=1)
     if not acquired:
-        raise HTTPException(status_code=429, detail='요청을 이미 처리하고 있습니다. 잠시 후 다시 선택해주세요.')
+        raise HTTPException(
+            status_code=429, detail='요청을 이미 처리하고 있습니다. 잠시 후 다시 선택해주세요.')
 
     try:
-        realtime_object = db_controller.find('RealTime', {'board_id': board_id, 'site': site})[0]
+        realtime_object = db_controller.find(
+            'RealTime', {'board_id': board_id, 'site': site})[0]
         GPT_Object_id = realtime_object['GPTAnswer']
         GPT_object = db_controller.find('GPT', {'_id': GPT_Object_id})[0]
 
@@ -136,7 +145,8 @@ def board_summary(board_id: str, site: str):
 
         # GPT 요약
         chatGPT = LLM()
-        logger.info("URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
+        logger.info(
+            "URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
         response = chatGPT.call(content=str_contents)
 
         # Update answer
@@ -144,9 +154,11 @@ def board_summary(board_id: str, site: str):
             db_controller.update_one('GPT',
                                      {'_id': GPT_Object_id},
                                      {'$set': {'answer': response}})
-            logger.info(f"{GPT_Object_id} site: {site} board_id: {board_id}문서 업데이트 완료")
+            logger.info(
+                f"{GPT_Object_id} site: {site} board_id: {board_id}문서 업데이트 완료")
         else:
-            logger.error(f"{GPT_Object_id} site: {site} board_id: {board_id}해당 ObjectId로 문서를 찾을 수 없습니다.")
+            logger.error(
+                f"{GPT_Object_id} site: {site} board_id: {board_id}해당 ObjectId로 문서를 찾을 수 없습니다.")
             return JSONResponse(content={"detail": "해당 ObjectId로 문서를 찾을 수 없습니다."}, status_code=404)
 
         return response
@@ -169,7 +181,7 @@ async def board_summary_rest(request: Request):
 
 
 def get_real_time_best():
-    CrawllerList = [Ygosu(),Ppomppu(),Theqoo(),Instiz(),Ruliweb()]
+    CrawllerList = [Ygosu(), Ppomppu(), Theqoo(), Instiz(), Ruliweb()]
     for i in CrawllerList:
         try:
             i.get_real_time_best()
@@ -179,12 +191,10 @@ def get_real_time_best():
 
 
 def get_daily_best():
-    CrawllerList = [Ygosu(),Ppomppu(),Theqoo(),Instiz(),Ruliweb()]
+    CrawllerList = [Ygosu(), Ppomppu(), Theqoo(), Instiz(), Ruliweb()]
     for i in CrawllerList:
         try:
             i.get_daily_best()
         except Exception as e:
             logger.error(e)
     return JSONResponse(content={'response': "데일리 베스트 가져오기 완료"})
-
-
