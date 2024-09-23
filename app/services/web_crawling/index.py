@@ -2,13 +2,21 @@ import logging
 import sys
 import threading
 
-from fastapi import APIRouter, FastAPI, HTTPException, Request
+from fastapi import APIRouter
+from fastapi import FastAPI
+from fastapi import HTTPException
+from fastapi import Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pymongo import settings
 
-from app.constants import (DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_INSTIZ,
-                           SITE_PPOMPPU, SITE_RULIWEB, SITE_THEQOO, SITE_YGOSU)
+from app.constants import DEFAULT_GPT_ANSWER
+from app.constants import SITE_DCINSIDE
+from app.constants import SITE_INSTIZ
+from app.constants import SITE_PPOMPPU
+from app.constants import SITE_RULIWEB
+from app.constants import SITE_THEQOO
+from app.constants import SITE_YGOSU
 from app.db.mongo_controller import MongoController
 from app.services.web_crawling.community_website.dcinside import Dcinside
 from app.services.web_crawling.community_website.instiz import Instiz
@@ -17,7 +25,8 @@ from app.services.web_crawling.community_website.ruliweb import Ruliweb
 from app.services.web_crawling.community_website.theqoo import Theqoo
 from app.services.web_crawling.community_website.ygosu import Ygosu
 from app.utils.llm import LLM
-from app.utils.loghandler import catch_exception, setup_logger
+from app.utils.loghandler import catch_exception
+from app.utils.loghandler import setup_logger
 from app.utils.tag_split import Tagsplit
 
 sys.excepthook = catch_exception

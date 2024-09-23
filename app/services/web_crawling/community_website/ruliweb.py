@@ -9,12 +9,15 @@ from bs4 import BeautifulSoup
 from pygments.lexers import q
 
 from app.config import Config
-from app.constants import DEFAULT_GPT_ANSWER, DEFAULT_TAG, SITE_RULIWEB
+from app.constants import DEFAULT_GPT_ANSWER
+from app.constants import DEFAULT_TAG
+from app.constants import SITE_RULIWEB
 from app.db.mongo_controller import MongoController
 from app.services.web_crawling.community_website.community_website import \
     AbstractCommunityWebsite
 from app.utils import FTPClient
-from app.utils.loghandler import catch_exception, setup_logger
+from app.utils.loghandler import catch_exception
+from app.utils.loghandler import setup_logger
 
 sys.excepthook = catch_exception
 
