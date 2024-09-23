@@ -45,7 +45,7 @@ class Ppomppu(AbstractCommunityWebsite):
 
     def get_real_time_best(self):
         """ppomppu daily post
-        
+
         :return: {rank: { {title: string, url: string}[]} }
 
 
@@ -142,7 +142,7 @@ class Ppomppu(AbstractCommunityWebsite):
     def extract_id_and_no_from_url(self, url):
         """
 
-        :param url: 
+        :param url:
 
         """
         pattern = r"id=([^&]*)&no=([^&]*)"
@@ -157,7 +157,7 @@ class Ppomppu(AbstractCommunityWebsite):
     def get_board_contents(self, board_id):
         """
 
-        :param board_id: 
+        :param board_id:
 
         """
         abs_path = f"./{self.yyyymmdd}/{board_id}"
@@ -204,7 +204,7 @@ class Ppomppu(AbstractCommunityWebsite):
     def save_img(self, url):
         """
 
-        :param url: 
+        :param url:
 
         """
         if not os.path.exists(self.download_path):

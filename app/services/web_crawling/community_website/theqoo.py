@@ -149,7 +149,7 @@ class Theqoo(AbstractCommunityWebsite):
     def get_board_contents(self, board_id):
         """
 
-        :param board_id: 
+        :param board_id:
 
         """
         abs_path = f"./{self.yyyymmdd}/{board_id}"
@@ -232,7 +232,7 @@ class Theqoo(AbstractCommunityWebsite):
     def save_img(self, url):
         """
 
-        :param url: 
+        :param url:
 
         """
         if not os.path.exists(self.download_path):

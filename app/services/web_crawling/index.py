@@ -43,8 +43,8 @@ router = APIRouter()
 def tag(board_id: str, site: str):
     """
 
-    :param board_id: str: 
-    :param site: str: 
+    :param board_id: str:
+    :param site: str:
 
     """
     global board_semaphores
@@ -125,8 +125,8 @@ def tag(board_id: str, site: str):
 def board_summary(board_id: str, site: str):
     """
 
-    :param board_id: str: 
-    :param site: str: 
+    :param board_id: str:
+    :param site: str:
 
     """
     global board_semaphores

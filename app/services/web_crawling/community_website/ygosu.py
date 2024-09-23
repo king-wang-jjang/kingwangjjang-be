@@ -39,7 +39,7 @@ class Ygosu(AbstractCommunityWebsite):
 
     def get_daily_best(self):
         """ygosu RealTimeBest post
-        
+
         :return: {rank: { {title: string, url: string}[]} }
 
 
@@ -126,7 +126,7 @@ class Ygosu(AbstractCommunityWebsite):
 
     def get_real_time_best(self):
         """ygosu RealTimeBest post
-        
+
         :return: {rank: { {title: string, url: string}[]} }
 
 
@@ -214,7 +214,7 @@ class Ygosu(AbstractCommunityWebsite):
     def get_board_contents(self, board_id):
         """
 
-        :param board_id: 
+        :param board_id:
 
         """
         abs_path = f"./{self.yyyymmdd}/{board_id}"
@@ -259,7 +259,7 @@ class Ygosu(AbstractCommunityWebsite):
     def save_img(self, url):
         """
 
-        :param url: 
+        :param url:
 
         """
         if not os.path.exists(self.download_path):

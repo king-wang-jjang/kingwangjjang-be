@@ -44,7 +44,7 @@ class Instiz(AbstractCommunityWebsite):
 
     def get_real_time_best(self):
         """ppomppu daily post
-        
+
         :return: {rank: { {title: string, url: string}[]} }
 
 
@@ -151,7 +151,7 @@ class Instiz(AbstractCommunityWebsite):
     def extract_time(self, url):
         """
 
-        :param url: 
+        :param url:
 
         """
         response = requests.get(url)
@@ -164,7 +164,7 @@ class Instiz(AbstractCommunityWebsite):
     def get_board_contents(self, board_id):
         """
 
-        :param board_id: 
+        :param board_id:
 
         """
         abs_path = f"./{self.yyyymmdd}/{board_id}"
@@ -211,7 +211,7 @@ class Instiz(AbstractCommunityWebsite):
     def save_img(self, url):
         """
 
-        :param url: 
+        :param url:
 
         """
         if not os.path.exists(self.download_path):
