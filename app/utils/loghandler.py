@@ -137,7 +137,7 @@ def setup_logger():
 
     # Slack 핸들러 추가
     slack_handler = SlackWebhookHandler()
-    slack_handler.setLevel(logging.DEBUG)
+    slack_handler.setLevel(logging.ERROR)
 
     # DB 핸들러 추가
     db_handler = DBLOGHandler()
