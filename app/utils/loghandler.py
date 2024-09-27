@@ -7,7 +7,7 @@ from colorama import Fore, init, Style
 from app.config import Config
 from app.db.mongo_controller import MongoController
 import threading
-
+import bson
 init(autoreset=True)  # colorama 초기화
 
 
@@ -116,8 +116,13 @@ class DBLOGHandler(logging.Handler):
         data = dict(record.__dict__)
         data["server"] = Config().get_env("SERVER_TYPE")
 
+        # Remove or convert non-serializable types to string
         for key, value in data.items():
-            if isinstance(value, Exception):
+            try:
+                # Check if the value can be serialized to BSON (MongoDB format)
+                bson.BSON.encode({key: value})
+            except Exception:
+                # If not serializable, convert to string
                 data[key] = str(value)
 
         try:
