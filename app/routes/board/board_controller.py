@@ -1,39 +1,39 @@
+import logging
+import sys
 from datetime import datetime
-from typing import List, Optional
+from typing import Dict
+from typing import List
+from typing import Optional
+
 import strawberry
-from app.services.board_comment.add import board_comment_add, board_reply_add
+from fastapi import APIRouter
+from fastapi import FastAPI
+from fastapi import HTTPException
+from pydantic import BaseModel
+from strawberry.fastapi import GraphQLRouter
+
+from app.services.board_comment.get import board_comment_get
+from app.services.count.likes import get_likes
+from app.services.count.views import get_views
+from app.services.web_crawling.index import tag
+from app.services.web_crawling.pagination import get_pagination_daily_best
+from app.services.web_crawling.pagination import get_pagination_real_time_best
+from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
 
-# Logger 설정
+# Setup logger and exception hook
 logger = setup_logger()
+sys.excepthook = catch_exception
 
-
-@strawberry.type
-class ReplyEntry:
-    """ReplyEntry represents a reply to a comment"""
-    board_id: str
-    site: str
-    user_id: str
-    comment: str
-    timestamp: str
-    _id: str
-
-
-@strawberry.type
-class CommentEntry:
-    """CommentEntry represents a comment on a board"""
-    _id: str
-    board_id: str
-    site: str
-    user_id: str
-    comment: str
-    reply: str
-    timestamp: str
+# Initialize FastAPI app
+app = FastAPI()
+router = APIRouter()
 
 
 @strawberry.type
 class Daily:
-    """Represents a daily entry"""
+    """ """
+
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -45,7 +45,8 @@ class Daily:
 
 @strawberry.type
 class RealTime:
-    """Represents a real-time entry"""
+    """ """
+
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -57,7 +58,8 @@ class RealTime:
 
 @strawberry.type
 class Summary:
-    """Represents a summary entry"""
+    """ """
+
     board_id: str
     site: str
     GPTAnswer: str
@@ -65,69 +67,125 @@ class Summary:
 
 
 @strawberry.type
-class BoardComment:
-    """Represents a list of comments on a board"""
-    comments: List[CommentEntry]
+class Comment:
+    """ """
+
+    board_id: str
+    site: str
+    Comments: str
 
 
 @strawberry.type
-class BoardReply:
-    """Represents a list of replies to a comment"""
-    replies: List[ReplyEntry]
+class Like:
+    """ """
+
+    board_id: str
+    site: str
+    NOWLIKE: int
 
 
 @strawberry.type
-class Mutation:
-    """Mutation class for adding comments and replies"""
+class View:
+    """ """
 
-    @strawberry.mutation
-    def comment(self, board_id: str, site: str, userid: str, comment: str) -> BoardComment:
-        """
-        Add a comment to a board.
+    board_id: str
+    site: str
+    NOWVIEW: int
 
-        :param board_id: ID of the board
-        :param site: Site name
-        :param userid: ID of the user posting the comment
-        :param comment: The comment text
-        :return: A BoardComment object containing the added comment
+
+@strawberry.type
+class Query:
+    """ """
+
+    @strawberry.field
+    def daily_pagination(self, index: int = 0) -> List[Daily]:
         """
-        logger.info(f"Adding comment to board {board_id} on site {site} by user {userid}")
+
+        :param index: int:  (Default value = 0)
+        :param index: int:  (Default value = 0)
+        :param index: int:  (Default value = 0)
+
+        """
         try:
-            comment_data = board_comment_add(board_id, site, userid, comment)
-            logger.info(f"Comment added to board {board_id}")
-            return BoardComment(comments=comment_data)
+            return get_pagination_daily_best(index)
         except Exception as e:
-            logger.error(f"Error adding comment to board {board_id} on site {site}: {e}")
-            raise e
+            logger.exception(f"Error getting daily data: {e}")
+            raise HTTPException(status_code=500,
+                                detail="Internal server error")
 
-    @strawberry.mutation
-    def reply(self, board_id: str, site: str, userid: str, parents_comment: str, reply: str) -> CommentEntry:
+    @strawberry.field
+    def realtime_pagination(self, index: int = 0) -> List[RealTime]:
         """
-        Add a reply to an existing comment.
 
-        :param board_id: ID of the board
-        :param site: Site name
-        :param userid: ID of the user posting the reply
-        :param parents_comment: ID of the parent comment to reply to
-        :param reply: The reply text
-        :return: A CommentEntry object representing the updated parent comment
+        :param index: int:  (Default value = 0)
+        :param index: int:  (Default value = 0)
+        :param index: int:  (Default value = 0)
+
         """
-        logger.info(f"Adding reply to comment {parents_comment} on board {board_id} by user {userid}")
         try:
-            reply_dicts = board_reply_add(board_id=board_id, site=site, userid=userid,
-                                          parrent_comment=parents_comment, reply=reply)
-            logger.info(f"Reply added to comment {parents_comment} on board {board_id}")
-
-            # Convert reply_dicts to a CommentEntry object
-            return CommentEntry(
-                _id=reply_dicts[0]["_id"],
-                board_id=reply_dicts[0]["board_id"],
-                user_id=reply_dicts[0]["user_id"],
-                comment=reply_dicts[0]["comment"],
-                reply=str(reply_dicts[0]["reply"]),
-                timestamp=reply_dicts[0]["timestamp"],
-                site=reply_dicts[0]["site"]
-            )
+            return get_pagination_real_time_best(index)
         except Exception as e:
-            logger.error(f"Error adding reply to comment {parents_comment} on board {board_id}: {e}")
-            raise e
+            logger.exception(f"Error getting realtime data: {e}")
+            raise HTTPException(status_code=500,
+                                detail="Internal server error")
+
+    @strawberry.field
+    def comment(self, board_id: str, site: str) -> Comment:
+        """
+
+        :param board_id: str:
+        :param site: str:
+        :param board_id: str:
+        :param site: str:
+        :param board_id: str:
+        :param site: str:
+
+        """
+        try:
+            comments = board_comment_get(board_id, site)
+            if not comments:
+                comments = [{"none": "none"}]
+            return Comment(board_id=board_id,
+                           site=site,
+                           Comments=str(comments))
+        except Exception as e:
+            logger.exception(f"Error creating summary board: {e}")
+            raise HTTPException(status_code=500,
+                                detail="Internal server error")
+
+    @strawberry.field
+    def get_like(self, board_id: str, site: str) -> Like:
+        """
+
+        :param board_id: str:
+        :param site: str:
+        :param board_id: str:
+        :param site: str:
+        :param board_id: str:
+        :param site: str:
+
+        """
+        return Like(board_id=board_id,
+                     site=site,
+                     NOWLIKE=get_likes(board_id, site))
+
+    @strawberry.field
+    def get_views(self, board_id: str, site: str) -> View:
+        """
+
+        :param board_id: str:
+        :param site: str:
+        :param board_id: str:
+        :param site: str:
+        :param board_id: str:
+        :param site: str:
+
+        """
+        return View(board_id=board_id,
+                     site=site,
+                     NOWVIEW=get_views(board_id, site))
+
+
+# Initialize GraphQL schema and router
+schema = strawberry.Schema(query=Query)
+graphql_app = GraphQLRouter(schema=schema)
