@@ -215,7 +215,7 @@ def setup_logger():
 
     # 슬랙 웹훅 핸들러 추가
     slack_handler = SlackWebhookHandler()
-    slack_handler.setLevel(logging.DEBUG)  # ERROR 레벨까지 모든 로그를 처리
+    slack_handler.setLevel(logging.ERROR)  # ERROR 레벨까지 모든 로그를 처리
     # DB 웹훅 핸들러 추가
     db_handler = DBLOGHandler()
     db_handler.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
