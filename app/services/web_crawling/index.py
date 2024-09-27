@@ -1,190 +1,53 @@
-import threading
-import logging
-
-from fastapi import FastAPI, Request, HTTPException, APIRouter
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from pymongo import settings
-
+import graphene
 from app.db.mongo_controller import MongoController
-from app.services.web_crawling.community_website.instiz import Instiz
-from app.services.web_crawling.community_website.ppomppu import Ppomppu
-from app.services.web_crawling.community_website.ruliweb import Ruliweb
-from app.services.web_crawling.community_website.theqoo import Theqoo
-from app.services.web_crawling.community_website.ygosu import Ygosu
-from app.services.web_crawling.community_website.dcinside import Dcinside
-
-from app.utils.llm import LLM
-from app.utils.tag_split import Tagsplit
-
-from app.constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU,SITE_PPOMPPU,SITE_THEQOO,SITE_INSTIZ,SITE_RULIWEB
-from app.utils.loghandler import setup_logger
-from app.utils.loghandler import catch_exception
+from app.utils.loghandler import setup_logger, catch_exception
 import sys
+
+# 시스템 예외처리 핸들러 설정
 sys.excepthook = catch_exception
+
+# 로거 설정
 logger = setup_logger()
 
-app = FastAPI()
-
-board_semaphores = {}
+# DBController 인스턴스 생성
 db_controller = MongoController()
 
-router = APIRouter()
-def tag(board_id: str, site: str):
-    global board_semaphores
-    semaphore_label = site + board_id
 
-    if board_id not in board_semaphores:
-        board_semaphores[semaphore_label] = threading.Semaphore(1)
+class BoardSummaryType(graphene.ObjectType):
+    board_id = graphene.String()
+    site = graphene.String()
+    rank = graphene.String()
+    title = graphene.String()
+    url = graphene.String()
+    create_time = graphene.DateTime()
+    GPTAnswer = graphene.String()
 
-    semaphore = board_semaphores[semaphore_label]
-    acquired = semaphore.acquire(timeout=1)
-    if not acquired:
-        raise HTTPException(status_code=429, detail='요청을 이미 처리하고 있습니다. 잠시 후 다시 선택해주세요.')
-
-    try:
-        realtime_object = db_controller.find('RealTime', {'board_id': board_id, 'site': site})[0]
-        TAG_Object_id = realtime_object['Tag']
-        TAG_object = db_controller.find('Tag', {'_id': TAG_Object_id})[0]
-
-        if TAG_object['tag'] != DEFAULT_GPT_ANSWER:
-            return TAG_object['tag']
-
-        if site == SITE_DCINSIDE:
-            crawler_instance = Dcinside()
-        elif site == SITE_YGOSU:
-            crawler_instance = Ygosu()
-        elif site == SITE_PPOMPPU:
-            crawler_instance = Ppomppu()
-        elif site == SITE_THEQOO:
-            crawler_instance = Theqoo()
-        elif site == SITE_INSTIZ:
-            crawler_instance = Instiz()
-        elif site == SITE_RULIWEB:
-            crawler_instance = Ruliweb()
-        else:
-            crawler_instance = None
-        json_contents = crawler_instance.get_board_contents(board_id)
-
-        str_contents = ''
-        for content in json_contents:
-            if 'content' in content:
-                str_contents += content['content']
-        response = str_contents
-
-        # GPT 요약
-        chatGPT = Tagsplit()
-        logger.info("URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
-        response = chatGPT.call(content=str_contents)
-
-        # Update answer
-        if TAG_object:
-            db_controller.update_one('GPT',
-                                     {'_id': TAG_Object_id},
-                                     {'$set': {'answer': response}})
-            logger.info(f"{TAG_Object_id} site: {site} board_id: {board_id}문서 업데이트 완료")
-        else:
-            logger.error(f"{TAG_Object_id} site: {site} board_id: {board_id}해당 ObjectId로 문서를 찾을 수 없습니다.")
-            return JSONResponse(content={"detail": "해당 ObjectId로 문서를 찾을 수 없습니다."}, status_code=404)
-
-        return response
-    finally:
-        semaphore.release()
+    def __init__(self, **kwargs):
+        logger.debug(f"BoardSummaryType 초기화 - kwargs: {kwargs}")
+        kwargs.pop('_id', None)  # '_id' 필드 제거
+        super().__init__(**kwargs)
 
 
-def board_summary(board_id: str, site: str):
-    global board_semaphores
-    semaphore_label = site + board_id
-
-    if board_id not in board_semaphores:
-        board_semaphores[semaphore_label] = threading.Semaphore(1)
-
-    semaphore = board_semaphores[semaphore_label]
-    acquired = semaphore.acquire(timeout=1)
-    if not acquired:
-        raise HTTPException(status_code=429, detail='요청을 이미 처리하고 있습니다. 잠시 후 다시 선택해주세요.')
+# 페이지 번호를 받아, 30개씩 데이터를 반환하는 함수
+def get_pagination_real_time_best(index: int):
+    logger.debug(f"get_pagination_real_time_best 호출 - index: {index}")
 
     try:
-        realtime_object = db_controller.find('RealTime', {'board_id': board_id, 'site': site})[0]
-        GPT_Object_id = realtime_object['GPTAnswer']
-        GPT_object = db_controller.find('GPT', {'_id': GPT_Object_id})[0]
-
-        if GPT_object['answer'] != DEFAULT_GPT_ANSWER:
-            return GPT_object['answer']
-
-        if site == SITE_DCINSIDE:
-            crawler_instance = Dcinside()
-        elif site == SITE_YGOSU:
-            crawler_instance = Ygosu()
-        elif site == SITE_PPOMPPU:
-            crawler_instance = Ppomppu()
-        elif site == SITE_THEQOO:
-            crawler_instance = Theqoo()
-        elif site == SITE_INSTIZ:
-            crawler_instance = Instiz()
-        elif site == SITE_RULIWEB:
-            crawler_instance = Ruliweb()
-        else:
-            crawler_instance = None
-        json_contents = crawler_instance.get_board_contents(board_id)
-
-        str_contents = ''
-        for content in json_contents:
-            if 'content' in content:
-                str_contents += content['content']
-        response = str_contents
-
-        # GPT 요약
-        chatGPT = LLM()
-        logger.info("URL: https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id)
-        response = chatGPT.call(content=str_contents)
-
-        # Update answer
-        if GPT_object:
-            db_controller.update_one('GPT',
-                                     {'_id': GPT_Object_id},
-                                     {'$set': {'answer': response}})
-            logger.info(f"{GPT_Object_id} site: {site} board_id: {board_id}문서 업데이트 완료")
-        else:
-            logger.error(f"{GPT_Object_id} site: {site} board_id: {board_id}해당 ObjectId로 문서를 찾을 수 없습니다.")
-            return JSONResponse(content={"detail": "해당 ObjectId로 문서를 찾을 수 없습니다."}, status_code=404)
-
-        return response
-    finally:
-        semaphore.release()
+        data = db_controller.get_real_time_best(index, 30)
+        logger.debug(f"실시간 베스트 데이터 조회 성공 - data 길이: {len(data)}")
+        return [BoardSummaryType(**item) for item in data]
+    except Exception as e:
+        logger.exception(f"실시간 베스트 데이터 조회 중 오류 발생 - index: {index}, 오류: {e}")
+        raise
 
 
-async def board_summary_rest(request: Request):
-    if request.method == 'POST':
-        data = await request.json()
-        board_id = data.get('board_id')
-        site = data.get('site')
+def get_pagination_daily_best(index: int):
+    logger.debug(f"get_pagination_daily_best 호출 - index: {index}")
 
-        return await board_summary(board_id, site)
-    # else:
-    #     dcincideCrwaller = Dcinside()
-    #     dcincideCrwaller.get_real_time_best()
-
-        # return JSONResponse(content={'response': "성공하는 루트 추가해야함"})
-
-
-def get_real_time_best():
-    CrawllerList = [Ygosu(),Ppomppu(),Theqoo(),Instiz(),Ruliweb()]
-    for i in CrawllerList:
-        try:
-            i.get_real_time_best()
-        except Exception as e:
-            logger.error(e)
-    return JSONResponse(content={'response': "실시간 베스트 가져오기 완료"})
-
-
-def get_daily_best():
-    CrawllerList = [Ygosu(),Ppomppu(),Theqoo(),Instiz(),Ruliweb()]
-    for i in CrawllerList:
-        try:
-            i.get_daily_best()
-        except Exception as e:
-            logger.error(e)
-    return JSONResponse(content={'response': "데일리 베스트 가져오기 완료"})
-
-
+    try:
+        data = db_controller.get_daily_best(index, 30)
+        logger.debug(f"데일리 베스트 데이터 조회 성공 - data 길이: {len(data)}")
+        return [BoardSummaryType(**item) for item in data]
+    except Exception as e:
+        logger.exception(f"데일리 베스트 데이터 조회 중 오류 발생 - index: {index}, 오류: {e}")
+        raise

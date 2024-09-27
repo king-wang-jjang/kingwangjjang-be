@@ -28,7 +28,7 @@ class Tagsplit:
         ["연애","유머","핫딜"] 이런식으로
         분석할 내용:"""
         output_parser = JsonOutputParser(pydantic_object=Parser_model)
-
+        logger.debug(f"TagSplit | output_parser: {output_parser}")
         format_instructions = output_parser.get_format_instructions()
         system_message_prompt = SystemMessagePromptTemplate.from_template(template)
         human_template = "[{text}]"
@@ -41,6 +41,8 @@ class Tagsplit:
             openai_api_key=Config().get_env("CHATGPT_API_KEY")
         )  # assuming you have Ollama installed and have llama3 model pulled with `ollama pull llama3 `
         self.chain = chat_prompt | llm | output_parser
+        logger.debug(f"TagSplit | chain: {self.chain}")
+
     def call(self,content:str):
         logger.debug(f"LLM tag split : {content}")
         return self.chain.invoke({"text":content})

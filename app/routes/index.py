@@ -1,33 +1,39 @@
 import logging
-
 import httpx
 from fastapi import APIRouter, Request, Response, HTTPException
-from app.utils.oauth import oauth,JWT
+from app.utils.oauth import oauth, JWT
 import sys
-from app.utils.loghandler import setup_logger,catch_exception
+from app.utils.loghandler import setup_logger, catch_exception
+
+# Global exception handler and logger setup
 sys.excepthook = catch_exception
 logger = setup_logger()
-router = APIRouter()
 
+router = APIRouter()
 
 
 async def forward_request(request: Request, base_url: str, path: str, token: str = None) -> httpx.Response:
     """프록시 서버로 요청을 전달합니다."""
     url = f"{base_url}/{path}"
     headers = dict(request.headers)
-    if not request.url.path.startswith("/callback") and not request.url.path.startswith("/login"):
+
+    if token and not request.url.path.startswith("/callback") and not request.url.path.startswith("/login"):
         headers["Authorization"] = f"Bearer {token}"
 
-    async with httpx.AsyncClient() as client:
-        response = await client.request(
-            method=request.method,
-            url=url,
-            headers=headers,
-            cookies=request.cookies,
-            data=await request.body(),
-        )
-
-    return response
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.request(
+                method=request.method,
+                url=url,
+                headers=headers,
+                cookies=request.cookies,
+                data=await request.body(),
+            )
+            logger.debug(f"Forwarded request to {url} with status {response.status_code}")
+        return response
+    except Exception as e:
+        logger.error(f"Error forwarding request to {url}: {e}")
+        raise HTTPException(status_code=500, detail="Error forwarding request to proxy server")
 
 
 @router.api_route(
@@ -38,22 +44,31 @@ async def proxy(request: Request, path: str) -> Response:
     """프록시 요청을 처리합니다."""
     base_url = "http://localhost:8000/proxy"
     token = None
+
+    # Token handling except for callback and login routes
     if not request.url.path.startswith("/callback") and not request.url.path.startswith("/login"):
         try:
-            token = request.headers.get("Authorization").split("Bearer ")[1]
-        except HTTPException as e:
-            logger.debug("Can't find token on your Requests")
-            raise HTTPException(status_code=401, detail="Can't find token on your Requests")
+            auth_header = request.headers.get("Authorization")
+            if not auth_header:
+                logger.debug("Authorization header missing")
+                raise HTTPException(status_code=401, detail="Authorization header is missing")
+
+            token = auth_header.split("Bearer ")[1]
+            logger.debug(f"Extracted token: {token}")
+
+        except IndexError:
+            logger.debug("Malformed Authorization header")
+            raise HTTPException(status_code=401, detail="Malformed Authorization header")
+
         # ID 토큰 검증
         try:
             token_data = JWT().decode(token)
-            logger.debug(f"JWT token issued: {token_data}")
-        except HTTPException as e:
-            logger.debug("Failed to verify your JWT token.")
-            raise HTTPException(status_code=401, detail="Failed to verify your JWT token.")
+            logger.debug(f"JWT token verified successfully: {token_data}")
+        except Exception as e:
+            logger.debug(f"JWT token verification failed: {e}")
+            raise HTTPException(status_code=401, detail="Invalid JWT token")
 
-
-    # 요청을 프록시 서버로 전달
+    # Forward the request to the proxy server
     response = await forward_request(request, base_url, path, token)
 
     return Response(

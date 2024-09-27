@@ -2,14 +2,14 @@ from datetime import datetime
 import os
 from bs4 import BeautifulSoup
 import requests
-
 from app.db.mongo_controller import MongoController
 from app.services.web_crawling.community_website.community_website import AbstractCommunityWebsite
-from app.constants import DEFAULT_GPT_ANSWER, SITE_THEQOO,DEFAULT_TAG
+from app.constants import DEFAULT_GPT_ANSWER, SITE_THEQOO, DEFAULT_TAG
 from app.utils import FTPClient
 from app.config import Config
 from app.utils.loghandler import catch_exception
 import sys
+
 sys.excepthook = catch_exception
 
 # selenium
@@ -23,195 +23,175 @@ from app.utils.loghandler import setup_logger
 
 logger = setup_logger()
 
+
 class Theqoo(AbstractCommunityWebsite):
     g_headers = [
-            {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
-        ]
-    
+        {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'},
+    ]
+
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
         self.db_controller = MongoController()
         try:
+            logger.info(f"Initializing Theqoo crawler for date {self.yyyymmdd}")
             self.ftp_client = FTPClient.FTPClient(
-                                server_address=Config().get_env('FTP_HOST'),
-                                username=Config().get_env('FTP_USERNAME'),
-                                password=Config().get_env('FTP_PASSWORD'))
+                server_address=Config().get_env('FTP_HOST'),
+                username=Config().get_env('FTP_USERNAME'),
+                password=Config().get_env('FTP_PASSWORD')
+            )
             super().__init__(self.yyyymmdd, self.ftp_client)
-            
+            logger.info("Theqoo initialized successfully")
         except Exception as e:
-            logger.info("Theqoo error:", e)
-
-    def get_daily_best(self):
-        pass
+            logger.error(f"Error initializing Theqoo: {e}")
 
     def get_real_time_best(self):
-        req = requests.get('https://theqoo.net/hot', headers=self.g_headers[0])
-        html_content = req.text
-        soup = BeautifulSoup(html_content, 'html.parser')
-        li_elements = soup.find('.hide_notice tr')
+        logger.info("Fetching real-time best posts from Theqoo")
+        try:
+            req = requests.get('https://theqoo.net/hot', headers=self.g_headers[0])
+            req.raise_for_status()
+            html_content = req.text
+            soup = BeautifulSoup(html_content, 'html.parser')
+            li_elements = soup.select('.hide_notice tr')
+        except Exception as e:
+            logger.error(f"Error fetching Theqoo hot page: {e}")
+            return
+
         already_exists_post = []
         for li in li_elements:
-            elements = li.find('td')
-            if len(elements) != 1:
-                p_element = elements[2]
-                a_element = elements[2]
-                time_element = elements[3]
-                if p_element and a_element and time_element and not "공지" in elements[0].get_text(strip=True):
-                    title = p_element.get_text(strip=True)
-                    # print(elements)
-                    url = "https://theqoo.net" + a_element.find('a')['href']
-
+            elements = li.find_all('td')
+            if len(elements) > 1:
+                try:
+                    title = elements[2].get_text(strip=True)
+                    url = "https://theqoo.net" + elements[2].find('a')['href']
                     board_id = url.split('hot/')[-1]
-                    time_text = time_element.get_text(strip=True)
-                    if(time_text.find('-') > 0):
-                        break  # 오늘 것만 추가 (이전 글은 제외 (DB에서 확인))
+                    time_text = elements[3].get_text(strip=True)
 
-                    # 시간 13:40 -> 2024.01.29 13:40 로 수정
+                    if '-' in time_text:
+                        break  # Skip older posts
+
                     now = datetime.now()
                     hour, minute = map(int, time_text.split(':'))
-                    # 시간 설정 및 datetime 객체 생성
                     target_datetime = datetime(now.year, now.month, now.day, hour, minute)
 
-                    try:
-                        existing_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': SITE_THEQOO})
-                        if existing_instance:
-                            already_exists_post.append(board_id)
-                            continue
-                        else:
-                            gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_THEQOO})
-                            if gpt_exists:
-                                gpt_obj_id = gpt_exists[0]['_id']
-                            else :
-                                gpt_obj = self.db_controller.insert_one('GPT', {
-                                    'board_id': board_id,
-                                    'site': SITE_THEQOO,
-                                    'answer': DEFAULT_GPT_ANSWER
-                                })
-                                gpt_obj_id = gpt_obj.inserted_id
-                            tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_THEQOO})
-                            if tag_exists:
-                                tag_obj_id = tag_exists[0]['_id']
-                            else:
-                                tag_obj = self.db_controller.insert_one('TAG', {
-                                    'board_id': board_id,
-                                    'site': SITE_THEQOO,
-                                    'Tag': DEFAULT_TAG
-                                })
-                                tag_obj_id = tag_obj.inserted_id
-                            self.db_controller.insert_one('RealTime', {
-                                'board_id': board_id,
-                                'site': SITE_THEQOO,
-                                'title': title,
-                                'url': url,
-                                'create_time': target_datetime,
-                                'GPTAnswer': gpt_obj_id,
-                                'Tag': tag_obj_id
-                            })
-                    except Exception as e:
-                        logger.error('error', e)
+                    # Check if post already exists in DB
+                    if self._post_already_exists(board_id, already_exists_post):
+                        continue
 
-            logger.info({"already exists post": already_exists_post})
+                    gpt_obj_id = self._get_or_create_gpt_object(board_id)
+                    tag_obj_id = self._get_or_create_tag_object(board_id)
+
+                    self.db_controller.insert_one('RealTime', {
+                        'board_id': board_id,
+                        'site': SITE_THEQOO,
+                        'title': title,
+                        'url': url,
+                        'create_time': target_datetime,
+                        'GPTAnswer': gpt_obj_id,
+                        'Tag': tag_obj_id
+                    })
+                    logger.info(f"Post {board_id} inserted successfully")
+                except Exception as e:
+                    logger.error(f"Error processing post {board_id}: {e}")
+
+        logger.info({"already exists post": already_exists_post})
 
     def get_board_contents(self, board_id):
+        logger.info(f"Fetching board contents for board_id: {board_id}")
         abs_path = f'./{self.yyyymmdd}/{board_id}'
-        self.download_path = os.path.abspath(abs_path) 
-        # self.set_driver_options()
+        self.download_path = os.path.abspath(abs_path)
 
         _url = "https://theqoo.net/hot/" + board_id
-        req = requests.get(_url, headers=self.g_headers[0])
-        html_content = req.text
-        soup = BeautifulSoup(html_content, 'html.parser')
+        try:
+            req = requests.get(_url, headers=self.g_headers[0])
+            req.raise_for_status()
+            html_content = req.text
+            soup = BeautifulSoup(html_content, 'html.parser')
+            content_list = []
+            write_div = soup.find('div', class_='rd_body clear')
 
-        # second_article = soup.find_all('article')[1]
-        # title = second_article.find('h3').get_text(strip=True)
-        content_list = []
+            if write_div:
+                find_all = write_div.find_all(['p', 'div'])
+                for element in find_all:
+                    text_content = element.text.strip()
+                    content_list.append({'type': 'text', 'content': text_content})
+            return content_list
+        except Exception as e:
+            logger.error(f"Error fetching board contents for {board_id}: {e}")
+            return []
 
-        write_div = soup.find('div', class_='rd_body clear')
-
-        find_all = (
-            write_div.find_all(['p'])
-            if len(write_div.find_all(['p'])) > len(write_div.find_all(['div']))
-            else write_div.find_all(['div'])
-        )
-     
-        for element in find_all:
-            text_content = element.text.strip()
-            content_list.append({'type': 'text', 'content': text_content})
-            # img_tags = element.find_all('img')
-            # for img_tag in img_tags:
-            #     image_url = img_tag['src']
-            #     try:
-            #         img_txt = super().img_to_text(self.save_img(image_url))
-            #         content_list.append({'type': 'image', 'url': image_url, 
-            #                             'content': img_txt})
-            #     except Exception as e:
-            #         logger.info(f'Theqoo Error {e}')
-
-            # video_tags = element.find_all('video')
-            # for video_tag in video_tags:
-            #     source_tags = video_tag.find_all('source')
-            #     for source_tag in source_tags:
-            #         video_url = source_tag['src']
-            #         content_list.append({'type': 'video', 'url': video_url})
-        # 업로드
-        # self.ftp_client.ftp_upload_folder(local_directory=self.download_path, remote_directory=board_id)
-        
-        # 업로드 후 삭제
-        # shutil.rmtree(self.download_path)
-
-        return content_list
-
-    # 속도 개선 작업 (20s -> 2s)
-    # https://www.notion.so/2-850bc2d1d98145bebcc89f3596798f05?pvs=4
     def set_driver_options(self):
-        '''
-            :option: download path
-        '''
         chrome_options = Options()
         prefs = {"download.default_directory": self.download_path}
         chrome_options.add_experimental_option("prefs", prefs)
-        # chrome_options.add_argument('headless')
         chrome_options.add_argument('--no-sandbox')
-        # chrome_options.add_argument('--incognito')
         chrome_options.add_argument('--disable-setuid-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_experimental_option('excludeSwitches',['enable-logging'])
+        chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
 
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
 
         self.driver = webdriver.Chrome(options=chrome_options)
-        
         try:
             self.driver.get("https://www.theqoo.com/")
-            WebDriverWait(self.driver, 5).until(
-                EC.presence_of_element_located((By.XPATH, '//body'))
-            )
+            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, '//body')))
+            logger.info("Selenium driver initialized and page loaded")
         except Exception as e:
-            logger.info('Theqoo Error', e)
-        finally:
-            return True
-    
+            logger.error(f"Error initializing Selenium driver: {e}")
+        return True
+
     def save_img(self, url):
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
 
         initial_file_count = len(os.listdir(self.download_path))
+        try:
+            script = f'''
+                var link = document.createElement('a');
+                link.href = "{url}";
+                link.target = "_blank";
+                link.click();
+            '''
+            self.driver.execute_script(script)
+            WebDriverWait(self.driver, 5).until(
+                lambda x: len(os.listdir(self.download_path)) > initial_file_count
+            )
 
-        script = f'''
-            var link = document.createElement('a');
-            link.href = "{url}";
-            link.target = "_blank";
-            link.click();
-        '''
-        self.driver.execute_script(script)
-        
-        WebDriverWait(self.driver, 5).until(
-            lambda x: len(os.listdir(self.download_path)) > initial_file_count
-        )
+            newest_file = max(os.listdir(self.download_path),
+                              key=lambda x: os.path.getctime(os.path.join(self.download_path, x)))
+            return os.path.join(self.download_path, newest_file)
+        except Exception as e:
+            logger.error(f"Error saving image from {url}: {e}")
+            return None
 
-        # 가장 최근에 다운로드된 파일 찾기
-        files = os.listdir(self.download_path)
-        newest_file = max(files, key=lambda x: os.path.getctime(os.path.join(self.download_path, x)))
+    def _post_already_exists(self, board_id, already_exists_post):
+        existing_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': SITE_THEQOO})
+        if existing_instance:
+            already_exists_post.append(board_id)
+            return True
+        return False
 
-        return self.download_path + "/" + newest_file
+    def _get_or_create_gpt_object(self, board_id):
+        gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_THEQOO})
+        if gpt_exists:
+            return gpt_exists[0]['_id']
+        else:
+            gpt_obj = self.db_controller.insert_one('GPT', {
+                'board_id': board_id,
+                'site': SITE_THEQOO,
+                'answer': DEFAULT_GPT_ANSWER
+            })
+            return gpt_obj.inserted_id
+
+    def _get_or_create_tag_object(self, board_id):
+        tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_THEQOO})
+        if tag_exists:
+            return tag_exists[0]['_id']
+        else:
+            tag_obj = self.db_controller.insert_one('TAG', {
+                'board_id': board_id,
+                'site': SITE_THEQOO,
+                'Tag': DEFAULT_TAG
+            })
+            return tag_obj.inserted_id

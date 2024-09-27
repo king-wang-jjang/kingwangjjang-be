@@ -1,10 +1,13 @@
-# app/count_controller.py
 from datetime import datetime
-from typing import List
-from typing import Optional
+from typing import List, Optional
 import strawberry
-from app.services.board_comment.add import board_comment_add
-from app.services.board_comment.add import board_reply_add
+from app.services.board_comment.add import board_comment_add, board_reply_add
+from app.utils.loghandler import setup_logger
+
+# Logger 설정
+logger = setup_logger()
+
+
 @strawberry.type
 class ReplyEntry:
     """ReplyEntry represents a reply to a comment"""
@@ -13,10 +16,12 @@ class ReplyEntry:
     user_id: str
     comment: str
     timestamp: str
-    _id : str
+    _id: str
+
 
 @strawberry.type
 class CommentEntry:
+    """CommentEntry represents a comment on a board"""
     _id: str
     board_id: str
     site: str
@@ -25,13 +30,10 @@ class CommentEntry:
     reply: str
     timestamp: str
 
-# 답글(Reply) 엔트리 정의
-
 
 @strawberry.type
 class Daily:
-    """ """
-
+    """Represents a daily entry"""
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -43,8 +45,7 @@ class Daily:
 
 @strawberry.type
 class RealTime:
-    """ """
-
+    """Represents a real-time entry"""
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -56,8 +57,7 @@ class RealTime:
 
 @strawberry.type
 class Summary:
-    """ """
-
+    """Represents a summary entry"""
     board_id: str
     site: str
     GPTAnswer: str
@@ -66,51 +66,68 @@ class Summary:
 
 @strawberry.type
 class BoardComment:
-    """ """
-
-    comments: List[CommentEntry]  # Dict의 타입을 명시적으로 지정
+    """Represents a list of comments on a board"""
+    comments: List[CommentEntry]
 
 
 @strawberry.type
 class BoardReply:
-    """ """
-    replies: List[ReplyEntry]  # Use a specific Strawberry type
+    """Represents a list of replies to a comment"""
+    replies: List[ReplyEntry]
+
 
 @strawberry.type
 class Mutation:
-    """ """
-    @strawberry.mutation
-    def comment(self, board_id: str, site: str, userid: str,
-                comment: str) -> BoardComment:
-        """
-
-        :param board_id: str:
-        :param site: str:
-        :param userid: str:
-        :param comment: str:
-
-        """
-
-        return BoardComment(comments=board_comment_add(board_id, site, userid, comment))
+    """Mutation class for adding comments and replies"""
 
     @strawberry.mutation
-    def reply(self, board_id: str, site: str, userid: str,
-              parents_comment: str, reply: str) -> CommentEntry:
+    def comment(self, board_id: str, site: str, userid: str, comment: str) -> BoardComment:
         """
+        Add a comment to a board.
 
-        :param board_id: str:
-        :param site: str:
-        :param userid: str:
-        :param parents_comment: str:
-        :param reply: str:
-
+        :param board_id: ID of the board
+        :param site: Site name
+        :param userid: ID of the user posting the comment
+        :param comment: The comment text
+        :return: A BoardComment object containing the added comment
         """
-        reply_dicts = board_reply_add(
-            board_id=board_id, site=site, userid=userid,
-            parrent_comment=parents_comment, reply=reply
-        )
-        # Convert each dict to a ReplyEntry instance
-        return CommentEntry(_id=reply_dicts[0]["_id"], board_id=reply_dicts[0]["board_id"],
-                            user_id=reply_dicts[0]["user_id"], comment=reply_dicts[0]["comment"],
-                            reply=str(reply_dicts[0]["reply"]), timestamp=reply_dicts[0]["timestamp"],
-                            site=reply_dicts[0]["site"])
+        logger.info(f"Adding comment to board {board_id} on site {site} by user {userid}")
+        try:
+            comment_data = board_comment_add(board_id, site, userid, comment)
+            logger.info(f"Comment added to board {board_id}")
+            return BoardComment(comments=comment_data)
+        except Exception as e:
+            logger.error(f"Error adding comment to board {board_id} on site {site}: {e}")
+            raise e
+
+    @strawberry.mutation
+    def reply(self, board_id: str, site: str, userid: str, parents_comment: str, reply: str) -> CommentEntry:
+        """
+        Add a reply to an existing comment.
+
+        :param board_id: ID of the board
+        :param site: Site name
+        :param userid: ID of the user posting the reply
+        :param parents_comment: ID of the parent comment to reply to
+        :param reply: The reply text
+        :return: A CommentEntry object representing the updated parent comment
+        """
+        logger.info(f"Adding reply to comment {parents_comment} on board {board_id} by user {userid}")
+        try:
+            reply_dicts = board_reply_add(board_id=board_id, site=site, userid=userid,
+                                          parrent_comment=parents_comment, reply=reply)
+            logger.info(f"Reply added to comment {parents_comment} on board {board_id}")
+
+            # Convert reply_dicts to a CommentEntry object
+            return CommentEntry(
+                _id=reply_dicts[0]["_id"],
+                board_id=reply_dicts[0]["board_id"],
+                user_id=reply_dicts[0]["user_id"],
+                comment=reply_dicts[0]["comment"],
+                reply=str(reply_dicts[0]["reply"]),
+                timestamp=reply_dicts[0]["timestamp"],
+                site=reply_dicts[0]["site"]
+            )
+        except Exception as e:
+            logger.error(f"Error adding reply to comment {parents_comment} on board {board_id}: {e}")
+            raise e

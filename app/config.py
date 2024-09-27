@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv,find_dotenv
 import logging
 # from utils.loghandler import setup_logger
+# *** 해당 코드에 로깅코드 작성시 애러발생 ***
 logger = logging.getLogger("")
 
 class Config:
