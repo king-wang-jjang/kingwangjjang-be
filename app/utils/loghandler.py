@@ -2,21 +2,17 @@ import logging
 import os
 import sys
 from logging import handlers
-
 import requests
-from colorama import Fore
-from colorama import init
-from colorama import Style
-
+from colorama import Fore, init, Style
 from app.config import Config
 from app.db.mongo_controller import MongoController
 import threading
-# from app.celery.Logging.tasks import task_send_to_slack,task_record_db
+
 init(autoreset=True)  # colorama 초기화
 
 
 class SlackWebhookHandler(logging.Handler):
-    """ """
+    """ Slack에 로그를 전송하는 핸들러 """
 
     def __init__(self):
         super().__init__()
@@ -24,11 +20,6 @@ class SlackWebhookHandler(logging.Handler):
             self.webhook_url = Config().get_env("WEBHOOK_URL")
 
     def emit(self, record):
-        """
-
-        :param record:
-
-        """
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
             payload = self.create_payload(record)
@@ -37,113 +28,53 @@ class SlackWebhookHandler(logging.Handler):
             self.print_colored_log(log_entry, record.levelname)
 
     def create_payload(self, record):
-        """
-
-        :param record:
-
-        """
         color_map = {
             "DEBUG": "#808080",  # Gray
             "INFO": "#00FF00",  # Green
             "WARNING": "#FFFF00",  # Yellow
             "ERROR": "#FF0000",  # Red
-            "CRITICAL": "#8B0000",  # Dark Red
+            "CRITICAL": "#8B0000"  # Dark Red
         }
         try:
             payload = {
                 "attachments": [{
-                    "color":
-                    color_map.get(record.levelname),
-                    "title":
-                    f"{record.levelname}!",
+                    "color": color_map.get(record.levelname),
+                    "title": f"{record.levelname}!",
                     "fields": [
-                        {
-                            "title": "MESSAGE",
-                            "value": record.message,
-                            "short": False,
-                        },
-                        {
-                            "title": "TYPE",
-                            "value": str(record.exc_info[0]),
-                            "short": True,
-                        },
-                        {
-                            "title": "VALUE",
-                            "value": str(record.exc_info[1]),
-                            "short": True,
-                        },
-                        {
-                            "title": "TRACEBACK",
-                            "value": str(record.exc_info[2]),
-                            "short": True,
-                        },
-                        {
-                            "title": "FILE",
-                            "value": record.filename,
-                            "short": True
-                        },
-                        {
-                            "title": "ERROR LINE",
-                            "value": record.lineno,
-                            "short": True,
-                        },
+                        {"title": "MESSAGE", "value": record.message, "short": False},
+                        {"title": "TYPE", "value": str(record.exc_info[0]), "short": True},
+                        {"title": "VALUE", "value": str(record.exc_info[1]), "short": True},
+                        {"title": "TRACEBACK", "value": str(record.exc_info[2]), "short": True},
+                        {"title": "FILE", "value": record.filename, "short": True},
+                        {"title": "ERROR LINE", "value": record.lineno, "short": True}
                     ],
-                    "footer":
-                    str(record.__dict__),
+                    "footer": str(record.__dict__)
                 }]
             }
-        except Exception as e:
+        except Exception:
             payload = {
                 "attachments": [{
-                    "color":
-                    color_map.get(record.levelname),
-                    "title":
-                    f"{record.levelname}! @everyone",
+                    "color": color_map.get(record.levelname),
+                    "title": f"{record.levelname}! @everyone",
                     "fields": [
-                        {
-                            "title": "MESSAGE",
-                            "value": record.message,
-                            "short": False,
-                        },
-                        {
-                            "title": "FILE",
-                            "value": record.filename,
-                            "short": True
-                        },
-                        {
-                            "title": "ERROR LINE",
-                            "value": record.lineno,
-                            "short": True,
-                        },
+                        {"title": "MESSAGE", "value": record.message, "short": False},
+                        {"title": "FILE", "value": record.filename, "short": True},
+                        {"title": "ERROR LINE", "value": record.lineno, "short": True}
                     ],
-                    "footer":
-                    str(record.__dict__),
+                    "footer": str(record.__dict__)
                 }]
             }
         return payload
 
     def send_to_slack(self, payload):
-        """
-
-        :param payload:
-
-        """
         headers = {"Content-Type": "application/json"}
         try:
-            response = requests.post(self.webhook_url,
-                                     json=payload,
-                                     headers=headers)
+            response = requests.post(self.webhook_url, json=payload, headers=headers)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             print(f"Error sending log to Slack: {e}")
 
     def print_colored_log(self, message, level):
-        """
-
-        :param message: param level:
-        :param level:
-
-        """
         color_map = {
             "DEBUG": Fore.LIGHTBLACK_EX,
             "INFO": Fore.GREEN,
@@ -151,13 +82,12 @@ class SlackWebhookHandler(logging.Handler):
             "ERROR": Fore.RED,
             "CRITICAL": Fore.RED + Style.BRIGHT,
         }
-        # Default to white if level not found
         color = color_map.get(level, Fore.WHITE)
         print(f"{color}{message}")
 
 
 class DBLOGHandler(logging.Handler):
-    """ """
+    """ MongoDB에 로그를 저장하는 핸들러 """
 
     def __init__(self):
         super().__init__()
@@ -165,24 +95,13 @@ class DBLOGHandler(logging.Handler):
             self.db_controller = MongoController()
 
     def emit(self, record):
-        """
-
-        :param record:
-
-        """
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
-            threading.Thread(target=self.record_db,args=(record,)).start()
+            threading.Thread(target=self.record_db, args=(record,)).start()
         else:
             self.print_colored_log(log_entry, record.levelname)
 
     def print_colored_log(self, message, level):
-        """
-
-        :param message: param level:
-        :param level:
-
-        """
         color_map = {
             "DEBUG": Fore.LIGHTBLACK_EX,
             "INFO": Fore.GREEN,
@@ -190,43 +109,40 @@ class DBLOGHandler(logging.Handler):
             "ERROR": Fore.RED,
             "CRITICAL": Fore.RED + Style.BRIGHT,
         }
-        # Default to white if level not found
         color = color_map.get(level, Fore.WHITE)
         print(f"{color}{message}")
 
     def record_db(self, record):
-        """
-
-        :param record:
-
-        """
         data = dict(record.__dict__)
         data["server"] = Config().get_env("SERVER_TYPE")
-        # Remove non-serializable types or convert them to string
+
         for key, value in data.items():
             if isinstance(value, Exception):
                 data[key] = str(value)
-        self.db_controller.insert_one("log", data)
+
+        try:
+            self.db_controller.insert_one("log", data)
+            print("Log successfully recorded in DB.")
+        except Exception as e:
+            print(f"Error recording log to DB: {e}")
 
 
 def setup_logger():
-    """ """
     logger = logging.getLogger("slack_logger")
 
-    # 슬랙 웹훅 핸들러 추가
+    # Slack 핸들러 추가
     slack_handler = SlackWebhookHandler()
-    slack_handler.setLevel(logging.DEBUG)  # ERROR 레벨까지 모든 로그를 처리
-    # DB 웹훅 핸들러 추가
-    db_handler = DBLOGHandler()
-    db_handler.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
-    # 로그 메시지 형식 설정
-    # formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    # slack_handler.setFormatter(formatter)
+    slack_handler.setLevel(logging.DEBUG)
 
-    # 핸들러를 로거에 추가
+    # DB 핸들러 추가
+    db_handler = DBLOGHandler()
+    db_handler.setLevel(logging.DEBUG)
+
+    # 핸들러 추가
     logger.addHandler(slack_handler)
     logger.addHandler(db_handler)
-    logger.setLevel(logging.DEBUG)  # DEBUG 레벨까지 모든 로그를 처리
+    logger.setLevel(logging.DEBUG)
+
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
         return logger
     else:
@@ -237,17 +153,12 @@ def setup_logger():
 
 
 def catch_exception(exc_type, exc_value, exc_traceback):
-    """
-
-    :param exc_type: param exc_value:
-    :param exc_traceback:
-    :param exc_value:
-
-    """
-    # 로깅 모듈을 이용해 로거를 미리 등록해놔야 합니다.
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
         logger = setup_logger()
     else:
         logger = logging.getLogger("")
-    logger.error("Unexpected exception.",
-                 exc_info=(exc_type, exc_value, exc_traceback))
+    logger.exception("Unexpected exception.", exc_info=(exc_type, exc_value, exc_traceback))
+
+
+# SERVER_RUN_MODE 상태 확인을 위한 디버깅 코드
+print(f"SERVER_RUN_MODE: {Config().get_env('SERVER_RUN_MODE')}")
