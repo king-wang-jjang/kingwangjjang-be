@@ -54,7 +54,7 @@ jobs:
 
     # Docker Hub 퍼블리시 step
     - name: Publish to docker hub 
-      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }}
+      run: docker push hwanju1596/kingwangjjang-be:0.0.1
 
 
 
