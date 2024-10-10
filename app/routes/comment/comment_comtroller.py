@@ -81,7 +81,7 @@ class Mutation:
     """Mutation class for adding comments and replies"""
 
     @strawberry.mutation
-    def comment(self, board_id: str, site: str, userid: str, comment: str) -> BoardComment:
+    def comment(self, board_id: str, site: str, userid: str, comment: str) ->  CommentEntry:
         """
         Add a comment to a board.
 
@@ -95,7 +95,7 @@ class Mutation:
         try:
             comment_data = board_comment_add(board_id, site, userid, comment)
             logger.info(f"Comment added to board {board_id}")
-            return BoardComment(
+            return CommentEntry(
                 _id=comment_data[0]["_id"],
                 board_id=comment_data[0]["board_id"],
                 user_id=comment_data[0]["user_id"],
