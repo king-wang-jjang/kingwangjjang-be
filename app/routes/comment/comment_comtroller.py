@@ -95,7 +95,14 @@ class Mutation:
         try:
             comment_data = board_comment_add(board_id, site, userid, comment)
             logger.info(f"Comment added to board {board_id}")
-            return BoardComment(comments=comment_data)
+            return BoardComment(
+                _id=comment_data[0]["_id"],
+                board_id=comment_data[0]["board_id"],
+                user_id=comment_data[0]["user_id"],
+                comment=comment_data[0]["comment"],
+                timestamp=comment_data[0]["timestamp"],
+                site=comment_data[0]["site"]
+            )
         except Exception as e:
             logger.error(f"Error adding comment to board {board_id} on site {site}: {e}")
             raise e
