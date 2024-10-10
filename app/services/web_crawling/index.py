@@ -189,3 +189,40 @@ def board_summary(board_id: str, site: str):
     finally:
         semaphore.release()
         logger.debug(f"세마포어 해제 - board_id: {board_id}, site: {site}")
+
+
+def get_real_time_best():
+    CrawllerList = [Ygosu(), Ppomppu(), Theqoo(), Instiz(), Ruliweb()]
+
+    for crawler in CrawllerList:
+        if crawler is None:
+            logger.warning(f"Skipping null crawler in list.")
+            continue
+
+        try:
+            logger.info(f"Starting real-time best fetch from {crawler.__class__.__name__}")
+            crawler.get_real_time_best()
+            logger.info(f"Successfully fetched real-time best from {crawler.__class__.__name__}")
+        except Exception as e:
+            logger.error(f"Error fetching real-time best from {crawler.__class__.__name__}: {str(e)}", exc_info=True)
+
+    return JSONResponse(content={'response': "실시간 베스트 가져오기 완료"})
+
+
+def get_daily_best():
+    CrawllerList = [Ygosu(), Ppomppu(), Theqoo(), Instiz(), Ruliweb()]
+
+    for crawler in CrawllerList:
+        if crawler is None:
+            logger.warning(f"Skipping null crawler in list.")
+            continue
+
+        try:
+            logger.info(f"Starting daily best fetch from {crawler.__class__.__name__}")
+            crawler.get_daily_best()
+            logger.info(f"Successfully fetched daily best from {crawler.__class__.__name__}")
+        except Exception as e:
+            logger.error(f"Error fetching daily best from {crawler.__class__.__name__}: {str(e)}", exc_info=True)
+
+    return JSONResponse(content={'response': "데일리 베스트 가져오기 완료"})
+
