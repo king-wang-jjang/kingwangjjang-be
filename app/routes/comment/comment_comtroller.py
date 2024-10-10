@@ -100,6 +100,7 @@ class Mutation:
                 board_id=comment_data[0]["board_id"],
                 user_id=comment_data[0]["user_id"],
                 comment=comment_data[0]["comment"],
+                reply=str(comment_data[0]["reply"]),
                 timestamp=comment_data[0]["timestamp"],
                 site=comment_data[0]["site"]
             )
