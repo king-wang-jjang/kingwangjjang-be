@@ -89,6 +89,7 @@ jobs:
         echo "WAS_USERNAME=${{ secrets.WAS_USERNAME }}" >> .env
         echo "SERVER_TYPE=PRODUCTION" >> .env
         echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
+        echo "DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}" >> .env
 
     - name: Tailscale
       uses: tailscale/github-action@v2
