@@ -1,56 +1,62 @@
-from fastapi import FastAPI
-from starlette.middleware.sessions import SessionMiddleware
-from starlette.requests import Request
-from utils.oauth import oauth
 from fastapi import APIRouter, FastAPI, HTTPException, Request
-from services.user.user import get_user_by_email,add_user
 from pydantic import BaseModel
-from typing import List, Optional
-from datetime import date, datetime, time, timedelta
+from app.services.webhook.mail import MailWebhooks
+from app.db.mongo_controller import MongoController
 import logging
-import strawberry
-from strawberry.fastapi import GraphQLRouter
-from services.web_crwaling.pagination import get_pagination_real_time_best,get_pagination_daily_best
-from services.web_crwaling.views import board_summary,tag
-from typing import List, Optional
-from config import Config
-import sys
-from services.webhook.mail import Mail_webhooks
-from db.mongo_controller import MongoController
+
+# MongoDB controller
 db_controller = MongoController()
 
+# FastAPI application
 app = FastAPI()
 router = APIRouter()
-class Webhook_mail(BaseModel):
-    FromName : str
-    MessageStream : str
-    From : str
-    FromFull : dict
-    To : str
-    ToFull : list
-    Cc : str
-    CcFull : list
-    Bcc : str
-    BccFull : list
-    OriginalRecipient : str
-    Subject : str
-    MessageID : str
-    ReplyTo : str
-    MailboxHash : str
-    Date : str
-    TextBody : str
-    HtmlBody : str
-    StrippedTextReply : str
-    RawEmail : str
-    Tag : str
-    Headers : list
-    Attachments : list
+
+# Logger setup
+logger = logging.getLogger(__name__)
+
+
+# Pydantic model for webhook data
+class WebhookMail(BaseModel):
+    FromName: str
+    MessageStream: str
+    From: str
+    FromFull: dict
+    To: str
+    ToFull: list
+    Cc: str
+    CcFull: list
+    Bcc: str
+    BccFull: list
+    OriginalRecipient: str
+    Subject: str
+    MessageID: str
+    ReplyTo: str
+    MailboxHash: str
+    Date: str
+    TextBody: str
+    HtmlBody: str
+    StrippedTextReply: str
+    RawEmail: str
+    Tag: str
+    Headers: list
+    Attachments: list
+
 
 @router.post("/webhook/mail/inbound")
-def webhook_mail(request: Webhook_mail):
-    db_id = db_controller.insert_one('mail',request.__dict__).inserted_id
-    payload = Mail_webhooks().create_payload(request,db_id)
-    Mail_webhooks().send_slack(payload)
+def webhook_mail(request: WebhookMail):
+    logger.info("Webhook received for inbound mail")
 
+    try:
+        # Save email data to MongoDB
+        db_id = db_controller.insert_one('mail', request.dict()).inserted_id
+        logger.info(f"Email data inserted into MongoDB with ID: {db_id}")
 
+        # Create Slack payload and send notification
+        mail_webhook = MailWebhooks()
+        payload = mail_webhook.create_payload(request, db_id)
+        mail_webhook.send_slack(payload)
+        logger.info(f"Slack notification sent successfully for email ID: {db_id}")
 
+    except Exception as e:
+        logger.error(f"Error processing webhook mail: {e}")
+        raise HTTPException(status_code=500, detail="Error processing the inbound mail webhook")

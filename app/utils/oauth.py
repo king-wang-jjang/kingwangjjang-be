@@ -3,7 +3,10 @@ from app.config import Config
 import jwt
 import hashlib
 from datetime import datetime,timedelta
-
+from app.utils.loghandler import catch_exception,setup_logger
+import sys
+sys.excepthook = catch_exception
+logger = setup_logger()
 oauth = OAuth()
 
 # Google API용 OAuth 2.0 인증 정보
@@ -32,7 +35,11 @@ oauth.register(
 class JWT():
     def __init__(self):
         self.secret_key = Config().get_env("JWT_SECRET_KEY")
+        logger.info(f"JWT secret key: {self.secret_key}")
     def encode(self, payload):
+        logger.debug(f"JWT encode payload: {payload}, type: {type(payload)}")
         return jwt.encode(payload, self.secret_key, algorithm='HS256')
+
     def decode(self, token):
+        logger.debug(f"JWT decode token: {token}, type: {type(token)}")
         return jwt.decode(token, self.secret_key, algorithms=['HS256'])

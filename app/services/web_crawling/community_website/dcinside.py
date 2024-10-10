@@ -18,7 +18,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 
-logger = logging.getLogger("")
+logger = logging.getLogger(__name__)
 
 
 class Dcinside(AbstractCommunityWebsite):
@@ -31,48 +31,59 @@ class Dcinside(AbstractCommunityWebsite):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
         self.db_controller = MongoController()
         try:
+            logger.info("Initializing Dcinside instance")
             self.ftp_client = FTPClient.FTPClient(
                 server_address=Config().get_env('FTP_HOST'),
                 username=Config().get_env('FTP_USERNAME'),
                 password=Config().get_env('FTP_PASSWORD'))
             super().__init__(self.yyyymmdd, self.ftp_client)
+            logger.info("Dcinside initialized successfully")
         except Exception as e:
             logger.error("Dcinside initialization error: %s", e)
             raise
 
     def get_real_time_best(self):
-        req = requests.get('https://www.dcinside.com/', headers=self.g_headers[0])
-        html_content = req.text
-        soup = BeautifulSoup(html_content, 'html.parser')
-        li_elements = soup.select('#dcbest_list_date li')
-        already_exists_post = []
+        logger.info("Fetching real-time best posts")
+        try:
+            req = requests.get('https://www.dcinside.com/', headers=self.g_headers[0])
+            req.raise_for_status()  # Check for HTTP errors
+            html_content = req.text
+            soup = BeautifulSoup(html_content, 'html.parser')
+            li_elements = soup.select('#dcbest_list_date li')
+            already_exists_post = []
 
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            futures = [executor.submit(self._process_li_element, li) for li in li_elements]
-            for future in as_completed(futures):
-                result = future.result()
-                if result:
-                    already_exists_post.append(result)
+            with ThreadPoolExecutor(max_workers=10) as executor:
+                futures = [executor.submit(self._process_li_element, li) for li in li_elements]
+                for future in as_completed(futures):
+                    result = future.result()
+                    if result:
+                        already_exists_post.append(result)
 
-        logger.info("Already exists post: %s", already_exists_post)
+            logger.info("Already exists post: %s", already_exists_post)
+        except Exception as e:
+            logger.error("Error fetching real-time best posts: %s", e)
 
     def _process_li_element(self, li):
-        p_element = li.select_one('.box.besttxt p')
-        a_element = li.select_one('.main_log')
-        time_element = li.select_one('.box.best_info .time')
+        logger.debug("Processing individual post element")
+        try:
+            p_element = li.select_one('.box.besttxt p')
+            a_element = li.select_one('.main_log')
+            time_element = li.select_one('.box.best_info .time')
 
-        if p_element and a_element and time_element:
-            title = p_element.get_text(strip=True)
-            url = a_element['href']
-            board_id = url.split('no=')[-1]
-            time_text = time_element.get_text(strip=True)
-            if '-' in time_text:
-                return None  # 오늘 것만 추가 (이전 글은 제외 (DB에서 확인))
+            if p_element and a_element and time_element:
+                title = p_element.get_text(strip=True)
+                url = a_element['href']
+                board_id = url.split('no=')[-1]
+                time_text = time_element.get_text(strip=True)
 
-            target_datetime = self._get_target_datetime(time_text)
+                if '-' in time_text:
+                    logger.debug("Post is not from today, skipping")
+                    return None  # 오늘 것만 추가 (이전 글은 제외)
 
-            try:
+                target_datetime = self._get_target_datetime(time_text)
+
                 if self._post_exists(board_id):
+                    logger.info(f"Post {board_id} already exists in DB")
                     return board_id
 
                 gpt_obj_id = self._get_or_create_gpt_obj_id(board_id)
@@ -85,25 +96,32 @@ class Dcinside(AbstractCommunityWebsite):
                     'create_time': target_datetime,
                     'GPTAnswer': gpt_obj_id
                 })
-            except Exception as e:
-                logger.error('Error processing post: %s', e)
+                logger.info(f"Post {board_id} added to DB")
+        except Exception as e:
+            logger.error("Error processing post element: %s", e)
         return None
 
     def get_board_contents(self, board_id):
+        logger.info(f"Fetching board contents for board_id: {board_id}")
         abs_path = f'./{self.yyyymmdd}/{board_id}'
         self.download_path = os.path.abspath(abs_path)
         _url = "https://gall.dcinside.com/board/view/?id=dcbest&no=" + board_id
-        req = requests.get(_url, headers=self.g_headers[0])
-        html_content = req.text
-        soup = BeautifulSoup(html_content, 'html.parser')
 
-        content_list = self._parse_content(soup)
-        return content_list
+        try:
+            req = requests.get(_url, headers=self.g_headers[0])
+            req.raise_for_status()
+            html_content = req.text
+            soup = BeautifulSoup(html_content, 'html.parser')
+
+            content_list = self._parse_content(soup)
+            logger.info(f"Content fetched for board_id {board_id}")
+            return content_list
+        except Exception as e:
+            logger.error(f"Error fetching board contents for {board_id}: %s", e)
+            return []
 
     def set_driver_options(self):
-        '''
-        Set Chrome driver options for Selenium.
-        '''
+        logger.info("Setting up Chrome driver options for Selenium")
         chrome_options = Options()
         prefs = {"download.default_directory": self.download_path}
         chrome_options.add_experimental_option("prefs", prefs)
@@ -114,19 +132,20 @@ class Dcinside(AbstractCommunityWebsite):
 
         os.makedirs(self.download_path, exist_ok=True)
 
-        self.driver = webdriver.Chrome(options=chrome_options)
-
         try:
+            self.driver = webdriver.Chrome(options=chrome_options)
             self.driver.get("https://www.dcinside.com/")
             WebDriverWait(self.driver, 5).until(
                 EC.presence_of_element_located((By.XPATH, '//body'))
             )
+            logger.info("Selenium driver initialized and page loaded")
+            return True
         except Exception as e:
-            logger.error('Dcinside Error: %s', e)
+            logger.error('Error initializing Selenium driver: %s', e)
             return False
-        return True
 
     def save_img(self, url):
+        logger.info(f"Saving image from URL: {url}")
         os.makedirs(self.download_path, exist_ok=True)
 
         initial_file_count = len(os.listdir(self.download_path))
@@ -138,23 +157,30 @@ class Dcinside(AbstractCommunityWebsite):
         '''
         self.driver.execute_script(script)
 
-        WebDriverWait(self.driver, 5).until(
-            lambda x: len(os.listdir(self.download_path)) > initial_file_count
-        )
-
-        newest_file = self._get_newest_file(self.download_path)
-        return os.path.join(self.download_path, newest_file)
+        try:
+            WebDriverWait(self.driver, 5).until(
+                lambda x: len(os.listdir(self.download_path)) > initial_file_count
+            )
+            newest_file = self._get_newest_file(self.download_path)
+            logger.info(f"Image saved successfully at {newest_file}")
+            return os.path.join(self.download_path, newest_file)
+        except Exception as e:
+            logger.error(f"Error saving image from {url}: %s", e)
+            return None
 
     def _get_target_datetime(self, time_text):
+        logger.debug(f"Parsing time_text {time_text}")
         now = datetime.now()
         hour, minute = map(int, time_text.split(':'))
         return datetime(now.year, now.month, now.day, hour, minute)
 
     def _post_exists(self, board_id):
+        logger.debug(f"Checking if post {board_id} exists in DB")
         existing_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': SITE_DCINSIDE})
         return existing_instance is not None
 
     def _get_or_create_gpt_obj_id(self, board_id):
+        logger.debug(f"Fetching or creating GPT object for post {board_id}")
         gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_DCINSIDE})
         if gpt_exists:
             return gpt_exists[0]['_id']
@@ -167,9 +193,11 @@ class Dcinside(AbstractCommunityWebsite):
             return gpt_obj.inserted_id
 
     def _parse_content(self, soup):
+        logger.debug("Parsing content from the page")
         content_list = []
         write_div = soup.find('div', class_='write_div')
-        find_all = write_div.find_all(['p']) if len(write_div.find_all(['p'])) > len(write_div.find_all(['div'])) else write_div.find_all(['div'])
+        find_all = write_div.find_all(['p']) if len(write_div.find_all(['p'])) > len(
+            write_div.find_all(['div'])) else write_div.find_all(['div'])
 
         for element in find_all:
             text_content = element.text.strip()
@@ -177,6 +205,7 @@ class Dcinside(AbstractCommunityWebsite):
         return content_list
 
     def _get_newest_file(self, directory):
+        logger.debug(f"Finding newest file in {directory}")
         files = os.listdir(directory)
         newest_file = max(files, key=lambda x: os.path.getctime(os.path.join(directory, x)))
         return newest_file

@@ -9,6 +9,8 @@ WORKDIR /app
 
 #poetry 설치
 RUN pip install poetry
+RUN apt-get update -y
+RUN apt-get install libgl1-mesa-glx -y
 
 #poetry 관련 파일 복사
 COPY ./pyproject.toml ./poetry.lock* /app/
