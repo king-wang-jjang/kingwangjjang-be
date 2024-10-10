@@ -122,7 +122,7 @@ class Mutation:
         logger.info(f"Adding reply to comment {parents_comment} on board {board_id} by user {userid}")
         try:
             reply_dicts = board_reply_add(board_id=board_id, site=site, userid=userid,
-                                          parrent_comment=parents_comment, reply=reply)
+                                          parent_comment=parents_comment, reply=reply)
             logger.info(f"Reply added to comment {parents_comment} on board {board_id}")
 
             # Convert reply_dicts to a CommentEntry object
