@@ -100,10 +100,10 @@ class Mutation:
         :param site: Site name
         :param userid: ID of the user posting the comment
         :param comment: The comment text
-        :param board_id: str: 
-        :param site: str: 
-        :param userid: str: 
-        :param comment: str: 
+        :param board_id: str:
+        :param site: str:
+        :param userid: str:
+        :param comment: str:
         :returns: A BoardComment object containing the added comment
 
         """
@@ -151,11 +151,11 @@ class Mutation:
         :param userid: ID of the user posting the reply
         :param parents_comment: ID of the parent comment to reply to
         :param reply: The reply text
-        :param board_id: str: 
-        :param site: str: 
-        :param userid: str: 
-        :param parents_comment: str: 
-        :param reply: str: 
+        :param board_id: str:
+        :param site: str:
+        :param userid: str:
+        :param parents_comment: str:
+        :param reply: str:
         :returns: A CommentEntry object representing the updated parent comment
 
         """

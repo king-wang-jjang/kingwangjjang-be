@@ -79,7 +79,7 @@ class Dcinside(AbstractCommunityWebsite):
     def _process_li_element(self, li):
         """
 
-        :param li: 
+        :param li:
 
         """
         logger.debug("Processing individual post element")
@@ -125,7 +125,7 @@ class Dcinside(AbstractCommunityWebsite):
     def get_board_contents(self, board_id):
         """
 
-        :param board_id: 
+        :param board_id:
 
         """
         logger.info(f"Fetching board contents for board_id: {board_id}")
@@ -174,7 +174,7 @@ class Dcinside(AbstractCommunityWebsite):
     def save_img(self, url):
         """
 
-        :param url: 
+        :param url:
 
         """
         logger.info(f"Saving image from URL: {url}")
@@ -203,7 +203,7 @@ class Dcinside(AbstractCommunityWebsite):
     def _get_target_datetime(self, time_text):
         """
 
-        :param time_text: 
+        :param time_text:
 
         """
         logger.debug(f"Parsing time_text {time_text}")
@@ -214,7 +214,7 @@ class Dcinside(AbstractCommunityWebsite):
     def _post_exists(self, board_id):
         """
 
-        :param board_id: 
+        :param board_id:
 
         """
         logger.debug(f"Checking if post {board_id} exists in DB")
@@ -226,7 +226,7 @@ class Dcinside(AbstractCommunityWebsite):
     def _get_or_create_gpt_obj_id(self, board_id):
         """
 
-        :param board_id: 
+        :param board_id:
 
         """
         logger.debug(f"Fetching or creating GPT object for post {board_id}")
@@ -249,7 +249,7 @@ class Dcinside(AbstractCommunityWebsite):
     def _parse_content(self, soup):
         """
 
-        :param soup: 
+        :param soup:
 
         """
         logger.debug("Parsing content from the page")
@@ -269,7 +269,7 @@ class Dcinside(AbstractCommunityWebsite):
     def _get_newest_file(self, directory):
         """
 
-        :param directory: 
+        :param directory:
 
         """
         logger.debug(f"Finding newest file in {directory}")
