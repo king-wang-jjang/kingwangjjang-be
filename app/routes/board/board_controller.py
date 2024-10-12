@@ -123,6 +123,7 @@ class Query:
         :param index: int:  (Default value = 0)
         :param index: int:  (Default value = 0)
         :param index: int:  (Default value = 0)
+        :param index: int:  (Default value = 0)
 
         """
         try:
@@ -135,6 +136,7 @@ class Query:
     def realtime_pagination(self, index: int = 0) -> List[RealTime]:
         """
 
+        :param index: int:  (Default value = 0)
         :param index: int:  (Default value = 0)
         :param index: int:  (Default value = 0)
         :param index: int:  (Default value = 0)
@@ -156,6 +158,8 @@ class Query:
         :param site: str:
         :param board_id: str:
         :param site: str:
+        :param board_id: str: 
+        :param site: str: 
 
         """
         try:
@@ -202,6 +206,8 @@ class Query:
         :param site: str:
         :param board_id: str:
         :param site: str:
+        :param board_id: str: 
+        :param site: str: 
 
         """
         return Like(board_id=board_id, site=site, NOWLIKE=get_likes(board_id, site))
@@ -216,6 +222,8 @@ class Query:
         :param site: str:
         :param board_id: str:
         :param site: str:
+        :param board_id: str: 
+        :param site: str: 
 
         """
         return View(board_id=board_id, site=site, NOWVIEW=get_views(board_id, site))

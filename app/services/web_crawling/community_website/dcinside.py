@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class Dcinside(AbstractCommunityWebsite):
+    """ """
     g_headers = [
         {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -46,9 +47,11 @@ class Dcinside(AbstractCommunityWebsite):
             raise
 
     def get_daily_best(self):
+        """ """
         pass
 
     def get_real_time_best(self):
+        """ """
         logger.info("Fetching real-time best posts")
         try:
             req = requests.get("https://www.dcinside.com/", headers=self.g_headers[0])
@@ -72,6 +75,11 @@ class Dcinside(AbstractCommunityWebsite):
             logger.error("Error fetching real-time best posts: %s", e)
 
     def _process_li_element(self, li):
+        """
+
+        :param li: 
+
+        """
         logger.debug("Processing individual post element")
         try:
             p_element = li.select_one(".box.besttxt p")
@@ -113,6 +121,11 @@ class Dcinside(AbstractCommunityWebsite):
         return None
 
     def get_board_contents(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         logger.info(f"Fetching board contents for board_id: {board_id}")
         abs_path = f"./{self.yyyymmdd}/{board_id}"
         self.download_path = os.path.abspath(abs_path)
@@ -132,6 +145,7 @@ class Dcinside(AbstractCommunityWebsite):
             return []
 
     def set_driver_options(self):
+        """ """
         logger.info("Setting up Chrome driver options for Selenium")
         chrome_options = Options()
         prefs = {"download.default_directory": self.download_path}
@@ -156,6 +170,11 @@ class Dcinside(AbstractCommunityWebsite):
             return False
 
     def save_img(self, url):
+        """
+
+        :param url: 
+
+        """
         logger.info(f"Saving image from URL: {url}")
         os.makedirs(self.download_path, exist_ok=True)
 
@@ -180,12 +199,22 @@ class Dcinside(AbstractCommunityWebsite):
             return None
 
     def _get_target_datetime(self, time_text):
+        """
+
+        :param time_text: 
+
+        """
         logger.debug(f"Parsing time_text {time_text}")
         now = datetime.now()
         hour, minute = map(int, time_text.split(":"))
         return datetime(now.year, now.month, now.day, hour, minute)
 
     def _post_exists(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         logger.debug(f"Checking if post {board_id} exists in DB")
         existing_instance = self.db_controller.find(
             "RealTime", {"board_id": board_id, "site": SITE_DCINSIDE}
@@ -193,6 +222,11 @@ class Dcinside(AbstractCommunityWebsite):
         return existing_instance is not None
 
     def _get_or_create_gpt_obj_id(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         logger.debug(f"Fetching or creating GPT object for post {board_id}")
         gpt_exists = self.db_controller.find(
             "GPT", {"board_id": board_id, "site": SITE_DCINSIDE}
@@ -211,6 +245,11 @@ class Dcinside(AbstractCommunityWebsite):
             return gpt_obj.inserted_id
 
     def _parse_content(self, soup):
+        """
+
+        :param soup: 
+
+        """
         logger.debug("Parsing content from the page")
         content_list = []
         write_div = soup.find("div", class_="write_div")
@@ -226,6 +265,11 @@ class Dcinside(AbstractCommunityWebsite):
         return content_list
 
     def _get_newest_file(self, directory):
+        """
+
+        :param directory: 
+
+        """
         logger.debug(f"Finding newest file in {directory}")
         files = os.listdir(directory)
         newest_file = max(

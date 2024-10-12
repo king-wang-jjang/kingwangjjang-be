@@ -27,6 +27,7 @@ logger = setup_logger()
 
 
 class Theqoo(AbstractCommunityWebsite):
+    """ """
     g_headers = [
         {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -49,9 +50,11 @@ class Theqoo(AbstractCommunityWebsite):
             logger.error(f"Error initializing Theqoo: {e}")
 
     def get_daily_best(self):
+        """ """
         pass
 
     def get_real_time_best(self):
+        """ """
         logger.info("Fetching real-time best posts from Theqoo")
         try:
             req = requests.get("https://theqoo.net/hot", headers=self.g_headers[0])
@@ -108,6 +111,11 @@ class Theqoo(AbstractCommunityWebsite):
         logger.info({"already exists post": already_exists_post})
 
     def get_board_contents(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         logger.info(f"Fetching board contents for board_id: {board_id}")
         abs_path = f"./{self.yyyymmdd}/{board_id}"
         self.download_path = os.path.abspath(abs_path)
@@ -132,6 +140,7 @@ class Theqoo(AbstractCommunityWebsite):
             return []
 
     def set_driver_options(self):
+        """ """
         chrome_options = Options()
         prefs = {"download.default_directory": self.download_path}
         chrome_options.add_experimental_option("prefs", prefs)
@@ -155,6 +164,11 @@ class Theqoo(AbstractCommunityWebsite):
         return True
 
     def save_img(self, url):
+        """
+
+        :param url: 
+
+        """
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
 
@@ -181,6 +195,12 @@ class Theqoo(AbstractCommunityWebsite):
             return None
 
     def _post_already_exists(self, board_id, already_exists_post):
+        """
+
+        :param board_id: 
+        :param already_exists_post: 
+
+        """
         existing_instance = self.db_controller.find(
             "RealTime", {"board_id": board_id, "site": SITE_THEQOO}
         )
@@ -190,6 +210,11 @@ class Theqoo(AbstractCommunityWebsite):
         return False
 
     def _get_or_create_gpt_object(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         gpt_exists = self.db_controller.find(
             "GPT", {"board_id": board_id, "site": SITE_THEQOO}
         )
@@ -207,6 +232,11 @@ class Theqoo(AbstractCommunityWebsite):
             return gpt_obj.inserted_id
 
     def _get_or_create_tag_object(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         tag_exists = self.db_controller.find(
             "TAG", {"board_id": board_id, "site": SITE_THEQOO}
         )

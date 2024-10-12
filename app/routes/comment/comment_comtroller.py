@@ -92,14 +92,18 @@ class Mutation:
     def comment(
         self, board_id: str, site: str, userid: str, comment: str
     ) -> CommentEntry:
-        """
-        Add a comment to a board.
+        """Add a comment to a board.
 
         :param board_id: ID of the board
         :param site: Site name
         :param userid: ID of the user posting the comment
         :param comment: The comment text
-        :return: A BoardComment object containing the added comment
+        :param board_id: str: 
+        :param site: str: 
+        :param userid: str: 
+        :param comment: str: 
+        :returns: A BoardComment object containing the added comment
+
         """
         logger.info(
             f"Adding comment to board {board_id} on site {site} by user {userid}"
@@ -138,15 +142,20 @@ class Mutation:
     def reply(
         self, board_id: str, site: str, userid: str, parents_comment: str, reply: str
     ) -> CommentEntry:
-        """
-        Add a reply to an existing comment.
+        """Add a reply to an existing comment.
 
         :param board_id: ID of the board
         :param site: Site name
         :param userid: ID of the user posting the reply
         :param parents_comment: ID of the parent comment to reply to
         :param reply: The reply text
-        :return: A CommentEntry object representing the updated parent comment
+        :param board_id: str: 
+        :param site: str: 
+        :param userid: str: 
+        :param parents_comment: str: 
+        :param reply: str: 
+        :returns: A CommentEntry object representing the updated parent comment
+
         """
         logger.info(
             f"Adding reply to comment {parents_comment} on board {board_id} by user {userid}"
