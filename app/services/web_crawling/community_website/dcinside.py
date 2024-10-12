@@ -28,7 +28,8 @@ class Dcinside(AbstractCommunityWebsite):
     """ """
     g_headers = [
         {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         },
     ]
 
@@ -56,7 +57,8 @@ class Dcinside(AbstractCommunityWebsite):
         """ """
         logger.info("Fetching real-time best posts")
         try:
-            req = requests.get("https://www.dcinside.com/", headers=self.g_headers[0])
+            req = requests.get("https://www.dcinside.com/",
+                               headers=self.g_headers[0])
             req.raise_for_status()  # Check for HTTP errors
             html_content = req.text
             soup = BeautifulSoup(html_content, "html.parser")
@@ -65,7 +67,8 @@ class Dcinside(AbstractCommunityWebsite):
 
             with ThreadPoolExecutor(max_workers=10) as executor:
                 futures = [
-                    executor.submit(self._process_li_element, li) for li in li_elements
+                    executor.submit(self._process_li_element, li)
+                    for li in li_elements
                 ]
                 for future in as_completed(futures):
                     result = future.result()
@@ -143,7 +146,8 @@ class Dcinside(AbstractCommunityWebsite):
             logger.info(f"Content fetched for board_id {board_id}")
             return content_list
         except Exception as e:
-            logger.error(f"Error fetching board contents for {board_id}: %s", e)
+            logger.error(f"Error fetching board contents for {board_id}: %s",
+                         e)
             return []
 
     def set_driver_options(self):
@@ -155,7 +159,8 @@ class Dcinside(AbstractCommunityWebsite):
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-setuid-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_experimental_option("excludeSwitches", ["enable-logging"])
+        chrome_options.add_experimental_option("excludeSwitches",
+                                               ["enable-logging"])
 
         os.makedirs(self.download_path, exist_ok=True)
 
@@ -163,8 +168,7 @@ class Dcinside(AbstractCommunityWebsite):
             self.driver = webdriver.Chrome(options=chrome_options)
             self.driver.get("https://www.dcinside.com/")
             WebDriverWait(self.driver, 5).until(
-                EC.presence_of_element_located((By.XPATH, "//body"))
-            )
+                EC.presence_of_element_located((By.XPATH, "//body")))
             logger.info("Selenium driver initialized and page loaded")
             return True
         except Exception as e:
@@ -190,9 +194,8 @@ class Dcinside(AbstractCommunityWebsite):
         self.driver.execute_script(script)
 
         try:
-            WebDriverWait(self.driver, 5).until(
-                lambda x: len(os.listdir(self.download_path)) > initial_file_count
-            )
+            WebDriverWait(self.driver, 5).until(lambda x: len(
+                os.listdir(self.download_path)) > initial_file_count)
             newest_file = self._get_newest_file(self.download_path)
             logger.info(f"Image saved successfully at {newest_file}")
             return os.path.join(self.download_path, newest_file)
@@ -218,9 +221,10 @@ class Dcinside(AbstractCommunityWebsite):
 
         """
         logger.debug(f"Checking if post {board_id} exists in DB")
-        existing_instance = self.db_controller.find(
-            "RealTime", {"board_id": board_id, "site": SITE_DCINSIDE}
-        )
+        existing_instance = self.db_controller.find("RealTime", {
+            "board_id": board_id,
+            "site": SITE_DCINSIDE
+        })
         return existing_instance is not None
 
     def _get_or_create_gpt_obj_id(self, board_id):
@@ -230,9 +234,10 @@ class Dcinside(AbstractCommunityWebsite):
 
         """
         logger.debug(f"Fetching or creating GPT object for post {board_id}")
-        gpt_exists = self.db_controller.find(
-            "GPT", {"board_id": board_id, "site": SITE_DCINSIDE}
-        )
+        gpt_exists = self.db_controller.find("GPT", {
+            "board_id": board_id,
+            "site": SITE_DCINSIDE
+        })
         if gpt_exists:
             return gpt_exists[0]["_id"]
         else:
@@ -255,11 +260,9 @@ class Dcinside(AbstractCommunityWebsite):
         logger.debug("Parsing content from the page")
         content_list = []
         write_div = soup.find("div", class_="write_div")
-        find_all = (
-            write_div.find_all(["p"])
-            if len(write_div.find_all(["p"])) > len(write_div.find_all(["div"]))
-            else write_div.find_all(["div"])
-        )
+        find_all = (write_div.find_all(
+            ["p"]) if len(write_div.find_all(["p"])) > len(
+                write_div.find_all(["div"])) else write_div.find_all(["div"]))
 
         for element in find_all:
             text_content = element.text.strip()
@@ -275,6 +278,5 @@ class Dcinside(AbstractCommunityWebsite):
         logger.debug(f"Finding newest file in {directory}")
         files = os.listdir(directory)
         newest_file = max(
-            files, key=lambda x: os.path.getctime(os.path.join(directory, x))
-        )
+            files, key=lambda x: os.path.getctime(os.path.join(directory, x)))
         return newest_file

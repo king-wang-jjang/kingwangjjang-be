@@ -135,7 +135,8 @@ class Query:
             return get_pagination_daily_best(index)
         except Exception as e:
             logger.exception(f"Error getting daily data: {e}")
-            raise HTTPException(status_code=500, detail="Internal server error")
+            raise HTTPException(status_code=500,
+                                detail="Internal server error")
 
     @strawberry.field
     def realtime_pagination(self, index: int = 0) -> List[RealTime]:
@@ -151,7 +152,8 @@ class Query:
             return get_pagination_real_time_best(index)
         except Exception as e:
             logger.exception(f"Error getting realtime data: {e}")
-            raise HTTPException(status_code=500, detail="Internal server error")
+            raise HTTPException(status_code=500,
+                                detail="Internal server error")
 
     @strawberry.field
     def comment(self, board_id: str, site: str) -> Comment:
@@ -183,8 +185,7 @@ class Query:
                             user_id=data["user_id"],
                             comment=data["comment"],
                             timestamp=data["timestamp"],
-                        )
-                    )
+                        ))
                 datas.append(
                     CommentEntrys(
                         _id=comment["_id"],
@@ -194,12 +195,12 @@ class Query:
                         comment=data["comment"],
                         reply=tmp_replys,
                         timestamp=data["timestamp"],
-                    )
-                )
+                    ))
             return Comment(board_id=board_id, site=site, Comments=datas)
         except Exception as e:
             logger.exception(f"Error creating summary board: {e}")
-            raise HTTPException(status_code=500, detail="Internal server error")
+            raise HTTPException(status_code=500,
+                                detail="Internal server error")
 
     @strawberry.field
     def get_like(self, board_id: str, site: str) -> Like:
@@ -215,7 +216,9 @@ class Query:
         :param site: str:
 
         """
-        return Like(board_id=board_id, site=site, NOWLIKE=get_likes(board_id, site))
+        return Like(board_id=board_id,
+                    site=site,
+                    NOWLIKE=get_likes(board_id, site))
 
     @strawberry.field
     def get_views(self, board_id: str, site: str) -> View:
@@ -231,7 +234,9 @@ class Query:
         :param site: str:
 
         """
-        return View(board_id=board_id, site=site, NOWVIEW=get_views(board_id, site))
+        return View(board_id=board_id,
+                    site=site,
+                    NOWVIEW=get_views(board_id, site))
 
 
 # Initialize GraphQL schema and router

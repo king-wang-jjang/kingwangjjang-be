@@ -91,9 +91,8 @@ class Mutation:
     """Mutation class for adding comments and replies"""
 
     @strawberry.mutation
-    def comment(
-        self, board_id: str, site: str, userid: str, comment: str
-    ) -> CommentEntry:
+    def comment(self, board_id: str, site: str, userid: str,
+                comment: str) -> CommentEntry:
         """Add a comment to a board.
 
         :param board_id: ID of the board
@@ -123,8 +122,7 @@ class Mutation:
                         user_id=data["user_id"],
                         comment=data["comment"],
                         timestamp=data["timestamp"],
-                    )
-                )
+                    ))
             return CommentEntry(
                 _id=comment_data[0]["_id"],
                 board_id=comment_data[0]["board_id"],
@@ -141,9 +139,8 @@ class Mutation:
             raise e
 
     @strawberry.mutation
-    def reply(
-        self, board_id: str, site: str, userid: str, parents_comment: str, reply: str
-    ) -> CommentEntry:
+    def reply(self, board_id: str, site: str, userid: str,
+              parents_comment: str, reply: str) -> CommentEntry:
         """Add a reply to an existing comment.
 
         :param board_id: ID of the board
@@ -170,7 +167,9 @@ class Mutation:
                 parent_comment=parents_comment,
                 reply=reply,
             )
-            logger.info(f"Reply added to comment {parents_comment} on board {board_id}")
+            logger.info(
+                f"Reply added to comment {parents_comment} on board {board_id}"
+            )
             reply_lists = []
             for data in reply_dicts[0]["reply"]:
                 logger.debug(f"Reply to comment {data}")
@@ -181,8 +180,7 @@ class Mutation:
                         user_id=data["user_id"],
                         comment=data["comment"],
                         timestamp=data["timestamp"],
-                    )
-                )
+                    ))
             # Convert reply_dicts to a CommentEntry object
             return CommentEntry(
                 _id=reply_dicts[0]["_id"],
