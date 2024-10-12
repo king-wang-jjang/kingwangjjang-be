@@ -1,24 +1,23 @@
-import os
 import logging
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+
 import requests
 from bs4 import BeautifulSoup
-from concurrent.futures import ThreadPoolExecutor, as_completed
-
-from app.constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE
-from app.db.mongo_controller import MongoController
-from app.services.web_crawling.community_website.community_website import (
-    AbstractCommunityWebsite,
-)
-from app.utils import FTPClient
-from app.config import Config
-
 # selenium
 from selenium import webdriver
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+from app.config import Config
+from app.constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE
+from app.db.mongo_controller import MongoController
+from app.services.web_crawling.community_website.community_website import \
+    AbstractCommunityWebsite
+from app.utils import FTPClient
 
 logger = logging.getLogger(__name__)
 

@@ -1,23 +1,23 @@
-from app.utils.loghandler import setup_logger
 import logging
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium import webdriver
-from datetime import datetime
 import os
-from bs4 import BeautifulSoup
-import requests
-from app.db.mongo_controller import MongoController
-from app.services.web_crawling.community_website.community_website import (
-    AbstractCommunityWebsite,
-)
-from app.constants import DEFAULT_GPT_ANSWER, SITE_THEQOO, DEFAULT_TAG
-from app.utils import FTPClient
-from app.config import Config
-from app.utils.loghandler import catch_exception
 import sys
+from datetime import datetime
+
+import requests
+from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+
+from app.config import Config
+from app.constants import DEFAULT_GPT_ANSWER, DEFAULT_TAG, SITE_THEQOO
+from app.db.mongo_controller import MongoController
+from app.services.web_crawling.community_website.community_website import \
+    AbstractCommunityWebsite
+from app.utils import FTPClient
+from app.utils.loghandler import catch_exception, setup_logger
 
 sys.excepthook = catch_exception
 
