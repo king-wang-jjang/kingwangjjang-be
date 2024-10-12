@@ -44,7 +44,8 @@ class Theqoo(AbstractCommunityWebsite):
             logger.info("Theqoo initialized successfully")
         except Exception as e:
             logger.error(f"Error initializing Theqoo: {e}")
-
+    def get_daily_best(self):
+        pass
     def get_real_time_best(self):
         logger.info("Fetching real-time best posts from Theqoo")
         try:

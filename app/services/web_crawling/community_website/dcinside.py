@@ -41,7 +41,8 @@ class Dcinside(AbstractCommunityWebsite):
         except Exception as e:
             logger.error("Dcinside initialization error: %s", e)
             raise
-
+    def get_daily_best(self):
+        pass
     def get_real_time_best(self):
         logger.info("Fetching real-time best posts")
         try:
