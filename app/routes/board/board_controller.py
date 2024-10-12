@@ -41,7 +41,24 @@ class Daily:
     url: str
     create_time: datetime
     GPTAnswer: Optional[str] = None
-
+@strawberry.type
+class ReplyEntrys:
+    """ReplyEntry represents a reply to a comment"""
+    board_id: str
+    site: str
+    user_id: str
+    comment: str
+    timestamp: str
+@strawberry.type
+class CommentEntrys:
+    """CommentEntry represents a comment on a board"""
+    _id: str
+    board_id: str
+    site: str
+    user_id: str
+    comment: str
+    reply: List[ReplyEntrys]
+    timestamp: str
 
 @strawberry.type
 class RealTime:
@@ -72,7 +89,7 @@ class Comment:
 
     board_id: str
     site: str
-    Comments: str
+    Comments: List[CommentEntrys]
 
 
 @strawberry.type
@@ -145,9 +162,28 @@ class Query:
             comments = board_comment_get(board_id, site)
             if not comments:
                 comments = [{"none": "none"}]
+            datas = []
+            for comment in comments:
+                tmp_replys = []
+                for data in comment["reply"]:
+                    logger.debug(f"Reply to comment {data}")
+                    tmp_replys.append(ReplyEntrys(board_id=data["board_id"], site=data["site"], user_id=data["user_id"],
+                                                  comment=data["comment"], timestamp=data["timestamp"]))
+                datas.append(
+                    CommentEntrys(
+                        _id=comment["_id"],
+                        board_id=data["board_id"],
+                        site=data["site"],
+                        user_id=data["user_id"],
+                        comment=data["comment"],
+                        reply=tmp_replys,
+                        timestamp=data["timestamp"]
+
+                    )
+                )
             return Comment(board_id=board_id,
                            site=site,
-                           Comments=str(comments))
+                           Comments=datas)
         except Exception as e:
             logger.exception(f"Error creating summary board: {e}")
             raise HTTPException(status_code=500,
