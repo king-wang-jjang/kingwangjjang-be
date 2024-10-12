@@ -12,6 +12,7 @@ concurrency:
 jobs:
   restyled:
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,7 +29,6 @@ jobs:
           steps.restyler.outputs.success == 'true' &&
           github.event.pull_request.head.repo.full_name == github.repository
         uses: peter-evans/create-pull-request@v6
-        permissions: write-all
         with:
           base: ${{ steps.restyler.outputs.restyled-base }}
           branch: ${{ steps.restyler.outputs.restyled-head }}
