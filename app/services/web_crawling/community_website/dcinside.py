@@ -41,12 +41,15 @@ class Dcinside(AbstractCommunityWebsite):
         except Exception as e:
             logger.error("Dcinside initialization error: %s", e)
             raise
+
     def get_daily_best(self):
         pass
+
     def get_real_time_best(self):
         logger.info("Fetching real-time best posts")
         try:
-            req = requests.get('https://www.dcinside.com/', headers=self.g_headers[0])
+            req = requests.get('https://www.dcinside.com/',
+                               headers=self.g_headers[0])
             req.raise_for_status()  # Check for HTTP errors
             html_content = req.text
             soup = BeautifulSoup(html_content, 'html.parser')
@@ -54,7 +57,8 @@ class Dcinside(AbstractCommunityWebsite):
             already_exists_post = []
 
             with ThreadPoolExecutor(max_workers=10) as executor:
-                futures = [executor.submit(self._process_li_element, li) for li in li_elements]
+                futures = [executor.submit(
+                    self._process_li_element, li) for li in li_elements]
                 for future in as_completed(futures):
                     result = future.result()
                     if result:
@@ -118,7 +122,8 @@ class Dcinside(AbstractCommunityWebsite):
             logger.info(f"Content fetched for board_id {board_id}")
             return content_list
         except Exception as e:
-            logger.error(f"Error fetching board contents for {board_id}: %s", e)
+            logger.error(
+                f"Error fetching board contents for {board_id}: %s", e)
             return []
 
     def set_driver_options(self):
@@ -129,7 +134,8 @@ class Dcinside(AbstractCommunityWebsite):
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-setuid-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        chrome_options.add_experimental_option(
+            'excludeSwitches', ['enable-logging'])
 
         os.makedirs(self.download_path, exist_ok=True)
 
@@ -160,7 +166,8 @@ class Dcinside(AbstractCommunityWebsite):
 
         try:
             WebDriverWait(self.driver, 5).until(
-                lambda x: len(os.listdir(self.download_path)) > initial_file_count
+                lambda x: len(os.listdir(self.download_path)
+                              ) > initial_file_count
             )
             newest_file = self._get_newest_file(self.download_path)
             logger.info(f"Image saved successfully at {newest_file}")
@@ -177,12 +184,14 @@ class Dcinside(AbstractCommunityWebsite):
 
     def _post_exists(self, board_id):
         logger.debug(f"Checking if post {board_id} exists in DB")
-        existing_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': SITE_DCINSIDE})
+        existing_instance = self.db_controller.find(
+            'RealTime', {'board_id': board_id, 'site': SITE_DCINSIDE})
         return existing_instance is not None
 
     def _get_or_create_gpt_obj_id(self, board_id):
         logger.debug(f"Fetching or creating GPT object for post {board_id}")
-        gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_DCINSIDE})
+        gpt_exists = self.db_controller.find(
+            'GPT', {'board_id': board_id, 'site': SITE_DCINSIDE})
         if gpt_exists:
             return gpt_exists[0]['_id']
         else:
@@ -208,5 +217,6 @@ class Dcinside(AbstractCommunityWebsite):
     def _get_newest_file(self, directory):
         logger.debug(f"Finding newest file in {directory}")
         files = os.listdir(directory)
-        newest_file = max(files, key=lambda x: os.path.getctime(os.path.join(directory, x)))
+        newest_file = max(files, key=lambda x: os.path.getctime(
+            os.path.join(directory, x)))
         return newest_file

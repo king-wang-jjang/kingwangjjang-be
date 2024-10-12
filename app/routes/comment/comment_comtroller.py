@@ -80,7 +80,7 @@ class Mutation:
     """Mutation class for adding comments and replies"""
 
     @strawberry.mutation
-    def comment(self, board_id: str, site: str, userid: str, comment: str) ->  CommentEntry:
+    def comment(self, board_id: str, site: str, userid: str, comment: str) -> CommentEntry:
         """
         Add a comment to a board.
 
@@ -90,14 +90,16 @@ class Mutation:
         :param comment: The comment text
         :return: A BoardComment object containing the added comment
         """
-        logger.info(f"Adding comment to board {board_id} on site {site} by user {userid}")
+        logger.info(
+            f"Adding comment to board {board_id} on site {site} by user {userid}")
         try:
             comment_data = board_comment_add(board_id, site, userid, comment)
             logger.info(f"Comment added to board {board_id}")
             reply_lists = []
             for data in comment_data[0]["reply"]:
                 logger.debug(f"Reply to comment {data}")
-                reply_lists.append(ReplyEntry(board_id=data["board_id"], site=data["site"], user_id=data["user_id"], comment=data["comment"], timestamp=data["timestamp"]))
+                reply_lists.append(ReplyEntry(
+                    board_id=data["board_id"], site=data["site"], user_id=data["user_id"], comment=data["comment"], timestamp=data["timestamp"]))
             return CommentEntry(
                 _id=comment_data[0]["_id"],
                 board_id=comment_data[0]["board_id"],
@@ -108,7 +110,8 @@ class Mutation:
                 site=comment_data[0]["site"]
             )
         except Exception as e:
-            logger.error(f"Error adding comment to board {board_id} on site {site}: {e}")
+            logger.error(
+                f"Error adding comment to board {board_id} on site {site}: {e}")
             raise e
 
     @strawberry.mutation
@@ -123,15 +126,18 @@ class Mutation:
         :param reply: The reply text
         :return: A CommentEntry object representing the updated parent comment
         """
-        logger.info(f"Adding reply to comment {parents_comment} on board {board_id} by user {userid}")
+        logger.info(
+            f"Adding reply to comment {parents_comment} on board {board_id} by user {userid}")
         try:
             reply_dicts = board_reply_add(board_id=board_id, site=site, userid=userid,
                                           parent_comment=parents_comment, reply=reply)
-            logger.info(f"Reply added to comment {parents_comment} on board {board_id}")
+            logger.info(
+                f"Reply added to comment {parents_comment} on board {board_id}")
             reply_lists = []
             for data in reply_dicts[0]["reply"]:
                 logger.debug(f"Reply to comment {data}")
-                reply_lists.append(ReplyEntry(board_id=data["board_id"], site=data["site"], user_id=data["user_id"], comment=data["comment"], timestamp=data["timestamp"]))
+                reply_lists.append(ReplyEntry(
+                    board_id=data["board_id"], site=data["site"], user_id=data["user_id"], comment=data["comment"], timestamp=data["timestamp"]))
             # Convert reply_dicts to a CommentEntry object
             return CommentEntry(
                 _id=reply_dicts[0]["_id"],
@@ -143,5 +149,6 @@ class Mutation:
                 site=reply_dicts[0]["site"]
             )
         except Exception as e:
-            logger.error(f"Error adding reply to comment {parents_comment} on board {board_id}: {e}")
+            logger.error(
+                f"Error adding reply to comment {parents_comment} on board {board_id}: {e}")
             raise e
