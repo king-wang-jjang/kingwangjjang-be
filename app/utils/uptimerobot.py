@@ -27,6 +27,7 @@ client = boto3.client(
 
 
 def check_online():
+    """ """
     response = requests.request("POST", url, data=payload, headers=headers)
     for i in response.json()["monitors"]:
         if i["status"] != 2:

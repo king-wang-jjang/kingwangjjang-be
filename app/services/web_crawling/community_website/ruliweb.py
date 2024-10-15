@@ -21,6 +21,7 @@ logger = setup_logger()
 
 
 class Ruliweb(AbstractCommunityWebsite):
+    """ """
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime("%Y%m%d")
         self.db_controller = MongoController()
@@ -37,10 +38,11 @@ class Ruliweb(AbstractCommunityWebsite):
             logger.error("Error initializing Ruliweb: %s", e)
 
     def get_daily_best(self):
-        """
-        Ruliweb daily best posts
-
+        """Ruliweb daily best posts
+        
         :return: {rank: { {title: string, url: string}[]} }
+
+
         """
         logger.info("Fetching daily best posts from Ruliweb")
         num = 1
@@ -96,10 +98,11 @@ class Ruliweb(AbstractCommunityWebsite):
         return data
 
     def get_real_time_best(self):
-        """
-        Ruliweb daily best posts
-
+        """Ruliweb daily best posts
+        
         :return: {rank: { {title: string, url: string}[]} }
+
+
         """
         logger.info("Fetching Realtime best posts from Ruliweb")
         num = 1
@@ -155,6 +158,11 @@ class Ruliweb(AbstractCommunityWebsite):
         return data
 
     def get_board_contents(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         logger.info(f"Fetching board contents for board_id: {board_id}")
         abs_path = f"./{self.yyyymmdd}/{board_id}"
         self.download_path = os.path.abspath(abs_path)
@@ -196,6 +204,11 @@ class Ruliweb(AbstractCommunityWebsite):
         return content_list
 
     def save_img(self, url):
+        """
+
+        :param url: 
+
+        """
         logger.info(f"Saving image from URL: {url}")
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
@@ -215,6 +228,11 @@ class Ruliweb(AbstractCommunityWebsite):
             return None
 
     def _post_already_exists(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         logger.debug(f"Checking if post {board_id} already exists in the database")
         existing_instance = self.db_controller.find(
             "Daily", {"board_id": board_id, "site": SITE_RULIWEB}
@@ -222,6 +240,11 @@ class Ruliweb(AbstractCommunityWebsite):
         return existing_instance is not None
 
     def _get_or_create_gpt_object(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         logger.debug(f"Fetching or creating GPT object for board_id: {board_id}")
         gpt_exists = self.db_controller.find(
             "GPT", {"board_id": board_id, "site": SITE_RULIWEB}
@@ -240,6 +263,11 @@ class Ruliweb(AbstractCommunityWebsite):
             return gpt_obj.inserted_id
 
     def _get_or_create_tag_object(self, board_id):
+        """
+
+        :param board_id: 
+
+        """
         logger.debug(f"Fetching or creating Tag object for board_id: {board_id}")
         tag_exists = self.db_controller.find(
             "TAG", {"board_id": board_id, "site": SITE_RULIWEB}
