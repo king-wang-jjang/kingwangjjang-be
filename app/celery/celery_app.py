@@ -33,8 +33,12 @@ celery_app.conf.update(
     beat_schedule={
         "realtime-to-db-every-5-minutes": {
             "task": "app.celery.tasks.task_realtime_to_db",
-            "schedule": crontab(minute="*/1"),  # Every 5 minutes
+            "schedule": crontab(minute="*/5"),  # Every 5 minutes
         },
+        # "online-check-every-5-minutes": {
+        #     "task": "app.celery.tasks.auto_reboot",
+        #     "schedule": crontab(minute="*/5"),  # Every 5 minutes
+        # },
         # 'daily-to-db-every-5-minutes': {
         #     'task': 'app.celery.tasks.task_daily_to_db',
         #     'schedule': crontab(minute='*/5'),  # Every 5 minutes
