@@ -2,7 +2,10 @@
 
 from .celery_app import celery_app
 from app.services.web_crawling.index import get_real_time_best, get_daily_best
-from app.services.web_crawling.pagination import get_pagination_real_time_best, get_pagination_daily_best
+from app.services.web_crawling.pagination import (
+    get_pagination_real_time_best,
+    get_pagination_daily_best,
+)
 from app.services.web_crawling.index import tag, board_summary
 from app.services.count.likes import add_likes, get_likes
 from app.services.count.views import add_views, get_views

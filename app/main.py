@@ -22,6 +22,7 @@ import uvicorn
 import logging
 import os
 import sys
+
 sys.path.append("/app")  # 내부 모듈이 임포트 되기전에 가장 먼저 임포트 되야함.
 # 내부 모듈이 임포트 되기전에 가장 먼저 임포트 되야함.
 sys.path.append("/Users/jason/pycharm/kingwangjjang-bes")
@@ -38,7 +39,8 @@ class IPFilterMiddleware(BaseHTTPMiddleware):
         if request.url.path.startswith("/proxy"):
             if request.client.host != "127.0.0.1":
                 logging.debug(
-                    f"403 Forbidden : A request came in from the wrong path | detail : {request.json()}")
+                    f"403 Forbidden : A request came in from the wrong path | detail : {request.json()}"
+                )
                 raise HTTPException(status_code=403, detail="Access forbidden")
             response = await call_next(request)
         else:
