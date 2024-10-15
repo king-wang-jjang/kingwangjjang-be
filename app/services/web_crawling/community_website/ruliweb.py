@@ -25,11 +25,13 @@ logger = setup_logger()
 
 class Ruliweb(AbstractCommunityWebsite):
     """ """
+
     def __init__(self):
         self.yyyymmdd = datetime.today().strftime("%Y%m%d")
         self.db_controller = MongoController()
         try:
-            logger.info(f"Initializing Ruliweb crawler for date {self.yyyymmdd}")
+            logger.info(
+                f"Initializing Ruliweb crawler for date {self.yyyymmdd}")
             self.ftp_client = FTPClient.FTPClient(
                 server_address=Config().get_env("FTP_HOST"),
                 username=Config().get_env("FTP_USERNAME"),
@@ -170,15 +172,18 @@ class Ruliweb(AbstractCommunityWebsite):
         abs_path = f"./{self.yyyymmdd}/{board_id}"
         self.download_path = os.path.abspath(abs_path)
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+            "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
         }
-        daily_instance = self.db_controller.find(
-            "Daily", {"board_id": board_id, "site": SITE_RULIWEB}
-        )
+        daily_instance = self.db_controller.find("Daily", {
+            "board_id": board_id,
+            "site": SITE_RULIWEB
+        })
         content_list = []
         if daily_instance:
             try:
-                response = requests.get(daily_instance[0]["url"], headers=headers)
+                response = requests.get(daily_instance[0]["url"],
+                                        headers=headers)
                 response.raise_for_status()
                 soup = BeautifulSoup(response.text, "lxml")
                 board_body = soup.find("td", class_="board-contents")
@@ -188,22 +193,32 @@ class Ruliweb(AbstractCommunityWebsite):
                     if p.find("img"):
                         img_url = "https:" + p.find("img")["src"]
                         try:
-                            img_txt = super().img_to_text(self.save_img(img_url))
-                            content_list.append(
-                                {"type": "image", "url": img_url, "content": img_txt}
-                            )
+                            img_txt = super().img_to_text(
+                                self.save_img(img_url))
+                            content_list.append({
+                                "type": "image",
+                                "url": img_url,
+                                "content": img_txt
+                            })
                         except Exception as e:
-                            logger.error(f"Error processing image from {img_url}: {e}")
+                            logger.error(
+                                f"Error processing image from {img_url}: {e}")
                     elif p.find("video"):
-                        video_url = "https:" + p.find("video").find("source")["src"]
+                        video_url = "https:" + p.find("video").find(
+                            "source")["src"]
                         try:
                             self.save_img(video_url)
                         except Exception as e:
-                            logger.error(f"Error saving video from {video_url}: {e}")
+                            logger.error(
+                                f"Error saving video from {video_url}: {e}")
                     else:
-                        content_list.append({"type": "text", "content": p.text.strip()})
+                        content_list.append({
+                            "type": "text",
+                            "content": p.text.strip()
+                        })
             except Exception as e:
-                logger.error(f"Error fetching board contents for {board_id}: {e}")
+                logger.error(
+                    f"Error fetching board contents for {board_id}: {e}")
         return content_list
 
     def save_img(self, url):
@@ -224,7 +239,8 @@ class Ruliweb(AbstractCommunityWebsite):
             with open(os.path.join(self.download_path, img_name), "wb") as f:
                 f.write(response.content)
 
-            logger.info(f"Image saved successfully at {self.download_path}/{img_name}")
+            logger.info(
+                f"Image saved successfully at {self.download_path}/{img_name}")
             return os.path.join(self.download_path, img_name)
         except Exception as e:
             logger.error(f"Error saving image from {url}: {e}")
@@ -236,10 +252,12 @@ class Ruliweb(AbstractCommunityWebsite):
         :param board_id:
 
         """
-        logger.debug(f"Checking if post {board_id} already exists in the database")
-        existing_instance = self.db_controller.find(
-            "Daily", {"board_id": board_id, "site": SITE_RULIWEB}
-        )
+        logger.debug(
+            f"Checking if post {board_id} already exists in the database")
+        existing_instance = self.db_controller.find("Daily", {
+            "board_id": board_id,
+            "site": SITE_RULIWEB
+        })
         return existing_instance is not None
 
     def _get_or_create_gpt_object(self, board_id):
@@ -248,10 +266,12 @@ class Ruliweb(AbstractCommunityWebsite):
         :param board_id:
 
         """
-        logger.debug(f"Fetching or creating GPT object for board_id: {board_id}")
-        gpt_exists = self.db_controller.find(
-            "GPT", {"board_id": board_id, "site": SITE_RULIWEB}
-        )
+        logger.debug(
+            f"Fetching or creating GPT object for board_id: {board_id}")
+        gpt_exists = self.db_controller.find("GPT", {
+            "board_id": board_id,
+            "site": SITE_RULIWEB
+        })
         if gpt_exists:
             return gpt_exists[0]["_id"]
         else:
@@ -271,16 +291,20 @@ class Ruliweb(AbstractCommunityWebsite):
         :param board_id:
 
         """
-        logger.debug(f"Fetching or creating Tag object for board_id: {board_id}")
-        tag_exists = self.db_controller.find(
-            "TAG", {"board_id": board_id, "site": SITE_RULIWEB}
-        )
+        logger.debug(
+            f"Fetching or creating Tag object for board_id: {board_id}")
+        tag_exists = self.db_controller.find("TAG", {
+            "board_id": board_id,
+            "site": SITE_RULIWEB
+        })
         if tag_exists:
             return tag_exists[0]["_id"]
         else:
-            tag_obj = self.db_controller.insert_one(
-                "TAG", {"board_id": board_id, "site": SITE_RULIWEB, "Tag": DEFAULT_TAG}
-            )
+            tag_obj = self.db_controller.insert_one("TAG", {
+                "board_id": board_id,
+                "site": SITE_RULIWEB,
+                "Tag": DEFAULT_TAG
+            })
             return tag_obj.inserted_id
 
 

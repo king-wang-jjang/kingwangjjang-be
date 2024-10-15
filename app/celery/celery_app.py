@@ -24,7 +24,9 @@ celery_app = Celery(
 
 celery_app.conf.update(
     task_routes={
-        "app.celery.tasks.task_realtime_to_db": {"queue": "crawling_queue"},
+        "app.celery.tasks.task_realtime_to_db": {
+            "queue": "crawling_queue"
+        },
         # "app.celery.tasks.task_daily_to_db": {"queue": "crawling_queue"},
     },
     result_expires=3600,

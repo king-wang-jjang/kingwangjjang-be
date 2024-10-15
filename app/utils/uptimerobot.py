@@ -15,7 +15,6 @@ headers = {
     "cache-control": "no-cache",
 }
 
-
 AWS_ACCESS_KEY_ID = Config.get_env("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = Config.get_env("AWS_SECRET_ACCESS_KEY")
 AWS_DEFAULT_REGION = Config.get_env("AWS_DEFAULT_REGION")
