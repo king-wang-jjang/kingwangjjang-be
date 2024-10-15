@@ -1,9 +1,10 @@
-import requests
-from app.utils.loghandler import setup_logger
-from app.utils.loghandler import catch_exception
-from app.config import Config
 import os
+
 import boto3
+import requests
+
+from app.config import Config
+from app.utils.loghandler import catch_exception, setup_logger
 
 url = "https://api.uptimerobot.com/v2/getMonitors"
 api_key = Config.get_env("MONITER_API")

@@ -1,8 +1,10 @@
+import logging
+
 from fastapi import APIRouter, FastAPI, HTTPException, Request
 from pydantic import BaseModel
-from app.services.webhook.mail import MailWebhooks
+
 from app.db.mongo_controller import MongoController
-import logging
+from app.services.webhook.mail import MailWebhooks
 
 # MongoDB controller
 db_controller = MongoController()
