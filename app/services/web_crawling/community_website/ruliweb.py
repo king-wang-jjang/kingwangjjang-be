@@ -88,8 +88,60 @@ class Ruliweb(AbstractCommunityWebsite):
         return data
 
     def get_real_time_best(self):
-        logger.info("Fetching real-time best posts from Ruliweb")
-        pass
+        '''
+        Ruliweb daily best posts
+
+        :return: {rank: { {title: string, url: string}[]} }
+        '''
+        logger.info("Fetching Realtime best posts from Ruliweb")
+        num = 1
+        _url = "https://bbs.ruliweb.com/best/humor_only/now?orderby=best_id&range=all"
+        try:
+            response = requests.get(_url)
+            response.raise_for_status()
+            soup = BeautifulSoup(response.text, 'html.parser')
+        except Exception as e:
+            logger.error(f"Error fetching page {_url}: {e}")
+            return {}
+
+        now = datetime.now()
+        already_exists_post = []
+        result = []
+
+        for tr in soup.find_all('li', class_='item blocktarget'):
+            try:
+                title_element = tr.find('a', class_='deco')
+                if title_element:
+                    title = title_element.get_text(strip=True)
+                    url = title_element['href']
+                    board_id = url.split('/')[-1]
+                    target_datetime = datetime(now.year, now.month, now.day)
+                    contents_url = url
+
+                    if self._post_already_exists(board_id):
+                        already_exists_post.append(board_id)
+                        continue
+
+                    gpt_obj_id = self._get_or_create_gpt_object(board_id)
+                    tag_obj_id = self._get_or_create_tag_object(board_id)
+
+                    self.db_controller.insert_one('Daily', {
+                        'board_id': board_id,
+                        'site': SITE_RULIWEB,
+                        'title': title,
+                        'url': contents_url,
+                        'create_time': target_datetime,
+                        'GPTAnswer': gpt_obj_id,
+                        'Tag': tag_obj_id
+                    })
+                    logger.info(f"Post {board_id} inserted successfully")
+            except Exception as e:
+                logger.error(f"Error processing post: {e}")
+
+        logger.info({"already exists post": already_exists_post})
+
+        data = {"rank": {i + 1: item for i, item in enumerate(result)}}
+        return data
 
     def get_board_contents(self, board_id):
         logger.info(f"Fetching board contents for board_id: {board_id}")
