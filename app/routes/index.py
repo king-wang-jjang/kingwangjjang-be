@@ -29,11 +29,13 @@ async def forward_request(request: Request, base_url: str, path: str, token: str
                 cookies=request.cookies,
                 data=await request.body(),
             )
-            logger.debug(f"Forwarded request to {url} with status {response.status_code}")
+            logger.debug(
+                f"Forwarded request to {url} with status {response.status_code}")
         return response
     except Exception as e:
         logger.error(f"Error forwarding request to {url}: {e}")
-        raise HTTPException(status_code=500, detail="Error forwarding request to proxy server")
+        raise HTTPException(
+            status_code=500, detail="Error forwarding request to proxy server")
 
 
 @router.api_route(
@@ -51,14 +53,16 @@ async def proxy(request: Request, path: str) -> Response:
             auth_header = request.headers.get("Authorization")
             if not auth_header:
                 logger.debug("Authorization header missing")
-                raise HTTPException(status_code=401, detail="Authorization header is missing")
+                raise HTTPException(
+                    status_code=401, detail="Authorization header is missing")
 
             token = auth_header.split("Bearer ")[1]
             logger.debug(f"Extracted token: {token}")
 
         except IndexError:
             logger.debug("Malformed Authorization header")
-            raise HTTPException(status_code=401, detail="Malformed Authorization header")
+            raise HTTPException(
+                status_code=401, detail="Malformed Authorization header")
 
         # ID 토큰 검증
         try:

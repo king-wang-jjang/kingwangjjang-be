@@ -1,3 +1,10 @@
+from app.utils.loghandler import setup_logger
+import logging
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium import webdriver
 from datetime import datetime
 import os
 from bs4 import BeautifulSoup
@@ -13,13 +20,6 @@ import sys
 sys.excepthook = catch_exception
 
 # selenium
-from selenium import webdriver
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-import logging
-from app.utils.loghandler import setup_logger
 
 logger = setup_logger()
 
@@ -34,7 +34,8 @@ class NatePan(AbstractCommunityWebsite):
         self.yyyymmdd = datetime.today().strftime('%Y%m%d')
         self.db_controller = MongoController()
         try:
-            logger.info(f"Initializing NatePan crawler for date {self.yyyymmdd}")
+            logger.info(
+                f"Initializing NatePan crawler for date {self.yyyymmdd}")
             self.ftp_client = FTPClient.FTPClient(
                 server_address=Config().get_env('FTP_HOST'),
                 username=Config().get_env('FTP_USERNAME'),
@@ -44,12 +45,15 @@ class NatePan(AbstractCommunityWebsite):
             logger.info("NatePan initialized successfully")
         except Exception as e:
             logger.error(f"Error initializing NatePan: {e}")
+
     def get_daily_best(self):
         pass
+
     def get_real_time_best(self):
         logger.info("Fetching real-time best posts from NatePan")
         try:
-            req = requests.get('https://pann.nate.com/', headers=self.g_headers[0])
+            req = requests.get('https://pann.nate.com/',
+                               headers=self.g_headers[0])
             req.raise_for_status()
             html_content = req.text
             soup = BeautifulSoup(html_content, 'html.parser')
@@ -71,7 +75,8 @@ class NatePan(AbstractCommunityWebsite):
 
                 now = datetime.now()
                 hour, minute = map(int, time_text.split(':'))
-                target_datetime = datetime(now.year, now.month, now.day, hour, minute)
+                target_datetime = datetime(
+                    now.year, now.month, now.day, hour, minute)
 
                 # Check if post already exists in DB
                 if self._post_already_exists(board_id, already_exists_post):
@@ -113,7 +118,8 @@ class NatePan(AbstractCommunityWebsite):
                 find_all = write_div.find_all(['p', 'div'])
                 for element in find_all:
                     text_content = element.text.strip()
-                    content_list.append({'type': 'text', 'content': text_content})
+                    content_list.append(
+                        {'type': 'text', 'content': text_content})
             return content_list
         except Exception as e:
             logger.error(f"Error fetching board contents for {board_id}: {e}")
@@ -126,7 +132,8 @@ class NatePan(AbstractCommunityWebsite):
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-setuid-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_experimental_option('excludeSwitches', ['enable-logging'])
+        chrome_options.add_experimental_option(
+            'excludeSwitches', ['enable-logging'])
 
         if not os.path.exists(self.download_path):
             os.makedirs(self.download_path)
@@ -134,7 +141,8 @@ class NatePan(AbstractCommunityWebsite):
         self.driver = webdriver.Chrome(options=chrome_options)
         try:
             self.driver.get("https://www.NatePan.com/")
-            WebDriverWait(self.driver, 5).until(EC.presence_of_element_located((By.XPATH, '//body')))
+            WebDriverWait(self.driver, 5).until(
+                EC.presence_of_element_located((By.XPATH, '//body')))
             logger.info("Selenium driver initialized and page loaded")
         except Exception as e:
             logger.error(f"Error initializing Selenium driver: {e}")
@@ -154,7 +162,8 @@ class NatePan(AbstractCommunityWebsite):
             '''
             self.driver.execute_script(script)
             WebDriverWait(self.driver, 5).until(
-                lambda x: len(os.listdir(self.download_path)) > initial_file_count
+                lambda x: len(os.listdir(self.download_path)
+                              ) > initial_file_count
             )
 
             newest_file = max(os.listdir(self.download_path),
@@ -165,14 +174,16 @@ class NatePan(AbstractCommunityWebsite):
             return None
 
     def _post_already_exists(self, board_id, already_exists_post):
-        existing_instance = self.db_controller.find('RealTime', {'board_id': board_id, 'site': SITE_NATE})
+        existing_instance = self.db_controller.find(
+            'RealTime', {'board_id': board_id, 'site': SITE_NATE})
         if existing_instance:
             already_exists_post.append(board_id)
             return True
         return False
 
     def _get_or_create_gpt_object(self, board_id):
-        gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_NATE})
+        gpt_exists = self.db_controller.find(
+            'GPT', {'board_id': board_id, 'site': SITE_NATE})
         if gpt_exists:
             return gpt_exists[0]['_id']
         else:
@@ -184,7 +195,8 @@ class NatePan(AbstractCommunityWebsite):
             return gpt_obj.inserted_id
 
     def _get_or_create_tag_object(self, board_id):
-        tag_exists = self.db_controller.find('TAG', {'board_id': board_id, 'site': SITE_NATE})
+        tag_exists = self.db_controller.find(
+            'TAG', {'board_id': board_id, 'site': SITE_NATE})
         if tag_exists:
             return tag_exists[0]['_id']
         else:

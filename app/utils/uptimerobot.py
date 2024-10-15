@@ -22,6 +22,7 @@ client = boto3.client('s3',
                       region_name=AWS_DEFAULT_REGION
                       )
 
+
 def check_online():
     response = requests.request("POST", url, data=payload, headers=headers)
     for i in response.json()["monitors"]:
