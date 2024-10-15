@@ -1,6 +1,9 @@
 import logging
 
-from fastapi import APIRouter, FastAPI, HTTPException, Request
+from fastapi import APIRouter
+from fastapi import FastAPI
+from fastapi import HTTPException
+from fastapi import Request
 from pydantic import BaseModel
 
 from app.db.mongo_controller import MongoController

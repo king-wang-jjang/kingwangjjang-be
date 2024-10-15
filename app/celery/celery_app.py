@@ -4,8 +4,9 @@ import celery.signals
 from celery import Celery
 from celery.app.log import TaskFormatter
 from celery.schedules import crontab
-from celery.signals import (after_setup_logger, after_setup_task_logger,
-                            setup_logging)
+from celery.signals import after_setup_logger
+from celery.signals import after_setup_task_logger
+from celery.signals import setup_logging
 
 from app.config import Config
 from app.utils.loghandler import setup_logger
