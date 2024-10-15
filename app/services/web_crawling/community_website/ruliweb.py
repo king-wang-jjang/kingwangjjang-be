@@ -42,7 +42,7 @@ class Ruliweb(AbstractCommunityWebsite):
 
     def get_daily_best(self):
         """Ruliweb daily best posts
-        
+
         :return: {rank: { {title: string, url: string}[]} }
 
 
@@ -102,7 +102,7 @@ class Ruliweb(AbstractCommunityWebsite):
 
     def get_real_time_best(self):
         """Ruliweb daily best posts
-        
+
         :return: {rank: { {title: string, url: string}[]} }
 
 
@@ -163,7 +163,7 @@ class Ruliweb(AbstractCommunityWebsite):
     def get_board_contents(self, board_id):
         """
 
-        :param board_id: 
+        :param board_id:
 
         """
         logger.info(f"Fetching board contents for board_id: {board_id}")
@@ -209,7 +209,7 @@ class Ruliweb(AbstractCommunityWebsite):
     def save_img(self, url):
         """
 
-        :param url: 
+        :param url:
 
         """
         logger.info(f"Saving image from URL: {url}")
@@ -233,7 +233,7 @@ class Ruliweb(AbstractCommunityWebsite):
     def _post_already_exists(self, board_id):
         """
 
-        :param board_id: 
+        :param board_id:
 
         """
         logger.debug(f"Checking if post {board_id} already exists in the database")
@@ -245,7 +245,7 @@ class Ruliweb(AbstractCommunityWebsite):
     def _get_or_create_gpt_object(self, board_id):
         """
 
-        :param board_id: 
+        :param board_id:
 
         """
         logger.debug(f"Fetching or creating GPT object for board_id: {board_id}")
@@ -268,7 +268,7 @@ class Ruliweb(AbstractCommunityWebsite):
     def _get_or_create_tag_object(self, board_id):
         """
 
-        :param board_id: 
+        :param board_id:
 
         """
         logger.debug(f"Fetching or creating Tag object for board_id: {board_id}")

@@ -112,7 +112,7 @@ class NatePan(AbstractCommunityWebsite):
     def get_board_contents(self, board_id):
         """
 
-        :param board_id: 
+        :param board_id:
 
         """
         logger.info(f"Fetching board contents for board_id: {board_id}")
@@ -165,7 +165,7 @@ class NatePan(AbstractCommunityWebsite):
     def save_img(self, url):
         """
 
-        :param url: 
+        :param url:
 
         """
         if not os.path.exists(self.download_path):
@@ -196,8 +196,8 @@ class NatePan(AbstractCommunityWebsite):
     def _post_already_exists(self, board_id, already_exists_post):
         """
 
-        :param board_id: 
-        :param already_exists_post: 
+        :param board_id:
+        :param already_exists_post:
 
         """
         existing_instance = self.db_controller.find(
@@ -211,7 +211,7 @@ class NatePan(AbstractCommunityWebsite):
     def _get_or_create_gpt_object(self, board_id):
         """
 
-        :param board_id: 
+        :param board_id:
 
         """
         gpt_exists = self.db_controller.find(
@@ -229,7 +229,7 @@ class NatePan(AbstractCommunityWebsite):
     def _get_or_create_tag_object(self, board_id):
         """
 
-        :param board_id: 
+        :param board_id:
 
         """
         tag_exists = self.db_controller.find(
