@@ -8,6 +8,7 @@ from app.config import Config
 from app.db.mongo_controller import MongoController
 import threading
 import bson
+import uuid
 init(autoreset=True)  # colorama 초기화
 
 class DiscordWebhookHandler(logging.Handler):
@@ -168,7 +169,8 @@ class DBLOGHandler(logging.Handler):
     def emit(self, record):
         log_entry = self.format(record)
         if Config().get_env("SERVER_RUN_MODE") == "TRUE":
-            threading.Thread(target=self.record_db, args=(record,)).start()
+            # threading.Thread(target=self.record_db, args=(record,)).start()
+            self.record_db(record)
         else:
             self.print_colored_log(log_entry, record.levelname)
 
@@ -187,13 +189,15 @@ class DBLOGHandler(logging.Handler):
         data = dict(record.__dict__)
         data["server"] = Config().get_env("SERVER_TYPE")
 
+        # Add unique ID or timestamp to prevent duplicate handling
+        if "unique_id" not in data:
+            data["unique_id"] = str(uuid.uuid4())
+
         # Remove or convert non-serializable types to string
         for key, value in data.items():
             try:
-                # Check if the value can be serialized to BSON (MongoDB format)
                 bson.BSON.encode({key: value})
             except Exception:
-                # If not serializable, convert to string
                 data[key] = str(value)
 
         try:
@@ -217,11 +221,12 @@ def setup_logger():
     db_handler.setLevel(logging.DEBUG)
 
     # 핸들러 추가
-    logger.addHandler(slack_handler)
+    # logger.addHandler(slack_handler)
     logger.addHandler(db_handler)
-    logger.addHandler(discord_handler)
+    # logger.addHandler(discord_handler)
 
-    logger.setLevel(logging.DEBUG)
+
+    logger.propagate = False
 
     if Config.get_env("SERVER_RUN_MODE") == "TRUE":
         return logger

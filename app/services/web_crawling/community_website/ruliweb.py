@@ -177,6 +177,3 @@ class Ruliweb(AbstractCommunityWebsite):
                 'Tag': DEFAULT_TAG
             })
             return tag_obj.inserted_id
-
-# Run the get_daily_best function
-Ruliweb().get_daily_best()
