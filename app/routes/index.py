@@ -46,7 +46,7 @@ async def proxy(request: Request, path: str) -> Response:
     token = None
 
     # Token handling except for callback and login routes
-    if not request.url.path.startswith("/callback") and not request.url.path.startswith("/login"):
+    if not request.url.path.startswith("/callback") and not request.url.path.startswith("/login") and not request.url.path.startswith("/ping") and not request.url.path.startswith("/webhook"):
         try:
             auth_header = request.headers.get("Authorization")
             if not auth_header:

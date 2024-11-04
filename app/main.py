@@ -19,6 +19,9 @@ from app.middlewares import static_middleware
 from app.routes import index
 from app.routes.page import page_controller
 from app.routes.path import ApiPaths
+from app.routes.ping import ping_controller
+from app.routes.mail import webhook_controller
+
 from app.routes.user import user_controller
 from app.utils import lifespan
 from app.utils.loghandler import catch_exception
@@ -54,6 +57,9 @@ if Config.get_env("SERVER_RUN_MODE") == "TRUE":
 cors_middleware.add(app)
 # static_middleware.add(app)
 app.include_router(auth_controller.router)
+app.include_router(ping_controller.router)
+app.include_router(webhook_controller.router)
+
 app.include_router(page_controller.router, prefix=ApiPaths.PROXY)
 # app.include_router(user_controller.router, prefix=ApiPaths.PROXY)
 # app.include_router(board_controller.router)

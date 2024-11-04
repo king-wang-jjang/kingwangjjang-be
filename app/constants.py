@@ -13,6 +13,9 @@ SITE_PPOMPPU = 'ppomppu'
 SITE_THEQOO = 'theqoo'
 SITE_INSTIZ = 'instiz'
 SITE_RULIWEB = 'ruliweb'
+SITE_NATE = 'natepan'
+
 COOKIES_KEY_NAME = "session_token"
 SESSION_TIME = timedelta(days=30)
 HASH_SALT = random.Random().randint(1, 100)
+
