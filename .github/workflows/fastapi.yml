@@ -94,6 +94,7 @@ jobs:
         echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
         echo "AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}" >> .env
         echo "AWS_InstanceIds=${{ secrets.AWS_InstanceIds }}" >> .env
+        echo "DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}" >> .env
 
     - name: Tailscale
       uses: tailscale/github-action@v2
