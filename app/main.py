@@ -10,7 +10,8 @@ from fastapi import HTTPException
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from strawberry.fastapi import GraphQLRouter
-
+import schedule
+from app.services.web_crawling.index import get_real_time_best
 from app.celery.schema import schema
 from app.celery.schema import task_status_schema
 from app.config import Config
@@ -21,12 +22,12 @@ from app.routes.page import page_controller
 from app.routes.path import ApiPaths
 from app.routes.ping import ping_controller
 from app.routes.mail import webhook_controller
-
+from app.schedule.schedules import threadings
 from app.routes.user import user_controller
 from app.utils import lifespan
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
-
+import threading
 
 
 from app.routes.auth import auth_controller
@@ -46,8 +47,7 @@ class IPFilterMiddleware(BaseHTTPMiddleware):
         else:
             response = await call_next(request)
         return response
-
-
+threading.Thread(target=threadings).start()
 app = FastAPI(lifespan=lifespan.lifespan)
 app.add_middleware(IPFilterMiddleware)
 logger = setup_logger()
