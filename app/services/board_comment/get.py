@@ -3,7 +3,6 @@ import logging
 from fastapi import FastAPI, Request, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pymongo import settings, MongoClient
 from app.db.mongo_controller import MongoController
 from app.utils.loghandler import setup_logger, catch_exception
 import sys

@@ -4,8 +4,8 @@ import logging
 from fastapi import FastAPI, Request, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from pymongo import settings
-
+# from pymongo import settings
+import schedule
 from app.db.mongo_controller import MongoController
 from app.services.web_crawling.community_website.instiz import Instiz
 from app.services.web_crawling.community_website.ppomppu import Ppomppu

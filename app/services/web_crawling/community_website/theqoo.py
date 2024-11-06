@@ -65,6 +65,8 @@ class Theqoo(AbstractCommunityWebsite):
                 try:
                     title = elements[2].get_text(strip=True)
                     url = "https://theqoo.net" + elements[2].find('a')['href']
+                    if "event" in url:
+                        continue
                     board_id = url.split('hot/')[-1]
                     time_text = elements[3].get_text(strip=True)
 
