@@ -46,27 +46,27 @@ async def proxy(request: Request, path: str) -> Response:
     token = None
 
     # Token handling except for callback and login routes
-    if not request.url.path.startswith("/callback") and not request.url.path.startswith("/login") and not request.url.path.startswith("/ping") and not request.url.path.startswith("/webhook"):
-        try:
-            auth_header = request.headers.get("Authorization")
-            if not auth_header:
-                logger.debug("Authorization header missing")
-                raise HTTPException(status_code=401, detail="Authorization header is missing")
-
-            token = auth_header.split("Bearer ")[1]
-            logger.debug(f"Extracted token: {token}")
-
-        except IndexError:
-            logger.debug("Malformed Authorization header")
-            raise HTTPException(status_code=401, detail="Malformed Authorization header")
-
-        # ID 토큰 검증
-        try:
-            token_data = JWT().decode(token)
-            logger.debug(f"JWT token verified successfully: {token_data}")
-        except Exception as e:
-            logger.debug(f"JWT token verification failed: {e}")
-            raise HTTPException(status_code=401, detail="Invalid JWT token")
+    # if not request.url.path.startswith("/callback") and not request.url.path.startswith("/login") and not request.url.path.startswith("/ping") and not request.url.path.startswith("/webhook"):
+        # try:
+        #     auth_header = request.headers.get("Authorization")
+        #     if not auth_header:
+        #         logger.debug("Authorization header missing")
+        #         raise HTTPException(status_code=401, detail="Authorization header is missing")
+        #
+        #     token = auth_header.split("Bearer ")[1]
+        #     logger.debug(f"Extracted token: {token}")
+        #
+        # except IndexError:
+        #     logger.debug("Malformed Authorization header")
+        #     raise HTTPException(status_code=401, detail="Malformed Authorization header")
+        #
+        # # ID 토큰 검증
+        # try:
+        #     token_data = JWT().decode(token)
+        #     logger.debug(f"JWT token verified successfully: {token_data}")
+        # except Exception as e:
+        #     logger.debug(f"JWT token verification failed: {e}")
+        #     raise HTTPException(status_code=401, detail="Invalid JWT token")
 
     # Forward the request to the proxy server
     response = await forward_request(request, base_url, path, token)
