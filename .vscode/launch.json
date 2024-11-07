@@ -7,10 +7,13 @@
             "module": "uvicorn",
             "args": [
                 "app.main:app",
-                "--reload"
+                "--reload",
+                "--port",
+                "8001"
             ],
             "jinja": true,
-            "envFile": "${workspaceFolder}/dev.env"
+            "envFile": "${workspaceFolder}/dev.env",
+            "python": "C:\\Users\\User\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\kingwangjjang-be-WgMXNu7U-py3.12\\Scripts\\python.exe"
         }
     ]
 }
