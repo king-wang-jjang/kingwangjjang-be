@@ -1,8 +1,5 @@
 import logging
 import pymongo
-# from app.utils.loghandler import catch_exception,setup_logger
-# import sys
-# sys.excepthook = catch_exception
 from app.db.context import Database
 from pymongo.errors import ConnectionFailure
 

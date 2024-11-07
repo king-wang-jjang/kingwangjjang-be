@@ -1,10 +1,7 @@
 import threading
-import logging
 
-from fastapi import FastAPI, Request, HTTPException, APIRouter
+from fastapi import FastAPI, HTTPException, APIRouter
 from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from pymongo import settings
 
 from app.db.mongo_controller import MongoController
 from app.services.web_crawling.community_website.instiz import Instiz
