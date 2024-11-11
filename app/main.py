@@ -35,21 +35,9 @@ from app.routes.auth import auth_controller
 sys.excepthook = catch_exception
 
 
-class IPFilterMiddleware(BaseHTTPMiddleware):
-    """ """
-
-    async def dispatch(self, request: Request, call_next):
-        if request.url.path.startswith("/proxy"):
-            if request.client.host != "127.0.0.1":
-                logging.debug(f"403 Forbidden : A request came in from the wrong path | detail : {request.json()}")
-                raise HTTPException(status_code=403, detail="Access forbidden")
-            response = await call_next(request)
-        else:
-            response = await call_next(request)
-        return response
 threading.Thread(target=threadings).start()
 app = FastAPI(lifespan=lifespan.lifespan)
-app.add_middleware(IPFilterMiddleware)
+# app.add_middleware(IPFilterMiddleware)
 logger = setup_logger()
 if Config.get_env("SERVER_RUN_MODE") == "TRUE":
     logging.getLogger("uvicorn.access").handlers = [logger.handlers[1]]
@@ -71,7 +59,7 @@ task_status_app = GraphQLRouter(task_status_schema)
 
 app.include_router(graphql_app, prefix=ApiPaths.GRAPHQL)
 app.include_router(task_status_app, prefix=ApiPaths.STATUS)
-app.include_router(index.router)
+# app.include_router(index.router)
 
 # ---------------------------------------------------
 
