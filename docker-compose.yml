@@ -17,6 +17,12 @@ services:
       kingwangjjang-network:
         ipv4_address: 172.26.0.13
     restart: unless-stopped
+  nginx:
+    image: top-nginx:latest
+    networks:
+      kingwangjjang-network:
+        ipv4_address: 172.26.0.15
+    restart: unless-stopped
 
 networks:
   kingwangjjang-network:
