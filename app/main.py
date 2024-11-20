@@ -15,14 +15,12 @@ from app.celery.schema import schema
 from app.celery.schema import task_status_schema
 from app.config import Config
 from app.middlewares import cors_middleware
-from app.middlewares import static_middleware
 from app.routes import index
 from app.routes.page import page_controller
 from app.routes.path import ApiPaths
 from app.routes.ping import ping_controller
 from app.routes.mail import webhook_controller
 
-from app.routes.user import user_controller
 from app.utils import lifespan
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
@@ -36,7 +34,6 @@ sys.excepthook = catch_exception
 
 class IPFilterMiddleware(BaseHTTPMiddleware):
     """ """
-
     async def dispatch(self, request: Request, call_next):
         if request.url.path.startswith("/proxy"):
             if request.client.host != "127.0.0.1":
