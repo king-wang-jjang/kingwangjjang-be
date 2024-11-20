@@ -6,6 +6,8 @@ from app.db.mongo_controller import MongoController
 import threading
 import bson
 import uuid
+from logging.handlers import TimedRotatingFileHandler
+import os 
 init(autoreset=True)  # colorama 초기화
 
 class BaseWebhookHandler(logging.Handler):
@@ -203,8 +205,13 @@ def setup_logger():
     logger = logging.getLogger("top1.kr")
     logger.setLevel(logging.INFO)
 
-    # 기본 핸들러 설정
-    file_handler = logging.FileHandler("app.log")
+    # 로그 폴더가 없으면 생성
+    log_directory = "log"
+    if not os.path.exists(log_directory):
+        os.makedirs(log_directory)
+
+    # 날짜별로 로그 파일을 생성하기 위한 핸들러 설정
+    file_handler = logging.handlers.TimedRotatingFileHandler(f"{log_directory}/app.log", when="midnight", interval=7, backupCount=30)
     file_handler.setLevel(logging.INFO)
     stream_handler = logging.StreamHandler()
     stream_handler.setLevel(logging.INFO)
