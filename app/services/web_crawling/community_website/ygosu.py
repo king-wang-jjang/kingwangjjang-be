@@ -110,7 +110,7 @@ class Ygosu(AbstractCommunityWebsite):
 
                     url = tit_element['href']
                     now = datetime.now()
-                    hour, minute = map(int, create_time.split(':'))
+                    hour, minute, second = map(int, create_time.split(':'))
                     target_datetime = datetime(now.year, now.month, now.day, hour, minute)
 
                     board_id = self._extract_board_id(url)
@@ -196,7 +196,7 @@ class Ygosu(AbstractCommunityWebsite):
 
     def _post_already_exists(self, board_id, collection):
         existing_instance = self.db_controller.find(collection, {'board_id': board_id, 'site': SITE_YGOSU})
-        return existing_instance is not None
+        return existing_instance is None
 
     def _get_or_create_gpt_object(self, board_id):
         gpt_exists = self.db_controller.find('GPT', {'board_id': board_id, 'site': SITE_YGOSU})

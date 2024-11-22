@@ -202,7 +202,7 @@ class Ruliweb(AbstractCommunityWebsite):
     def _post_already_exists(self, board_id):
         logger.debug(f"Checking if post {board_id} already exists in the database")
         existing_instance = self.db_controller.find('Daily', {'board_id': board_id, 'site': SITE_RULIWEB})
-        return existing_instance is not None
+        return existing_instance is None
 
     def _get_or_create_gpt_object(self, board_id):
         logger.debug(f"Fetching or creating GPT object for board_id: {board_id}")

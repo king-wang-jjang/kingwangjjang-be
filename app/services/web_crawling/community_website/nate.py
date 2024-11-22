@@ -1,3 +1,4 @@
+# 구현중. 작동금지
 from datetime import datetime
 import os
 from bs4 import BeautifulSoup
