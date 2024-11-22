@@ -1,5 +1,5 @@
-# Python 3.12.4 이미지 사용
-FROM python:3.12.4
+# Python 3.12.4 ARM64 이미지 사용
+FROM --platform=linux/arm64 python:3.12.4
 
 # 디렉토리 설정
 WORKDIR /app
