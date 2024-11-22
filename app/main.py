@@ -36,18 +36,6 @@ sys.excepthook = catch_exception
 
 
 threading.Thread(target=threadings).start()
-class IPFilterMiddleware(BaseHTTPMiddleware):
-    """ """
-    async def dispatch(self, request: Request, call_next):
-        if request.url.path.startswith("/proxy"):
-            if request.client.host != "127.0.0.1":
-                logging.debug(f"403 Forbidden : A request came in from the wrong path | detail : {request.json()}")
-                raise HTTPException(status_code=403, detail="Access forbidden")
-            response = await call_next(request)
-        else:
-            response = await call_next(request)
-        return response
-
 
 # app.add_middleware(IPFilterMiddleware)
 logger = setup_logger()
