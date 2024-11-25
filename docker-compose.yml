@@ -8,19 +8,14 @@ services:
     env_file:
       - .env
     networks:
-      kingwangjjang-network:
-        ipv4_address: 172.26.0.10
+      - kingwangjjang-network
     restart: unless-stopped
   redis:
     image: redis:latest
     networks:
-      kingwangjjang-network:
-        ipv4_address: 172.26.0.13
+      - kingwangjjang-network
     restart: unless-stopped
 
 networks:
   kingwangjjang-network:
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.26.0.0/16
+    external: true
