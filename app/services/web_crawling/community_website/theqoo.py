@@ -19,9 +19,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 import logging
-from app.utils.loghandler import setup_logger
+from app.utils.loghandler import crawler_logger
 
-logger = setup_logger()
+logger = crawler_logger()
 
 
 class Theqoo(AbstractCommunityWebsite):

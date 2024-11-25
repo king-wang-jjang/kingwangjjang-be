@@ -201,6 +201,40 @@ class DBLOGHandler(logging.Handler):
         except Exception as e:
             print(f"Error recording log to DB: {e}")
 
+def crawler_logger():
+    logger = logging.getLogger("crawler")
+    logger.setLevel(logging.INFO)
+
+    # 로그 폴더가 없으면 생성
+    log_directory = "log"
+    if not os.path.exists(log_directory):
+        os.makedirs(log_directory)
+
+    # 날짜별로 로그 파일을 생성하기 위한 핸들러 설정
+    file_handler = logging.handlers.TimedRotatingFileHandler(f"{log_directory}/crawler.log", when="midnight", interval=7, backupCount=30)
+    file_handler.setLevel(logging.DEBUG)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.WARN)
+
+    # 포맷 설정
+    formatter = logging.Formatter("%(levelname)s: [%(asctime)s]%(name)s %(filename)s:%(lineno)d - %(message)s")
+    file_handler.setFormatter(formatter)
+    stream_handler.setFormatter(formatter)
+
+    # 기본 핸들러 추가
+    logger.addHandler(file_handler)
+    logger.addHandler(stream_handler)
+
+    # # 추가 핸들러 등록
+    # logger.addHandler(db_handler)
+    # logger.addHandler(discord_handler)
+    # logger.addHandler(slack_handler)
+
+    # 상위 로거로 전파 방지
+    logger.propagate = False
+
+    return logger
+
 def setup_logger():
     logger = logging.getLogger("top1.kr")
     logger.setLevel(logging.INFO)

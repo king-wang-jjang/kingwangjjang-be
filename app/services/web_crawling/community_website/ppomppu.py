@@ -13,9 +13,9 @@ sys.excepthook = catch_exception
 from app.config import Config
 from app.constants import DEFAULT_GPT_ANSWER, SITE_PPOMPPU, DEFAULT_TAG
 import os
-from app.utils.loghandler import setup_logger
+from app.utils.loghandler import crawler_logger
 
-logger = setup_logger()
+logger = crawler_logger()
 
 
 class Ppomppu(AbstractCommunityWebsite):
