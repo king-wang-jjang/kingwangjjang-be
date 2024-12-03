@@ -37,11 +37,15 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
-   
-    # Docker Image 빌드 step
-    - name: Build docker image
-#      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }} .
-      run : docker build -t hwanju1596/kingwangjjang-be:0.0.1 .
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+#    # Docker Image 빌드 step
+#    - name: Build docker image
+##      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }} .
+#      run : docker build -t hwanju1596/kingwangjjang-be:0.0.1 .
 
     # Docker Hub 로그인 step
     - name: Login docker hub
@@ -52,12 +56,19 @@ jobs:
       # docker/login-action 사용(GitHub제공) 도커허브 로그인
       # github actions secrets 민감정보 사용
 
-    # Docker Hub 퍼블리시 step
-    - name: Publish to docker hub 
-      run: docker push hwanju1596/kingwangjjang-be:0.0.1
-
-
-
+#    # Docker Hub 퍼블리시 step
+#    - name: Publish to docker hub
+#      run: docker push hwanju1596/kingwangjjang-be:0.0.1
+#
+#
+    - name: Build and push
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:0.0.1
+        platforms: |
+          linux/arm64
   run: # job 2
     # WAS 인스턴스에 접속, Docker 이미지 pull, run하는 Job
     
@@ -94,7 +105,6 @@ jobs:
         echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
         echo "AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}" >> .env
         echo "AWS_InstanceIds=${{ secrets.AWS_InstanceIds }}" >> .env
-        echo "DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}" >> .env
 
     - name: Tailscale
       uses: tailscale/github-action@v2
