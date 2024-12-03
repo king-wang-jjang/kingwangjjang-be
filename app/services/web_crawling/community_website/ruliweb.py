@@ -12,9 +12,9 @@ import logging
 from app.config import Config
 from app.constants import DEFAULT_GPT_ANSWER, SITE_RULIWEB, DEFAULT_TAG
 import os
-from app.utils.loghandler import setup_logger
+from app.utils.loghandler import crawler_logger
 
-logger = setup_logger()
+logger = crawler_logger()
 
 class Ruliweb(AbstractCommunityWebsite):
     def __init__(self):

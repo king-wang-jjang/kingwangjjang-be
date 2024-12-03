@@ -8,13 +8,13 @@ from app.utils import FTPClient
 import logging
 from app.config import Config
 from app.constants import DEFAULT_GPT_ANSWER, SITE_INSTIZ, DEFAULT_TAG
-from app.utils.loghandler import setup_logger, catch_exception
+from app.utils.loghandler import crawler_logger, catch_exception
 import sys
 import os
 
 # Set up logger and exception hook
 sys.excepthook = catch_exception
-logger = setup_logger()
+logger = crawler_logger()
 
 class Instiz(AbstractCommunityWebsite):
     def __init__(self):

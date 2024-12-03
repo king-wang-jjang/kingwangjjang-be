@@ -8,11 +8,11 @@ from app.utils.FTPClient import FTPClient
 from app.constants import DEFAULT_GPT_ANSWER, SITE_YGOSU, DEFAULT_TAG
 import logging
 from app.config import Config
-from app.utils.loghandler import setup_logger, catch_exception
+from app.utils.loghandler import crawler_logger, catch_exception
 import sys
 sys.excepthook = catch_exception
 
-logger = setup_logger()
+logger = crawler_logger()
 
 class Ygosu(AbstractCommunityWebsite):
     def __init__(self):

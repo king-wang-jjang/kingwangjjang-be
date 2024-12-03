@@ -7,7 +7,7 @@ from app.services.web_crawling.community_website.community_website import Abstra
 from app.constants import DEFAULT_GPT_ANSWER, SITE_NATE, DEFAULT_TAG
 from app.utils import FTPClient
 from app.config import Config
-from app.utils.loghandler import catch_exception
+from app.utils.loghandler import catch_exception, crawler_logger
 import sys
 
 sys.excepthook = catch_exception
@@ -19,9 +19,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 import logging
-from app.utils.loghandler import setup_logger
 
-logger = setup_logger()
+logger = crawler_logger()
 
 
 class NatePan(AbstractCommunityWebsite):
