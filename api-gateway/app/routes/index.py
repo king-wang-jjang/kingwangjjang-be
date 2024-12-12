@@ -3,8 +3,8 @@ import httpx
 from fastapi import APIRouter, Request, Response, HTTPException
 import sys
 
-from app.utils.loghandler import catch_exception
-from app.utils.loghandler import setup_logger
+from utils.loghandler import catch_exception
+from utils.loghandler import setup_logger
 # Global exception handler and logger setup
 sys.excepthook = catch_exception
 logger = setup_logger()

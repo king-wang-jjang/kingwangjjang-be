@@ -5,25 +5,25 @@
         "name": "Debug API Gateway",
         "type": "debugpy",
         "request": "launch",
-        "module": "uvicorn",
         "program": "${workspaceFolder}/api-gateway/app/main.py",
         "console": "integratedTerminal",
         "env": {
           "ENV_FILE": "${workspaceFolder}/.env"
         },
-        "args": ["--reload"]
+        "args": ["-m", "uvicorn", "api-gateway.app.main:app", "--reload"],
+        "python": "C:\\Users\\User\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\kingwangjjang-be-WgMXNu7U-py3.12\\Scripts\\python.exe",
       },
       {
         "name": "Debug Board App",
         "type": "debugpy",
         "request": "launch",
-        "module": "uvicorn",
         "program": "${workspaceFolder}/board-app/app/main.py",
         "console": "integratedTerminal",
         "env": {
           "ENV_FILE": "${workspaceFolder}/.env"
         },
-        "args": ["--reload"]
+        "args": ["board-app.app.main:app", "--reload"],
+        "python": "C:\\Users\\User\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\kingwangjjang-be-WgMXNu7U-py3.12\\Script\\python.exe"
       },
     ]
   }
