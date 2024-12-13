@@ -39,11 +39,7 @@ async def forward_request(request: Request, base_url: str, path: str, token: str
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
 async def proxy(request: Request, path: str) -> Response:
     """프록시 요청을 처리합니다."""
-    base_url = "http://localhost:8000/proxy"
-    token = None
-    # print(request.headers)
-    # headers = dict(request.headers)
-
+    base_url = "http://localhost:8002/"+ path
     try:
         async with httpx.AsyncClient() as client:
             response = await client.request(
