@@ -16,9 +16,9 @@ async def proxy(request: Request, path: str) -> Response:
     """프록시 요청을 처리합니다."""
     
     # prefix에 따라 포트 설정
-    if path.startswith("boardapp/"):
+    if path.startswith("boardservice/"):
         port = 8002
-        path = path[len("boardapp/"):]
+        path = path[len("boardservice/"):]
     elif path.startswith("schedulerapp/"):
         port = 8003
         path = path[len("schedulerapp/"):]
