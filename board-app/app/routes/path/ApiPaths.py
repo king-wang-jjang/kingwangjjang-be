@@ -1,8 +1,8 @@
 SEPARATE = "/"
-PROXY = "/proxy"
+# PROXY = "/proxy"
 # Graphql
-GRAPHQL = PROXY + "/graphql"
-STATUS = PROXY + "/status"
+GRAPHQL = SEPARATE + "board"
+STATUS = SEPARATE + "status"
 # Restful paths
 # Auth paths
 AUTH = SEPARATE + "google"

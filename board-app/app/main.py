@@ -15,7 +15,6 @@ from app.celery.schema import schema
 from app.celery.schema import task_status_schema
 from app.config import Config
 from app.middlewares import cors_middleware
-from app.routes import index
 from app.routes.page import page_controller
 from app.routes.path import ApiPaths
 from app.routes.ping import ping_controller
@@ -57,7 +56,7 @@ app.include_router(auth_controller.router)
 app.include_router(ping_controller.router)
 app.include_router(webhook_controller.router)
 
-app.include_router(page_controller.router, prefix=ApiPaths.PROXY)
+# app.include_router(page_controller.router, prefix=ApiPaths.PROXY)
 # app.include_router(user_controller.router, prefix=ApiPaths.PROXY)
 # app.include_router(board_controller.router)
 
@@ -68,7 +67,6 @@ task_status_app = GraphQLRouter(task_status_schema)
 
 app.include_router(graphql_app, prefix=ApiPaths.GRAPHQL)
 app.include_router(task_status_app, prefix=ApiPaths.STATUS)
-app.include_router(index.router)
 
 # ---------------------------------------------------
 
