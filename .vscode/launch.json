@@ -1,30 +1,35 @@
 {
-    "version": "0.2.0",
-    "configurations": [
+  "version": "0.2.0",
+  "configurations": [
       {
-        "name": "Debug API Gateway",
-        "type": "debugpy",
-        "request": "launch",
-        "program": "${workspaceFolder}/api-gateway/app/main.py",
-        "console": "integratedTerminal",
-        "env": {
-          "ENV_FILE": "${workspaceFolder}/.env"
-        },
-        "args": ["-m", "uvicorn", "api-gateway.app.main:app", "--reload"],
-        "python": "C:\\Users\\User\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\kingwangjjang-be-WgMXNu7U-py3.12\\Scripts\\python.exe",
+          "name": "Debug API Gateway",
+          "type": "debugpy",
+          "request": "launch",
+          "module": "uvicorn",
+          "console": "integratedTerminal",
+          "env": {
+              "ENV_FILE": "${workspaceFolder}/.env",
+              "PYTHONPATH": "${workspaceFolder}/api-gateway"
+          },
+          "args": ["app.main:app", "--reload", "--log-level", "debug", "--port", "8001"],
+          "python": "C:\\Users\\User\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\kingwangjjang-be-WgMXNu7U-py3.12\\Scripts\\python.exe",
+          "justMyCode": false,
+          "cwd": "${workspaceFolder}/api-gateway"
       },
       {
-        "name": "Debug Board App",
-        "type": "debugpy",
-        "request": "launch",
-        "program": "${workspaceFolder}/board-app/app/main.py",
-        "console": "integratedTerminal",
-        "env": {
-          "ENV_FILE": "${workspaceFolder}/.env"
-        },
-        "args": ["board-app.app.main:app", "--reload"],
-        "python": "C:\\Users\\User\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\kingwangjjang-be-WgMXNu7U-py3.12\\Script\\python.exe"
-      },
-    ]
-  }
-  
+          "name": "Debug Board App",
+          "type": "debugpy",
+          "request": "launch",
+          "module": "uvicorn",
+          "console": "integratedTerminal",
+          "env": {
+              "ENV_FILE": "${workspaceFolder}/.env",
+              "PYTHONPATH": "${workspaceFolder}/board-app"
+          },
+          "args": ["app.main:app", "--reload", "--log-level", "debug", "--port", "8002"],
+          "python": "C:\\Users\\User\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\kingwangjjang-be-WgMXNu7U-py3.12\\Scripts\\python.exe",
+          "justMyCode": false,
+          "cwd": "${workspaceFolder}/board-app"
+      }
+  ]
+}

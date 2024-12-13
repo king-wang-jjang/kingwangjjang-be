@@ -1,7 +1,7 @@
 import logging
 import logging.handlers
 from colorama import Fore, init, Style
-from config import Config
+from app.config import Config
 import os 
 init(autoreset=True)  # colorama 초기화
 
