@@ -60,15 +60,15 @@ jobs:
       - name: Build and push api-gateway
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./api-gateway
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/api-gateway:0.0.1 --path api-gateway
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/api-gateway:0.0.1
       - name: Build and push board-service
         uses: docker/build-push-action@v6
         with:
           context: ./board-service
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/board-service:0.0.1 --path board-service
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/board-service:0.0.1
           platforms: |
             linux/arm64
   run: # job 2
