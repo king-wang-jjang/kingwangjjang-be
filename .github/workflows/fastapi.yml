@@ -57,8 +57,8 @@ jobs:
       #      run: docker push hwanju1596/kingwangjjang-be:0.0.1
       #
       #
-      - name: Build and push
-        uses: docker/build-push-action@v6 api-gateway
+      - name: Build and push api-gateway
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
