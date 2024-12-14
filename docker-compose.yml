@@ -2,7 +2,7 @@ version: "3.3"
 
 services:
   kingwangjjang-api-gateway:
-    image: hwanju1596/kingwangjjang-api-gateway:0.0.1
+    image: hwanju1596/api-gateway:0.0.1
     ports:
       - "8000:8000"
     env_file:
@@ -13,7 +13,7 @@ services:
     volumes:
       - ./logs:/var/log
   kingwangjjang-board-app:
-    image: hwanju1596/kingwangjjang-board-app:0.0.1
+    image: hwanju1596/board-app:0.0.1
     env_file:
       - .env
     networks:
