@@ -65,6 +65,7 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/api-gateway:0.0.1
           platforms: |
             linux/arm64
+            linux/amd64
       - name: Build and push board-service
         uses: docker/build-push-action@v6
         with:
@@ -73,6 +74,7 @@ jobs:
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/board-service:0.0.1
           platforms: |
             linux/arm64
+            linux/amd64
   run: # job 2
     # WAS 인스턴스에 접속, Docker 이미지 pull, run하는 Job
 

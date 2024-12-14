@@ -16,7 +16,7 @@ services:
     networks:
       - kingwangjjang-network
 
-  kingwangjjang-board-app:
+  kingwangjjang-board-service:
     image: hwanju1596/board-service:0.0.1
     env_file:
       - .env
