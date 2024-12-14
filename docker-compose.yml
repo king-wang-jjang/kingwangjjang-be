@@ -13,7 +13,7 @@ services:
     volumes:
       - ./logs:/var/log
   kingwangjjang-board-app:
-    image: hwanju1596/board-app:0.0.1
+    image: hwanju1596/board-service:0.0.1
     env_file:
       - .env
     networks:
