@@ -1,5 +1,9 @@
 version: "3.3"
 
+networks:
+  kingwangjjang-network:
+    driver: bridge
+
 services:
   kingwangjjang-api-gateway:
     image: hwanju1596/api-gateway:0.0.1
@@ -7,21 +11,14 @@ services:
       - "8000:8000"
     env_file:
       - .env
-    networks:
-      - kingwangjjang-network
-    restart: unless-stopped
     volumes:
       - ./logs:/var/log
+    networks:
+      - kingwangjjang-network
+
   kingwangjjang-board-app:
     image: hwanju1596/board-service:0.0.1
     env_file:
       - .env
-    networks:
-      - kingwangjjang-network
-    restart: unless-stopped
     volumes:
       - ./logs:/var/log
-
-networks:
-  kingwangjjang-network:
-    external: true
