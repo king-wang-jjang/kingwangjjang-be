@@ -21,13 +21,6 @@ services:
     restart: unless-stopped
     volumes:
       - ./logs:/var/log
-  redis:
-    image: redis:latest
-    networks:
-      - kingwangjjang-network
-    restart: unless-stopped
-    volumes:
-      - ./logs:/var/log
 
 networks:
   kingwangjjang-network:
