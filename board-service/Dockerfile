@@ -23,7 +23,7 @@ RUN poetry lock --no-update && poetry install --only main
 #소스코드 복사
 COPY . .
 
-#3000번 포트 개방.
 EXPOSE 33333
+
 # uvicorn 서버 실행
 ENTRYPOINT  ["poetry","run", "sh", "prod.sh"]
