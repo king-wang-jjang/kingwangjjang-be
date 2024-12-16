@@ -10,6 +10,7 @@ python = "^3.12"
 uvicorn = "^0.32.1"
 fastapi = "^0.115.6"
 httpx = "^0.28.1"
+colorama = "^0.4.6"
 
 [build-system]
 requires = ["poetry-core"]
