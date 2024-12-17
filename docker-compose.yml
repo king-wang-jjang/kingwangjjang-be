@@ -1,34 +1,24 @@
 version: "3.3"
 
+networks:
+  kingwangjjang-network:
+    driver: bridge
+
 services:
   kingwangjjang-api-gateway:
-    image: hwanju1596/kingwangjjang-api-gateway:0.0.1
+    image: hwanju1596/api-gateway:0.0.1
     ports:
       - "8000:8000"
     env_file:
       - .env
-    networks:
-      - kingwangjjang-network
-    restart: unless-stopped
     volumes:
       - ./logs:/var/log
-  kingwangjjang-board-app:
-    image: hwanju1596/kingwangjjang-board-app:0.0.1
+    networks:
+      - kingwangjjang-network
+
+  kingwangjjang-board-service:
+    image: hwanju1596/board-service:0.0.1
     env_file:
       - .env
-    networks:
-      - kingwangjjang-network
-    restart: unless-stopped
     volumes:
       - ./logs:/var/log
-  redis:
-    image: redis:latest
-    networks:
-      - kingwangjjang-network
-    restart: unless-stopped
-    volumes:
-      - ./logs:/var/log
-
-networks:
-  kingwangjjang-network:
-    external: true

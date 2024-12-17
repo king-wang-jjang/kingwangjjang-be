@@ -17,7 +17,7 @@ async def proxy(request: Request, path: str) -> Response:
     
     # prefix에 따라 포트 설정
     if path.startswith("boardservice/"):
-        port = 8002
+        port = 33333
         path = path[len("boardservice/"):]
     elif path.startswith("schedulerapp/"):
         port = 8003

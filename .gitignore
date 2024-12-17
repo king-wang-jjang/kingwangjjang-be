@@ -37,3 +37,5 @@ yarn.lock
 # Ignore FastAPI specific files
 __pycache__/
 .pytest_cache/
+
+.vscode/
