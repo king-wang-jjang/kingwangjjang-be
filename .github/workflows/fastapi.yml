@@ -4,22 +4,19 @@ name: Fastapi CI
 # Workflow 실행조건
 on:
   push:
-    branches: [ "develop" ]
-    # push 발생할 시 -> main 브랜치에서 실행 
-  pull_request: 
-    branches: [ "main", "develop" ] 
+    branches: ["develop"]
+    # push 발생할 시 -> main 브랜치에서 실행
+  pull_request:
+    branches: ["main", "develop"]
     # PR 발생할 시 -> main 및 develop 브랜치에서 실행
 
-
 # fastapi.yml (Django CI)workflow 에서 실행할 Job(작업) 정의
-jobs: 
+jobs:
   # job 1(build) -> job 2(run)
 
-
   build: # job 1
-
     # job 실행 환경 (최신 ubuntu)
-    runs-on: ubuntu-latest 
+    runs-on: ubuntu-latest
 
     strategy:
       max-parallel: 4 # 동시 실행될 최대 Job 수
@@ -27,51 +24,60 @@ jobs:
         python-version: [3.9]
 
     steps:
-    # Job 수행 단계별 작업
+      # Job 수행 단계별 작업
 
-    # actions/checkout 액션 사용(GitHub제공), 소스코드 체크아웃(@v3 == 액션 버전)
-    - uses: actions/checkout@v3 
+      # actions/checkout 액션 사용(GitHub제공), 소스코드 체크아웃(@v3 == 액션 버전)
+      - uses: actions/checkout@v3
 
-    # Python 버전 설정 step
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      # Python 버전 설정 step
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-#    # Docker Image 빌드 step
-#    - name: Build docker image
-##      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }} .
-#      run : docker build -t hwanju1596/kingwangjjang-be:0.0.1 .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      #    # Docker Image 빌드 step
+      #    - name: Build docker image
+      ##      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:${{ secrets.BE_DEV_VERSION }} .
+      #      run : docker build -t hwanju1596/kingwangjjang-be:0.0.1 .
+      # Docker Hub 로그인 step
+      - name: Login docker hub
+        uses: docker/login-action@master
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        # docker/login-action 사용(GitHub제공) 도커허브 로그인
+        # github actions secrets 민감정보 사용
 
-    # Docker Hub 로그인 step
-    - name: Login docker hub
-      uses: docker/login-action@master
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }} 
-      # docker/login-action 사용(GitHub제공) 도커허브 로그인
-      # github actions secrets 민감정보 사용
-
-#    # Docker Hub 퍼블리시 step
-#    - name: Publish to docker hub
-#      run: docker push hwanju1596/kingwangjjang-be:0.0.1
-#
-#
-    - name: Build and push
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        push: true
-        tags: ${{ secrets.DOCKERHUB_USERNAME }}/kingwangjjang-be:0.0.1
-        platforms: |
-          linux/arm64
+      #    # Docker Hub 퍼블리시 step
+      #    - name: Publish to docker hub
+      #      run: docker push hwanju1596/kingwangjjang-be:0.0.1
+      #
+      #
+      - name: Build and push api-gateway
+        uses: docker/build-push-action@v6
+        with:
+          context: ./api-gateway
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/api-gateway:0.0.1
+          platforms: |
+            linux/arm64
+            linux/amd64
+      - name: Build and push board-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./board-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/board-service:0.0.1
+          platforms: |
+            linux/arm64
+            linux/amd64
   run: # job 2
     # WAS 인스턴스에 접속, Docker 이미지 pull, run하는 Job
-    
+
     needs: build # build job이 성공적으로 실행되야 실행
     runs-on: ubuntu-latest
     strategy:
@@ -80,64 +86,65 @@ jobs:
         python-version: [3.9]
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Create .env file
-      run: |
-        echo "BE_DEV_VERSION=${{ secrets.BE_DEV_VERSION }}" >> .env
-        echo "CHATGPT_API_KEY=${{ secrets.CHATGPT_API_KEY }}" >> .env
-        echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
-        echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
-        echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-        echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-        echo "FTP_HOST=${{ secrets.FTP_HOST }}" >> .env
-        echo "FTP_PASSWORD=${{ secrets.FTP_PASSWORD }}" >> .env
-        echo "FTP_USER=${{ secrets.FTP_USER }}" >> .env
-        echo "FTP_USERNAME=${{ secrets.FTP_USERNAME }}" >> .env
-        echo "SERVER_RUN_MODE=${{ secrets.SERVER_RUN_MODE }}" >> .env
-        echo "WEBHOOK_URL=${{ secrets.PRODUCTION_WEBHOOK_URL }}" >> .env
-        echo "WAS_HOST=${{ secrets.WAS_HOST }}" >> .env
-        echo "WAS_PASSWORD=${{ secrets.WAS_PASSWORD }}" >> .env
-        echo "WAS_USERNAME=${{ secrets.WAS_USERNAME }}" >> .env
-        echo "SERVER_TYPE=PRODUCTION" >> .env
-        echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
-        echo "MONITER_API=${{ secrets.MONITER_API }}" >> .env
-        echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
-        echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
-        echo "AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}" >> .env
-        echo "AWS_InstanceIds=${{ secrets.AWS_InstanceIds }}" >> .env
+      - uses: actions/checkout@v3
+      - name: Create .env file
+        run: |
+          echo "BE_DEV_VERSION=${{ secrets.BE_DEV_VERSION }}" >> .env
+          echo "CHATGPT_API_KEY=${{ secrets.CHATGPT_API_KEY }}" >> .env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "FTP_HOST=${{ secrets.FTP_HOST }}" >> .env
+          echo "FTP_PASSWORD=${{ secrets.FTP_PASSWORD }}" >> .env
+          echo "FTP_USER=${{ secrets.FTP_USER }}" >> .env
+          echo "FTP_USERNAME=${{ secrets.FTP_USERNAME }}" >> .env
+          echo "SERVER_RUN_MODE=${{ secrets.SERVER_RUN_MODE }}" >> .env
+          echo "WEBHOOK_URL=${{ secrets.PRODUCTION_WEBHOOK_URL }}" >> .env
+          echo "WAS_HOST=${{ secrets.WAS_HOST }}" >> .env
+          echo "WAS_PASSWORD=${{ secrets.WAS_PASSWORD }}" >> .env
+          echo "WAS_USERNAME=${{ secrets.WAS_USERNAME }}" >> .env
+          echo "SERVER_TYPE=PRODUCTION" >> .env
+          echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
+          echo "MONITER_API=${{ secrets.MONITER_API }}" >> .env
+          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+          echo "AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}" >> .env
+          echo "AWS_InstanceIds=${{ secrets.AWS_InstanceIds }}" >> .env
 
-    - name: Tailscale
-      uses: tailscale/github-action@v2
-      with:
-        oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-        oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-        tags: tag:cicd
-    # Was 인스턴스에 github secrets 변수 값들을 .env 파일에 복사해서 was 인스턴스에 업로드
-    # .env 파일에 데이터를 넣어야하는데 그 데이터는 github secrets에 있음
-    # scp-action 사용해서 was 인스턴스에 업로드
-    - name: Upload secrets,docker-compose to WAS instance
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.WAS_HOST }}
-        username: ${{ secrets.WAS_USERNAME }}
-        port: ${{ secrets.WAS_SSH_PORT }}
-        key: ${{ secrets.SSH_KEY }}
-        source: ".env,docker-compose.yml"
-        target: "/home/ubuntu/kingwangjjang/"
-        overwrite: true
+      - name: Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:cicd
+      # Was 인스턴스에 github secrets 변수 값들을 .env 파일에 복사해서 was 인스턴스에 업로드
+      # .env 파일에 데이터를 넣어야하는데 그 데이터는 github secrets에 있음
+      # scp-action 사용해서 was 인스턴스에 업로드
+      - name: Upload secrets,docker-compose to WAS instance
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.WAS_HOST }}
+          username: ${{ secrets.WAS_USERNAME }}
+          port: ${{ secrets.WAS_SSH_PORT }}
+          key: ${{ secrets.SSH_KEY }}
+          source: ".env,docker-compose.yml"
+          target: "/home/ubuntu/kingwangjjang/"
+          overwrite: true
 
-
-    # WAS 인스턴스 접속 & 애플리케이션 실행 step
-    - name: Connect to WAS & Execute Application
-      uses: appleboy/ssh-action@master # GitHub제공 액션 사용, ssh로 인스턴스 접속
-      with:
-        host: ${{ secrets.WAS_HOST }}
-        username: ${{ secrets.WAS_USERNAME }}
-        key: ${{secrets.SSH_KEY}}
-        port: ${{ secrets.WAS_SSH_PORT }}
-        script: | # 인스턴스 접속후 실행할 스크립트
-          sudo docker version
-          cd kingwangjjang
-          sudo docker-compose down
-          sudo docker rmi hwanju1596/kingwangjjang-be:0.0.1 -f
-          sudo docker-compose up -d
+      # WAS 인스턴스 접속 & 애플리케이션 실행 step
+      - name: Connect to WAS & Execute Application
+        uses: appleboy/ssh-action@master # GitHub제공 액션 사용, ssh로 인스턴스 접속
+        with:
+          host: ${{ secrets.WAS_HOST }}
+          username: ${{ secrets.WAS_USERNAME }}
+          key: ${{secrets.SSH_KEY}}
+          port: ${{ secrets.WAS_SSH_PORT }}
+          script: | # 인스턴스 접속후 실행할 스크립트
+            sudo docker version
+            cd kingwangjjang
+            sudo docker-compose down
+            sudo docker rmi hwanju1596/board-service:0.0.1 -f
+            sudo docker rmi hwanju1596/api-gateway:0.0.1 -f
+            sudo docker-compose up -d
+            sudo docker network connect kingwangjjang-network kingwangjjang_kingwangjjang-api-gateway_1
