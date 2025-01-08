@@ -12,24 +12,25 @@
               "PYTHONPATH": "${workspaceFolder}/api-gateway"
           },
           "args": ["app.main:app", "--reload", "--log-level", "debug", "--port", "8001"],
-          "python": "C:\\Users\\User\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\kingwangjjang-be-WgMXNu7U-py3.12\\Scripts\\python.exe",
+          "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
           "justMyCode": false,
           "cwd": "${workspaceFolder}/api-gateway"
       },
       {
-          "name": "Debug Board App",
+          "name": "Debug Board service",
           "type": "debugpy",
           "request": "launch",
           "module": "uvicorn",
           "console": "integratedTerminal",
           "env": {
               "ENV_FILE": "${workspaceFolder}/.env",
-              "PYTHONPATH": "${workspaceFolder}/board-app"
+              "PYTHONPATH": "${workspaceFolder}/board-service"
           },
-          "args": ["app.main:app", "--reload", "--log-level", "debug", "--port", "8002"],
-          "python": "C:\\Users\\User\\AppData\\Local\\pypoetry\\Cache\\virtualenvs\\kingwangjjang-be-WgMXNu7U-py3.12\\Scripts\\python.exe",
+          "args": ["app.main:app", "--reload", "--log-level", "debug", "--port", "33333"],
+        // 디버깅 하기 전 작업: poetry config virtualenvs.in-project true 
+        // "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
           "justMyCode": false,
-          "cwd": "${workspaceFolder}/board-app"
+          "cwd": "${workspaceFolder}/board-service"
       }
   ]
 }
