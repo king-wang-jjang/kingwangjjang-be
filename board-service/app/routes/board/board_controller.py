@@ -32,8 +32,6 @@ router = APIRouter()
 
 @strawberry.type
 class Daily:
-    """ """
-
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -41,17 +39,17 @@ class Daily:
     url: str
     create_time: datetime
     GPTAnswer: Optional[str] = None
+
 @strawberry.type
 class ReplyEntrys:
-    """ReplyEntry represents a reply to a comment"""
     board_id: str
     site: str
     user_id: str
     comment: str
     timestamp: str
+
 @strawberry.type
 class CommentEntrys:
-    """CommentEntry represents a comment on a board"""
     _id: str
     board_id: str
     site: str
@@ -62,8 +60,6 @@ class CommentEntrys:
 
 @strawberry.type
 class RealTime:
-    """ """
-
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -72,57 +68,35 @@ class RealTime:
     create_time: datetime
     GPTAnswer: Optional[str] = None
 
-
 @strawberry.type
 class Summary:
-    """ """
-
     board_id: str
     site: str
     GPTAnswer: str
     Tag: List[str]
 
-
 @strawberry.type
 class Comment:
-    """ """
-
     board_id: str
     site: str
     Comments: List[CommentEntrys]
 
-
 @strawberry.type
 class Like:
-    """ """
-
     board_id: str
     site: str
     NOWLIKE: int
 
-
 @strawberry.type
 class View:
-    """ """
-
     board_id: str
     site: str
     NOWVIEW: int
 
-
 @strawberry.type
 class Query:
-    """ """
-
     @strawberry.field
     def daily_pagination(self, index: int = 0) -> List[Daily]:
-        """
-
-        :param index: int:  (Default value = 0)
-        :param index: int:  (Default value = 0)
-        :param index: int:  (Default value = 0)
-
-        """
         try:
             return get_pagination_daily_best(index)
         except Exception as e:
@@ -132,13 +106,6 @@ class Query:
 
     @strawberry.field
     def realtime_pagination(self, index: int = 0) -> List[RealTime]:
-        """
-
-        :param index: int:  (Default value = 0)
-        :param index: int:  (Default value = 0)
-        :param index: int:  (Default value = 0)
-
-        """
         try:
             return get_pagination_real_time_best(index)
         except Exception as e:
@@ -148,16 +115,6 @@ class Query:
 
     @strawberry.field
     def comment(self, board_id: str, site: str) -> Comment:
-        """
-
-        :param board_id: str:
-        :param site: str:
-        :param board_id: str:
-        :param site: str:
-        :param board_id: str:
-        :param site: str:
-
-        """
         try:
             comments = board_comment_get(board_id, site)
             if not comments:
@@ -178,7 +135,6 @@ class Query:
                         comment=data["comment"],
                         reply=tmp_replys,
                         timestamp=data["timestamp"]
-
                     )
                 )
             return Comment(board_id=board_id,
@@ -191,37 +147,16 @@ class Query:
 
     @strawberry.field
     def get_like(self, board_id: str, site: str) -> Like:
-        """
-
-        :param board_id: str:
-        :param site: str:
-        :param board_id: str:
-        :param site: str:
-        :param board_id: str:
-        :param site: str:
-
-        """
         return Like(board_id=board_id,
                      site=site,
                      NOWLIKE=get_likes(board_id, site))
 
     @strawberry.field
     def get_views(self, board_id: str, site: str) -> View:
-        """
-
-        :param board_id: str:
-        :param site: str:
-        :param board_id: str:
-        :param site: str:
-        :param board_id: str:
-        :param site: str:
-
-        """
         return View(board_id=board_id,
                      site=site,
                      NOWVIEW=get_views(board_id, site))
 
 
-# Initialize GraphQL schema and router
 schema = strawberry.Schema(query=Query)
 graphql_app = GraphQLRouter(schema=schema)
