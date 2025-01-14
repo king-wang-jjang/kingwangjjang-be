@@ -45,7 +45,7 @@ def tag(board_id: str, site: str):
         raise HTTPException(status_code=429, detail='요청을 이미 처리하고 있습니다. 잠시 후 다시 선택해주세요.')
 
     try:
-        realtime_object = db_controller.find('RealTime', {'board_id': board_id, 'site': site})[0]
+        realtime_object = db_controller.find('Realtime', {'board_id': board_id, 'site': site})[0]
         TAG_Object_id = realtime_object['Tag']
         TAG_object = db_controller.find('Tag', {'_id': TAG_Object_id})[0]
 
@@ -125,7 +125,7 @@ def board_summary(board_id: str, site: str):
         raise HTTPException(status_code=429, detail='요청을 이미 처리하고 있습니다. 잠시 후 다시 선택해주세요.')
 
     try:
-        realtime_object = db_controller.find('RealTime', {'board_id': board_id, 'site': site})[0]
+        realtime_object = db_controller.find('Realtime', {'board_id': board_id, 'site': site})[0]
         GPT_Object_id = realtime_object['GPTAnswer']
         GPT_object = db_controller.find('GPT', {'_id': GPT_Object_id})[0]
 

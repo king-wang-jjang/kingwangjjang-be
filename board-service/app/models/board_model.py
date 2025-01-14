@@ -25,7 +25,7 @@ class PyObjectId(ObjectId):
     def __modify_schema__(cls, field_schema):
         field_schema.update(type="string")
 
-class RealTimeDTO(BaseModel):
+class RealtimeDTO(BaseModel):
     id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
     board_id: Union[str, int]
     site: str
@@ -43,13 +43,13 @@ class RealTimeDTO(BaseModel):
     @staticmethod
     def from_mongo(data):
         if data:
-            return RealTimeDTO(**data)
+            return RealtimeDTO(**data)
         return None
 
     @staticmethod
     def find(query):
         results = db_controller.find('realtimebest', query)
-        return [RealTimeDTO.from_mongo(doc) for doc in results]
+        return [RealtimeDTO.from_mongo(doc) for doc in results]
 
     @staticmethod
     def insert(data):

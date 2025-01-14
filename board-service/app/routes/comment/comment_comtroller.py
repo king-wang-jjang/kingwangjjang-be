@@ -43,7 +43,7 @@ class Daily:
 
 
 @strawberry.type
-class RealTime:
+class Realtime:
     """Represents a real-time entry"""
     board_id: str
     rank: Optional[str] = None

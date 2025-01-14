@@ -59,7 +59,7 @@ class CommentEntrys:
     timestamp: str
 
 @strawberry.type
-class RealTime:
+class Realtime:
     board_id: str
     rank: Optional[str] = None
     site: str
@@ -105,7 +105,7 @@ class Query:
                                 detail="Internal server error")
 
     @strawberry.field
-    def realtime_pagination(self, index: int = 0) -> List[RealTime]:
+    def realtime_pagination(self, index: int = 0) -> List[Realtime]:
         try:
             return get_pagination_real_time_best(index)
         except Exception as e:
