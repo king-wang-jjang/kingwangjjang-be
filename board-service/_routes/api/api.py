@@ -12,7 +12,7 @@ sys.excepthook = catch_exception
 #     title: str
 #     url: str
 #     createTime: datetime.datetime
-#     GPTAnswer: str
+#     gpt_answer: str
 
 # @strawberry.type
 # class Post:
@@ -28,7 +28,7 @@ sys.excepthook = catch_exception
 #             title="Example Title",
 #             url="https://gall.dcinside.com/board/view/?id=dcbest&no=248716",
 #             createTime=datetime.datetime.now(),
-#             GPTAnswer="gpt 응답"
+#             gpt_answer="gpt 응답"
 #         )
 
 # # Define schema

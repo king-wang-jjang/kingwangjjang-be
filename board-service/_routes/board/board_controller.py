@@ -37,7 +37,7 @@ class Daily:
     title: str
     url: str
     create_time: datetime
-    GPTAnswer: Optional[str] = None
+    gpt_answer: Optional[str] = None
 
 @strawberry.type
 class ReplyEntrys:
@@ -65,13 +65,13 @@ class Realtime:
     title: str
     url: str
     create_time: datetime
-    GPTAnswer: Optional[str] = None
+    gpt_answer: Optional[str] = None
 
 @strawberry.type
 class Summary:
     board_id: str
     site: str
-    GPTAnswer: str
+    gpt_answer: str
     Tag: List[str]
 
 @strawberry.type

@@ -126,7 +126,7 @@ def board_summary(board_id: str, site: str):
 
     try:
         realtime_object = db_controller.find('Realtime', {'board_id': board_id, 'site': site})[0]
-        GPT_Object_id = realtime_object['GPTAnswer']
+        GPT_Object_id = realtime_object['gpt_answer']
         GPT_object = db_controller.find('GPT', {'_id': GPT_Object_id})[0]
 
         logger.debug(f"DB 조회 결과 - GPT_Object_id: {GPT_Object_id}, GPT_object: {GPT_object}")
