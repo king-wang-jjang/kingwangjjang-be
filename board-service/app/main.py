@@ -23,7 +23,8 @@ from app.middlewares import cors_middleware
 from app.utils import lifespan
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
-from app.schemas.sample_schema import schema
+from app.schemas.sample_schema import schema as samele
+from app.schemas.board_schema import schema 
 
 
 # from routes.board import board_controller
@@ -51,13 +52,10 @@ if Config.get_env("SERVER_RUN_MODE") == "TRUE":
     logging.getLogger("uvicorn.error").handlers = [logger.handlers[1]]
 cors_middleware.add(app)
 # static_middleware.add(app)
-# app.include_router(auth_controller.router)
-# app.include_router(ping_controller.router)
-# app.include_router(webhook_controller.router)
 
-# app.include_router(page_controller.router, prefix=ApiPaths.PROXY)
-# app.include_router(user_controller.router, prefix=ApiPaths.PROXY)
-# app.include_router(board_controller.router)
+graphql_app = GraphQLRouter(samele)
+app.include_router(graphql_app, prefix="/sample")
+
 graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/graphql")
 # ---------------------------------------------------
