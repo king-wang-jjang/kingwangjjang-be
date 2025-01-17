@@ -19,7 +19,7 @@ class BoardSummaryType(graphene.ObjectType):
     title = graphene.String()
     url = graphene.String()
     create_time = graphene.DateTime()
-    GPTAnswer = graphene.String()
+    gpp_answer = graphene.String()
     Tag = graphene.List(graphene.String)
     def __init__(self, **kwargs):
         kwargs.pop('_id', None)  # '_id' 필드 제거
