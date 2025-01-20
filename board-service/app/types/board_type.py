@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Any, List, Optional, Tuple, Union
 import strawberry
 
 @strawberry.type
@@ -32,14 +32,15 @@ class CommentEntrys:
 
 @strawberry.type
 class Realtime:
-    board_id: str
-    rank: Optional[str] = None
+    _id: Optional[str] = None
+    board_id: Tuple[str, int]
+    # rank: Optional[str] = None
     site: str
     title: str
     url: str
-    create_time: datetime
+    contents: Optional[str] = None
     gpt_answer: Optional[str] = None
-
+    create_time: datetime
 @strawberry.type
 class Summary:
     board_id: str

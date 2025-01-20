@@ -29,13 +29,12 @@ sys.excepthook = catch_exception
 @strawberry.type
 class Query:
     @strawberry.field
-    def daily_pagination(self, index: int = 0) -> List[Daily]:
-        return get_pagination_daily_best(index)
-
-    @strawberry.field
     def realtime_pagination(self, index: int = 0) -> List[Realtime]:
         return get_pagination_real_time_best(index)
 
+    @strawberry.field
+    def daily_pagination(self, index: int = 0) -> List[Daily]:
+        return get_pagination_daily_best(index)
 
     @strawberry.field
     def comment(self, board_id: str, site: str) -> Comment:
