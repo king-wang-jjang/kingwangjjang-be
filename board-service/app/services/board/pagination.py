@@ -16,11 +16,8 @@ db_controller = MongoController()
 # 페이지 번호를 받아, 30개씩 데이터를 반환하는 함수
 def get_pagination_real_time_best(index: int) -> List[Realtime]:
     logger.info(f"real-time best page index: {index}")
-
     try:
         data = db_controller.get_real_time_best(index, 30)
-        logger.info(f"Successfully fetched {len(data)} records for real-time best.")
-
         return [Realtime(**item) for item in data]
     except Exception as e:
         logger.exception(f"Error getting realtime data: {e}")
