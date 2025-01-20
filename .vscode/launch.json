@@ -11,8 +11,8 @@
               "ENV_FILE": "${workspaceFolder}/.env",
               "PYTHONPATH": "${workspaceFolder}/api-gateway"
           },
-          "args": ["app.main:app", "--reload", "--log-level", "debug", "--port", "8001"],
-          "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+          "args": ["app.main:app", "--reload", "--log-level", "debug", "--port", "33330"],
+        //   "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
           "justMyCode": false,
           "cwd": "${workspaceFolder}/api-gateway"
       },
