@@ -1,28 +1,15 @@
 import logging
 import httpx
-from fastapi import APIRouter, FastAPI, Request, Response, HTTPException
+from fastapi import APIRouter, Request, Response, HTTPException
 import sys
-from fastapi.middleware.cors import CORSMiddleware
 
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
 # Global exception handler and logger setup
+
 sys.excepthook = catch_exception
 logger = setup_logger()
-
 router = APIRouter()
-app = FastAPI()
-origins = [
-    "http://localhost:8083",  
-    "https://top1.kr",  
-]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"]
-    )
 
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
 async def proxy(request: Request, path: str) -> Response:
