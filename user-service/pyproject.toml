@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "gpt-service"
+version = "0.1.0"
+description = "GPT Summary, tagging"
+authors = ["woody <woody@aicess.ai>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+uvicorn = "^0.32.1"
+fastapi = "^0.115.6"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

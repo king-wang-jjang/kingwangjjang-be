@@ -6,26 +6,26 @@ import sys
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
 # Global exception handler and logger setup
+
 sys.excepthook = catch_exception
 logger = setup_logger()
-
 router = APIRouter()
 
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
 async def proxy(request: Request, path: str) -> Response:
     """프록시 요청을 처리합니다."""
-    
+    url = ""
     # prefix에 따라 포트 설정
     if path.startswith("boardservice/"):
         port = 33333
         path = path[len("boardservice/"):]
+        url = f"http://kingwangjjang_kingwangjjang-board-service_1:{port}/{path}" 
     elif path.startswith("schedulerapp/"):
         port = 8003
         path = path[len("schedulerapp/"):]
     else:
         raise HTTPException(status_code=404, detail="Invalid path prefix")
-
-    url = f"http://localhost:{port}/{path}"
+    
     try:
         async with httpx.AsyncClient() as client:
             response = await client.request(
