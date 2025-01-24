@@ -3,6 +3,7 @@ version: "3.3"
 networks:
   kingwangjjang-network:
     driver: bridge
+    name: kingwangjjang-network
 
 services:
   kingwangjjang-api-gateway:

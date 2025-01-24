@@ -12,7 +12,8 @@ from fastapi import FastAPI
 app = FastAPI()
 origins = [
     "http://localhost:8083",  
-    "https://top1.kr",  
+    "https://top1.kr",
+    "https://마약.kr"
 ]
 app.add_middleware(
     CORSMiddleware,
