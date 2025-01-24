@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from app.routes import index
+from app.routes.auth import auth_services
+from app.routes.auth import auth_controllers
 from fastapi import FastAPI
 
 app = FastAPI()
@@ -24,3 +26,5 @@ app.add_middleware(
 )
 
 app.include_router(index.router)
+app.include_router(auth_services.router)
+app.include_router(auth_controllers.router)

@@ -20,6 +20,7 @@ async def proxy(request: Request, path: str) -> Response:
         port = 33333
         path = path[len("boardservice/"):]
         url = f"http://kingwangjjang_kingwangjjang-board-service_1:{port}/{path}" 
+        url = f"http://localhost:{port}/{path}"
     elif path.startswith("schedulerapp/"):
         port = 8003
         path = path[len("schedulerapp/"):]
