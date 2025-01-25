@@ -1,5 +1,5 @@
 import httpx
-from app.routes.auth.auth_models import UserInfo
+from app.models.auth_models import UserInfo
 from app.db.mongo_controller import MongoController
 
 

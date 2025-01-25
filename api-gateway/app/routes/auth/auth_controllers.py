@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from app.config import Config
-from app.routes.auth.auth_services import AuthService
+from app.services.auth_services import AuthService
 
 router = APIRouter()
 config = Config()
