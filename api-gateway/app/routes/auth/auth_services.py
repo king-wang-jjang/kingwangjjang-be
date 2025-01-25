@@ -1,78 +1,49 @@
-import sys
-from fastapi import APIRouter
 import httpx
-from app.routes.auth.auth_models import KakaoUserInfo, MongoUser
+from app.routes.auth.auth_models import UserInfo
 from app.db.mongo_controller import MongoController
-from app.utils.loghandler import setup_logger
-from app.utils.loghandler import catch_exception
 
-db = MongoController()
 
-sys.excepthook = catch_exception
-logger = setup_logger()
-router = APIRouter()
-
-class KakaoOAuthService:
+KAKAO_API_BASE = "https://kapi.kakao.com"
+db_controller = MongoController()
+class AuthService:
     @staticmethod
-    async def get_access_token(code: str) -> str:
-        # 카카오 API로부터 액세스 토큰 가져오기
+    async def fetch_access_token(code: str, client_id: str, redirect_uri: str, client_secret: str):
+        """카카오에서 Access Token 가져오기"""
         token_url = "https://kauth.kakao.com/oauth/token"
         data = {
             "grant_type": "authorization_code",
-            "client_id": os.getenv("KAKAO_CLIENT_ID"),
-            "client_secret": os.getenv("KAKAO_CLIENT_SECRET"),
-            "redirect_uri": os.getenv("KAKAO_REDIRECT_URI"),
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "redirect_uri": redirect_uri,
             "code": code,
         }
+
         async with httpx.AsyncClient() as client:
             response = await client.post(token_url, data=data)
-        return response.json().get("access_token")
+            response.raise_for_status()  # 에러 발생 시 예외 처리
+            return response.json().get("access_token")
 
     @staticmethod
-    async def get_user_info(access_token: str) -> KakaoUserInfo:
-        # 카카오 API로 사용자 정보 가져오기
-        user_info_url = "https://kapi.kakao.com/v2/user/me"
+    async def fetch_user_info(access_token: str) -> UserInfo:
+        """Access Token으로 카카오 사용자 정보 가져오기"""
+        user_info_url = f"{KAKAO_API_BASE}/v2/user/me"
         headers = {"Authorization": f"Bearer {access_token}"}
-        async with httpx.AsyncClient() as client:
-            user_response = await client.get(user_info_url, headers=headers)
-        user_data = user_response.json()
 
-        return KakaoUserInfo(
-            id=user_data["id"],
-            email=user_data["kakao_account"].get("email"),
-            nickname=user_data["properties"].get("nickname"),
-            profile_image=user_data["properties"].get("profile_image"),
+        async with httpx.AsyncClient() as client:
+            response = await client.get(user_info_url, headers=headers)
+            response.raise_for_status()  # 에러 발생 시 예외 처리
+            user_data = response.json()
+
+        return UserInfo(
+            id=user_data["id"]
         )
 
-class UserService:
     @staticmethod
-    async def save_user(user: KakaoUserInfo) -> MongoUser:
-        # MongoDB에 사용자 저장
-        user_collection = db["users"]
-        existing_user = await user_collection.find_one({"kakao_id": user.id})
+    async def save_user_to_db(user_info: UserInfo):
+        """사용자 정보를 MongoDB에 저장"""
+        existing_user = db_controller.find_user({"id": user_info.id})
         if existing_user:
-            # 이미 존재하면 업데이트
-            await user_collection.update_one(
-                {"kakao_id": user.id},
-                {"$set": user.dict(exclude={"id"})}
-            )
+            return existing_user
         else:
-            # 존재하지 않으면 삽입
-            await user_collection.insert_one({
-                "kakao_id": user.id,
-                "email": user.email,
-                "nickname": user.nickname,
-                "profile_image": user.profile_image,
-            })
-
-        updated_user = await user_collection.find_one({"kakao_id": user.id})
-        return MongoUser(**updated_user)
-
-    @staticmethod
-    async def get_user_by_kakao_id(kakao_id: int) -> MongoUser:
-        # MongoDB에서 사용자 조회
-        user_collection = db["users"]
-        user = await user_collection.find_one({"kakao_id": kakao_id})
-        if user:
-            return MongoUser(**user)
-        return None
+            db_controller.insert_user(user_info.dict())
+            return user_info.dict()

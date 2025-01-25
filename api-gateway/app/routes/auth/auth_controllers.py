@@ -1,61 +1,36 @@
-import sys
-import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
-from fastapi.security import OAuth2PasswordBearer
-from pydantic import BaseModel
-from dotenv import load_dotenv
 from app.config import Config
-from app.utils.loghandler import setup_logger
-from app.utils.loghandler import catch_exception
-from app.routes.auth.auth_models import KakaoUserInfo, MongoUser
+from app.routes.auth.auth_services import AuthService
 
-sys.excepthook = catch_exception
-logger = setup_logger()
 router = APIRouter()
+config = Config()
 
-KAKAO_CLIENT_ID = Config().get_env("KAKAO_CLIENT_ID")
-REDIRECT_URI = Config().get_env("REDIRECT_URI")
-KAKAO_CLIENT_SECRET = Config().get_env("KAKAO_CLIENT_SECRET")
-
-class OAuthToken(BaseModel):
-    access_token: str
+KAKAO_CLIENT_ID = config.get_env("KAKAO_CLIENT_ID")
+REDIRECT_URI = config.get_env("REDIRECT_URI")
+KAKAO_CLIENT_SECRET = config.get_env("KAKAO_CLIENT_SECRET")
 
 @router.get("/login")
-async def login():
+def login():
+    """카카오 로그인 URL로 리다이렉션"""
     kakao_oauth_url = (
-        f"https://kauth.kakao.com/oauth/authorize?client_id={KAKAO_CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code"
+        f"https://kauth.kakao.com/oauth/authorize"
+        f"?client_id={KAKAO_CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code"
     )
-    
     return RedirectResponse(url=kakao_oauth_url)
 
 @router.get("/callback")
 async def callback(code: str):
-    # 카카오에서 받은 인가 코드로 액세스 토큰 요청
-    token_url = "https://kauth.kakao.com/oauth/token"
-    data = {
-        "grant_type": "authorization_code",
-        "client_id": KAKAO_CLIENT_ID,
-        "client_secret": KAKAO_CLIENT_SECRET,
-        "redirect_uri": REDIRECT_URI,
-        "code": code,
-    }
-    async with httpx.AsyncClient() as client:
-        response = await client.post(token_url, data=data)
-    access_token = response.json().get("access_token")
-    
-    # 액세스 토큰을 사용하여 사용자 정보 가져오기
-    user_info_url = "https://kapi.kakao.com/v2/user/me"
-    headers = {"Authorization": f"Bearer {access_token}"}
-    async with httpx.AsyncClient() as client:
-        user_response = await client.get(user_info_url, headers=headers)
-    
-    user_data = user_response.json()
-    kakao_user = KakaoUserInfo(
-        id=user_data["id"],
-        email=user_data["kakao_account"].get("email"),
-        nickname=user_data["properties"].get("nickname"),
-        profile_image=user_data["properties"].get("profile_image")
-    )
-    
-    return {"user_info": kakao_user}
+    """카카오 인증 후 콜백 처리"""
+    try:
+        # 1. Access Token 요청
+        access_token = await AuthService.fetch_access_token(
+            code, KAKAO_CLIENT_ID, REDIRECT_URI, KAKAO_CLIENT_SECRET
+        )
+        # 2. 사용자 정보 요청
+        user_info = await AuthService.fetch_user_info(access_token)
+        # 3. 사용자 정보를 DB에 저장
+        user = await AuthService.save_user_to_db(user_info)
+        return {"message": "Login successful", "user": user}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
