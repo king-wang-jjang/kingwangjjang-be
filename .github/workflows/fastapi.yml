@@ -95,10 +95,6 @@ jobs:
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-          echo "FTP_HOST=${{ secrets.FTP_HOST }}" >> .env
-          echo "FTP_PASSWORD=${{ secrets.FTP_PASSWORD }}" >> .env
-          echo "FTP_USER=${{ secrets.FTP_USER }}" >> .env
-          echo "FTP_USERNAME=${{ secrets.FTP_USERNAME }}" >> .env
           echo "SERVER_RUN_MODE=${{ secrets.SERVER_RUN_MODE }}" >> .env
           echo "WEBHOOK_URL=${{ secrets.PRODUCTION_WEBHOOK_URL }}" >> .env
           echo "WAS_HOST=${{ secrets.WAS_HOST }}" >> .env
