@@ -1,10 +1,16 @@
 import datetime
+import sys
 import httpx
 import jwt
 from app.models.auth_models import UserInfo
 from app.db.mongo_controller import MongoController
 from app.config import Config
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
+from app.utils.loghandler import catch_exception, setup_logger
+# Global exception handler and logger setup
+
+sys.excepthook = catch_exception
+logger = setup_logger()
 
 config = Config()
 KAKAO_API_BASE = "https://kapi.kakao.com"
@@ -62,6 +68,7 @@ class JWTService:
 
         payload = {
             "user_id": user_id,
+            # 다른 OAuth 인증 기관을 추가하면 site 옵션을 추가해야한다.
             "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),  # 만료 시간
             "iat": datetime.datetime.utcnow(),  # 발급 시간
             "iss": "your-service-name",  # 발급자
@@ -75,9 +82,9 @@ class JWTService:
         try:
             # 토큰 디코딩 및 검증
             decoded_payload = jwt.decode(token, cls.SECRET_KEY, algorithms=["HS256"])
-            print("검증 성공! Payload:", decoded_payload)
+            logger.info("검증 성공! Payload:", decoded_payload)
             return decoded_payload
         except ExpiredSignatureError:
-            print("토큰이 만료되었습니다.")
+            logger.warn("토큰이 만료되었습니다.")
         except InvalidTokenError:
-            print("유효하지 않은 토큰입니다.")
+            logger.error("유효하지 않은 토큰입니다.")

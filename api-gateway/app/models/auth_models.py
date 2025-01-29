@@ -1,3 +1,4 @@
+import datetime
 from pydantic import BaseModel, Field
 from typing import Optional
 
@@ -8,3 +9,4 @@ class UserInfo(BaseModel):
     nickname: Optional[str] = None  # 닉네임 (선택적 필드)
     filter: Optional[dict] = None  # 필터 데이터 (선택적 필드)
     profile_image: Optional[str] = None  # 프로필 이미지 URL (선택적 필드)
+    create_time: Optional[datetime.datetime] = Field(default_factory=datetime.datetime.now)

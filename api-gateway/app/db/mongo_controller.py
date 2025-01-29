@@ -23,4 +23,4 @@ class MongoController(object):
 
     def find_user(self, query):
         collection = self.db.get_collection('users')
-        return bool(collection.find_one(query))
+        return collection.find_one(query)

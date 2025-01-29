@@ -1,7 +1,8 @@
+from urllib import response
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from app.config import Config
-from app.services.auth_services import KakaoAuthService, UserService
+from app.services.auth_services import JWTService, KakaoAuthService, UserService
 
 router = APIRouter()
 config = Config()
@@ -31,6 +32,21 @@ async def callback(code: str):
         user_info = await KakaoAuthService.fetch_user_info(access_token)
         # 3. 사용자 정보를 DB에 저장
         user = await UserService.save_user_to_db(user_info)
-        return {"message": "Login successful", "user": user}
+
+        # 4. JWT 생성
+        jwt_token = JWTService.create_jwt(user["id"])
+        
+        response = RedirectResponse(url="localhost:8083/board")
+        response.set_cookie(
+            key="access_token",
+            value=jwt_token,
+            httponly=True,  # JS에서 접근 불가 (XSS 방어)
+            secure=True,  # HTTPS에서만 사용
+            samesite="Lax",  # CSRF 방어
+            max_age=3600,  # 1시간 만료
+        )
+        
+        return response
+    
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
