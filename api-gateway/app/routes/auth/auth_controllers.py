@@ -36,7 +36,7 @@ async def callback(code: str):
         # 4. JWT 생성
         jwt_token = JWTService.create_jwt(user["id"])
         
-        response = RedirectResponse(url="localhost:8083/board")
+        response = RedirectResponse(url="http://localhost:8083/board")
         response.set_cookie(
             key="access_token",
             value=jwt_token,
@@ -45,7 +45,7 @@ async def callback(code: str):
             samesite="Lax",  # CSRF 방어
             max_age=3600,  # 1시간 만료
         )
-        
+
         return response
     
     except Exception as e:

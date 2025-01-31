@@ -2,7 +2,11 @@
 import sys
 from pathlib import Path
 
+import strawberry
+from app.graphql.schema import Query, schema
+
 from fastapi.middleware.cors import CORSMiddleware
+from strawberry.fastapi import GraphQLRouter
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
@@ -26,5 +30,8 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+graphql_app = GraphQLRouter(schema)
+app.include_router(graphql_app, prefix="/graphql") 
 app.include_router(auth_controllers.router)
 app.include_router(index.router)
+

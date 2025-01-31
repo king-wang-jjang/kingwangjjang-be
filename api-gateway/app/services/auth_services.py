@@ -1,8 +1,9 @@
+from dataclasses import asdict
 import datetime
 import sys
 import httpx
 import jwt
-from app.models.auth_models import UserInfo
+from app.models.auth_models import UserType
 from app.db.mongo_controller import MongoController
 from app.config import Config
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
@@ -34,7 +35,7 @@ class KakaoAuthService:
             return response.json().get("access_token")
 
     @staticmethod
-    async def fetch_user_info(access_token: str) -> UserInfo:
+    async def fetch_user_info(access_token: str) -> UserType:
         """Access Token으로 카카오 사용자 정보 가져오기"""
         user_info_url = f"{KAKAO_API_BASE}/v2/user/me"
         headers = {"Authorization": f"Bearer {access_token}"}
@@ -44,20 +45,23 @@ class KakaoAuthService:
             response.raise_for_status()  # 에러 발생 시 예외 처리
             user_data = response.json()
 
-        return UserInfo(
-            id=user_data["id"]
+        return UserType(
+            user_id=user_data["id"]
         )
 
 class UserService:
     @staticmethod
-    async def save_user_to_db(user_info: UserInfo):
+    async def save_user_to_db(user_info: UserType):
         """사용자 정보를 MongoDB에 저장"""
-        existing_user = db_controller.find_user({"id": user_info.id})
+        existing_user = db_controller.find_user({"user_id": user_info.user_id})  # user_id가 아니라 id 필드 사용
+
         if existing_user:
             return existing_user
         else:
-            db_controller.insert_user(user_info.dict())
-            return user_info.dict()
+            # UserType 객체를 dict로 변환
+            user_dict = asdict(user_info)
+            db_controller.insert_user(user_dict)
+            return user_dict  # MongoDB는 dict를 반환하는 것이 일반적
         
 class JWTService:
     SECRET_KEY = config.get_env("JWT_SECRET_KEY")

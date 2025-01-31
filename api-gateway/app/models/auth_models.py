@@ -1,12 +1,22 @@
-import datetime
-from pydantic import BaseModel, Field
+import strawberry
 from typing import Optional
+import datetime
+from dataclasses import field  # 기본값을 설정하기 위해 필요
 
-class UserInfo(BaseModel):
-    id: int  # 카카오 고유 ID
-    auth_organization: Optional[str] = None  # 인증 기관 (선택적 필드)
-    user_id: Optional[int] = None  # 사용자 ID (선택적 필드)
-    nickname: Optional[str] = None  # 닉네임 (선택적 필드)
-    filter: Optional[dict] = None  # 필터 데이터 (선택적 필드)
-    profile_image: Optional[str] = None  # 프로필 이미지 URL (선택적 필드)
-    create_time: Optional[datetime.datetime] = Field(default_factory=datetime.datetime.now)
+@strawberry.type
+class FilterType:
+    key: str
+    value: str
+
+@strawberry.type
+class UserType:
+    _id: Optional[str] = None
+    # id: int = strawberry.field(name="user_id")
+    # id: int
+    user_id:  Optional[str] = None
+    auth_organization: Optional[str] = None
+    nickname: Optional[str] = None
+    filter: Optional[FilterType] = None
+    profile_image: Optional[str] = None
+    # 현재 시간으로 기본값 설정
+    create_time: datetime.datetime = field(default_factory=datetime.datetime.now)
