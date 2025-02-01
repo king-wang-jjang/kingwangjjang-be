@@ -1,11 +1,7 @@
 # from typing import Union
 import sys
 from pathlib import Path
-
-import strawberry
-
 from fastapi.middleware.cors import CORSMiddleware
-from strawberry.fastapi import GraphQLRouter
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
@@ -17,8 +13,8 @@ origins = [
     "http://localhost:8083",  
     "https://top1.kr",
     "https://마약.kr",
-    "http://localhost:33330",
 ]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

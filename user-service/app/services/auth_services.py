@@ -69,7 +69,6 @@ class JWTService:
     # JWT 생성 함수
     @classmethod
     def create_jwt(cls, user_id):
-
         payload = {
             "user_id": user_id,
             # 다른 OAuth 인증 기관을 추가하면 site 옵션을 추가해야한다.

@@ -18,6 +18,8 @@ def login():
         f"https://kauth.kakao.com/oauth/authorize"
         f"?client_id={KAKAO_CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code"
     )
+    print('kakao_oauth_url', kakao_oauth_url)
+
     return RedirectResponse(url=kakao_oauth_url)
 
 @router.get("/callback")
@@ -34,7 +36,7 @@ async def callback(code: str):
         user = await UserService.save_user_to_db(user_info)
 
         # 4. JWT 생성
-        jwt_token = JWTService.create_jwt(user["id"])
+        jwt_token = JWTService.create_jwt(user["user_id"])
         
         response = RedirectResponse(url="http://localhost:8083/board")
         response.set_cookie(
@@ -50,3 +52,9 @@ async def callback(code: str):
     
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/ping")
+def ping():
+    print("pingpingpingpingpingpingping")
+    return RedirectResponse(url="http://localhost:8083")
