@@ -19,7 +19,7 @@ def extract_user_id_from_context(info: Info) -> Optional[str]:
 
 async def get_user_by_id(info: Info, id: Optional[str] = None) -> Optional[UserType]:
     """user_id가 없을 경우, Context에서 추출"""
-    if id is None:
+    if id is None or id == '':
         id = extract_user_id_from_context(info)  # 🔹 GraphQL Context에서 user_id 가져오기
     
     if id is None:
