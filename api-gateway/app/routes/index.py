@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse
 import httpx
 from fastapi import APIRouter, Request, Response, HTTPException
 import sys
-
+from app.services.auth_services import JWTService
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
 
@@ -11,38 +11,62 @@ sys.excepthook = catch_exception
 logger = setup_logger()
 router = APIRouter()
 
+def get_service_url(path: str) -> str:
+    """요청 경로를 기반으로 서비스 URL을 반환"""
+    service_map = {
+        "boardservice/": 33333,
+        "schedulerapp/": 8003,
+        "user/": 33334,
+    }
+    for prefix, port in service_map.items():
+        if path.startswith(prefix):
+            return f"http://localhost:{port}/{path[len(prefix):]}"
+    return ""
+
+def authenticate_user_request(request: Request) -> str:
+    """JWT 검증 및 user_id 추출"""
+    token = request.cookies.get("access_token")
+    if not token:
+        logger.warning("Unauthorized access attempt: Missing token")
+        raise HTTPException(status_code=403, detail="Access forbidden: Missing token")
+
+    decoded_token = JWTService.decode_access_token(access_token=token)
+    user_id = decoded_token if decoded_token else None
+
+    if not user_id:
+        logger.warning(f"Invalid token access attempt: {token}")
+        raise HTTPException(status_code=403, detail="Access forbidden: Invalid token")
+    
+    return user_id
+
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
 async def proxy(request: Request, path: str) -> Response:
     """프록시 요청을 처리합니다."""
-    url = ""
-    
-    # 경로를 기반으로 서비스 포트 설정
-    if path.startswith("boardservice/"):
-        port = 33333
-        path = path[len("boardservice/"):]  # 'boardservice/' 부분 제거
-        url = f"http://localhost:{port}/{path}" 
-    elif path.startswith("schedulerapp/"):
-        port = 8003
-        path = path[len("schedulerapp/"):]
-        url = f"http://localhost:{port}/{path}"
-    elif path.startswith("user/"):
-        port = 33334
-        path = path[len("user/"):]
-        url = f"http://localhost:{port}/{path}"
-    else:
+    url = get_service_url(path)
+    if not url:
         raise HTTPException(status_code=404, detail="Invalid path prefix")
     
+    user_id = None
+    if path.startswith("user/"):
+        user_id = authenticate_user_request(request)
+
     try:
         async with httpx.AsyncClient() as client:
+            headers = dict(request.headers)
+            
+            # 🔹 User-Service 요청 시 `user_id`를 Header에 추가
+            if user_id:
+                headers["X-User-Id"] = str(user_id)
+                logger.info(f"Forwarding request to User-Service with X-User-Id: {user_id}")
+
             response = await client.request(
                 method=request.method,
                 url=url,
-                headers=dict(request.headers),
+                headers=headers,
                 cookies=request.cookies,
                 data=await request.body(),
             )
-            # logger.info('response.cookies', response.cookies)
-            # 리다이렉트 응답일 경우 직접 Location 헤더를 설정
+
             if response.is_redirect:
                 return RedirectResponse(url=response.headers["Location"], status_code=response.status_code)
 

@@ -18,5 +18,7 @@ class UserType:
     nickname: Optional[str] = None
     filter: Optional[FilterType] = None
     profile_image: Optional[str] = None
+    access_token: Optional[str] = None
+    refresh_token: Optional[str] = None
     # 현재 시간으로 기본값 설정
     create_time: datetime.datetime = field(default_factory=datetime.datetime.now)
