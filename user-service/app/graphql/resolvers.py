@@ -28,5 +28,6 @@ async def get_user_by_id(info: Info, id: Optional[str] = None) -> Optional[UserT
     user = mongo.find_user({"user_id": int(id)})  # MongoDB에서 id를 int로 저장
 
     if user:
-        return UserType(**user)
+        user_data = {k: v for k, v in user.items() if k in UserType.__annotations__}  
+        return UserType(**user_data)
     return None
