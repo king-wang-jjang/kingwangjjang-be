@@ -5,7 +5,6 @@ from pathlib import Path
 import uvicorn
 import strawberry
 from app.graphql.schema import Query, schema
-from app.routes.auth import auth_controllers
 
 from fastapi.middleware.cors import CORSMiddleware
 from strawberry.fastapi import GraphQLRouter
@@ -29,7 +28,6 @@ sys.excepthook = catch_exception
 logger = setup_logger()
 
 graphql_app = GraphQLRouter(schema)
-app.include_router(auth_controllers.router)
 app.include_router(graphql_app, prefix="/graphql") 
 
 if __name__ == "__main__":

@@ -18,13 +18,12 @@ def login():
         f"https://kauth.kakao.com/oauth/authorize"
         f"?client_id={KAKAO_CLIENT_ID}&redirect_uri={REDIRECT_URI}&response_type=code"
     )
-    print('kakao_oauth_url', kakao_oauth_url)
 
-    return RedirectResponse(url=kakao_oauth_url)
+    return RedirectResponse(url=kakao_oauth_url, status_code=302)
+
 
 @router.get("/callback")
 async def callback(code: str):
-    """카카오 인증 후 콜백 처리"""
     try:
         # 1. Access Token 요청
         access_token = await KakaoAuthService.fetch_access_token(
@@ -38,20 +37,19 @@ async def callback(code: str):
         # 4. JWT 생성
         jwt_token = JWTService.create_jwt(user["user_id"])
         
-        response = RedirectResponse(url="http://localhost:8083/board")
+        response = RedirectResponse(url="http://localhost:8083/board", status_code=302)
         response.set_cookie(
             key="access_token",
             value=jwt_token,
-            httponly=True,  # JS에서 접근 불가 (XSS 방어)
-            secure=True,  # HTTPS에서만 사용
-            samesite="Lax",  # CSRF 방어
-            max_age=3600,  # 1시간 만료
+            httponly=True,
+            secure=True,
+            samesite="Lax",
+            max_age=3600,
         )
 
         return response
-    
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/ping")

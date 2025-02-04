@@ -25,9 +25,9 @@ async def proxy(request: Request, path: str) -> Response:
         port = 8003
         path = path[len("schedulerapp/"):]
         url = f"http://localhost:{port}/{path}"
-    elif path.startswith("auth/"):
+    elif path.startswith("user/"):
         port = 33334
-        path = path[len("auth/"):]
+        path = path[len("user/"):]
         url = f"http://localhost:{port}/{path}"
     else:
         raise HTTPException(status_code=404, detail="Invalid path prefix")
@@ -41,7 +41,7 @@ async def proxy(request: Request, path: str) -> Response:
                 cookies=request.cookies,
                 data=await request.body(),
             )
-
+            # logger.info('response.cookies', response.cookies)
             # 리다이렉트 응답일 경우 직접 Location 헤더를 설정
             if response.is_redirect:
                 return RedirectResponse(url=response.headers["Location"], status_code=response.status_code)
