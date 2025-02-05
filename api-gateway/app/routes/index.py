@@ -3,6 +3,8 @@ from fastapi.responses import RedirectResponse
 import httpx
 from fastapi import APIRouter, Request, Response, HTTPException
 import sys
+
+from app.utils.loghandler import Config
 from app.services.auth_services import JWTService
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
@@ -10,6 +12,7 @@ from app.utils.loghandler import setup_logger
 sys.excepthook = catch_exception
 logger = setup_logger()
 router = APIRouter()
+config = Config()
 
 def get_service_url(path: str) -> str:
     """요청 경로를 기반으로 서비스 URL을 반환"""
@@ -25,6 +28,11 @@ def get_service_url(path: str) -> str:
 
 def authenticate_user_request(request: Request) -> str:
     """JWT 검증 및 user_id 추출"""
+    isServer = config.get_env('SERVER_RUN_MODE')
+    if (isServer == "FALSE"):
+        logger.info(f"Skip Authenticate: {isServer}")
+        return 3891969863
+    
     token = request.cookies.get("access_token")
     if not token:
         logger.warning("Unauthorized access attempt: Missing token")
