@@ -1,5 +1,5 @@
 # Python 3.12.4 이미지 사용
-FROM python:3.12.4
+FROM python:3.12.8
 
 # 디렉토리 설정
 WORKDIR /app
