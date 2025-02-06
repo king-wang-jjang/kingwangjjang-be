@@ -15,16 +15,16 @@ router = APIRouter()
 config = Config()
 
 def get_service_url(path: str) -> str:
-    """요청 경로를 기반으로 서비스 URL을 반환"""
     service_map = {
-        "boardservice/": 33333,
-        "schedulerapp/": 8003,
-        "user/": 33334,
+        "boardservice/": "kingwangjjang-board-service:33333",
+        "schedulerapp/": "kingwangjjang-scheduler-service:8003",
+        "user/": "kingwangjjang-user-service:33334",
     }
-    for prefix, port in service_map.items():
+    for prefix, target in service_map.items():
         if path.startswith(prefix):
-            return f"http://localhost:{port}/{path[len(prefix):]}"
+            return f"http://{target}/{path[len(prefix):]}"
     return ""
+
 
 def authenticate_user_request(request: Request) -> str:
     """JWT 검증 및 user_id 추출"""

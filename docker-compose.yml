@@ -23,3 +23,5 @@ services:
       - .env
     volumes:
       - ./logs:/var/log
+    networks:
+      - kingwangjjang-network

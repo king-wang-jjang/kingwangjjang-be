@@ -143,4 +143,4 @@ jobs:
             sudo docker rmi hwanju1596/board-service:0.0.1 -f
             sudo docker rmi hwanju1596/api-gateway:0.0.1 -f
             sudo docker-compose up -d
-            sudo docker network connect kingwangjjang-network kingwangjjang_kingwangjjang-api-gateway_1
+    # sudo docker network connect kingwangjjang-network kingwangjjang_kingwangjjang-api-gateway_1
