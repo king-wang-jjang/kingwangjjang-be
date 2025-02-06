@@ -1,4 +1,3 @@
-import logging
 from fastapi.responses import RedirectResponse
 import httpx
 from fastapi import APIRouter, Request, Response, HTTPException
