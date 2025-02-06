@@ -28,9 +28,9 @@ def get_service_url(path: str) -> str:
 
 def authenticate_user_request(request: Request) -> str:
     """JWT 검증 및 user_id 추출"""
-    isServer = config.get_env('SERVER_RUN_MODE')
-    if (isServer == "FALSE"):
-        logger.info(f"Skip Authenticate: {isServer}")
+    is_graphql_generate = config.get_env('SERVER_TYPE')
+    if (is_graphql_generate == "GRAPHQL-GENERATE"):
+        logger.info(f"Skip Authenticate (is_graphql_generate): {is_graphql_generate}")
         return 3891969863
     
     token = request.cookies.get("access_token")
