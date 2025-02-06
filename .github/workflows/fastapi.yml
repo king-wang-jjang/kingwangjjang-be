@@ -75,6 +75,16 @@ jobs:
           platforms: |
             linux/arm64
             linux/amd64
+
+      - name: Build and push user-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./user-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/user-service:0.0.1
+          platforms: |
+            linux/arm64
+            linux/amd64
   run: # job 2
     # WAS 인스턴스에 접속, Docker 이미지 pull, run하는 Job
 
@@ -102,11 +112,16 @@ jobs:
           echo "WAS_USERNAME=${{ secrets.WAS_USERNAME }}" >> .env
           echo "SERVER_TYPE=PRODUCTION" >> .env
           echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
-          echo "MONITER_API=${{ secrets.MONITER_API }}" >> .env
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
-          echo "AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}" >> .env
-          echo "AWS_InstanceIds=${{ secrets.AWS_InstanceIds }}" >> .env
+          echo "JWT_REFRESH_SECRET_KEY=${{ secrets.JWT_REFRESH_SECRET_KEY }}" >> .env
+          echo "REDIRECT_URI=${{ secrets.REDIRECT_URI }}" >> .env
+          echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID}}" >> .env
+          echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET}}" >> .env
+
+      # echo "MONITER_API=${{ secrets.MONITER_API }}" >> .env
+      # echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+      # echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+      # echo "AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}" >> .env
+      # echo "AWS_InstanceIds=${{ secrets.AWS_InstanceIds }}" >> .env
 
       - name: Tailscale
         uses: tailscale/github-action@v2

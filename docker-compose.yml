@@ -25,3 +25,12 @@ services:
       - ./logs:/var/log
     networks:
       - kingwangjjang-network
+
+  kingwangjjang-user-service:
+    image: hwanju1596/user-service:0.0.1
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/var/log
+    networks:
+      - kingwangjjang-network
