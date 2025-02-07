@@ -23,6 +23,7 @@ router = APIRouter()
 KAKAO_CLIENT_ID = config.get_env("KAKAO_CLIENT_ID")
 REDIRECT_URI = config.get_env("REDIRECT_URI")
 KAKAO_CLIENT_SECRET = config.get_env("KAKAO_CLIENT_SECRET")
+WEBSITE_URL = config.get_env("WEBSITE_URL")
 
 class KakaoAuthService:
     @staticmethod
@@ -83,8 +84,8 @@ async def callback(code: str):
         jwt_token = JWTService.create_access_token(user_info.user_id)
         
         JWTService.decode_access_token(access_token=jwt_token)
-        
-        response = RedirectResponse(url="http://localhost:8083/board", status_code=302)
+
+        response = RedirectResponse(url=WEBSITE_URL, status_code=302)
         response.set_cookie(
             key="access_token",
             value=jwt_token,
