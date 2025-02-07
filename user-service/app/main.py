@@ -1,19 +1,18 @@
 # from typing import Union
 import sys
 from pathlib import Path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 import uvicorn
-import strawberry
-from app.graphql.schema import Query, schema
+from fastapi import FastAPI
 
 from fastapi.middleware.cors import CORSMiddleware
 from strawberry.fastapi import GraphQLRouter
 
-sys.path.append(str(Path(__file__).resolve().parent.parent))
+from app.graphql.schema import schema
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
 
-from fastapi import FastAPI
 
 app = FastAPI()
 app.add_middleware(

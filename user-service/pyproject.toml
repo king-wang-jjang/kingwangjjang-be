@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "gpt-service"
+name = "user-service"
 version = "0.1.0"
-description = "GPT Summary, tagging"
+description = "user service"
 authors = ["woody <woody@aicess.ai>"]
 readme = "README.md"
 
@@ -9,7 +9,8 @@ readme = "README.md"
 python = "^3.12"
 uvicorn = "^0.32.1"
 fastapi = "^0.115.6"
-strawberry-graphql = {extras = ["debug-server"], version = "^0.258.0"}
+graphql-core = "^3.2.6"
+strawberry-graphql = {extras = ["fastapi"], version = "^0.258.0"}
 
 [build-system]
 requires = ["poetry-core"]
