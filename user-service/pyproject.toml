@@ -10,7 +10,8 @@ python = "^3.12"
 uvicorn = "^0.32.1"
 fastapi = "^0.115.6"
 graphql-core = "^3.2.6"
-strawberry-graphql = {extras = ["fastapi"], version = "^0.258.0"}
+strawberry-graphql = "^0.236.0"
+pymongo = "^4.11"
 
 [build-system]
 requires = ["poetry-core"]
