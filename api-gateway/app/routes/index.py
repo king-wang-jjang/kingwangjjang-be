@@ -14,11 +14,16 @@ router = APIRouter()
 config = Config()
 
 def get_service_url(path: str) -> str:
+    is_server = config.get_env('SERVER_RUN_MODE')
     service_map = {
         "boardservice/": "kingwangjjang-board-service:33333",
-        "schedulerapp/": "kingwangjjang-scheduler-service:8003",
         "user/": "kingwangjjang-user-service:33334",
     }
+    if is_server == "FALSE":
+        service_map = {
+            "boardservice/": "localhost:33333",
+            "user/": "localhost:33334",
+        }
     for prefix, target in service_map.items():
         if path.startswith(prefix):
             return f"http://{target}/{path[len(prefix):]}"

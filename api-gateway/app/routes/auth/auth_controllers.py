@@ -51,14 +51,30 @@ class KakaoAuthService:
         user_info_url = f"{KAKAO_API_BASE}/v2/user/me"
         headers = {"Authorization": f"Bearer {access_token}"}
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(user_info_url, headers=headers)
-            response.raise_for_status()
-            user_data = response.json()
+        logger.info("Fetching Kakao user info from %s", user_info_url)
+        logger.debug("Request Headers: %s", headers)
 
-        return UserType(
-            user_id=user_data["id"]
-        )
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(user_info_url, headers=headers)
+                response.raise_for_status()
+                
+                user_data = response.json()
+                logger.info("Kakao user info fetched successfully: %s", user_data)
+
+                return UserType(
+                    user_id=user_data["id"]
+                )
+            except httpx.HTTPStatusError as e:
+                logger.error(
+                    "HTTP error occurred while fetching Kakao user info: %s, Response: %s",
+                    e.response.status_code,
+                    e.response.text
+                )
+            except httpx.RequestError as e:
+                logger.error("Request error occurred: %s", e)
+
+        return None
 
 @router.get("/login")
 def login():
