@@ -9,7 +9,7 @@ class FilterType:
 
 @dataclass
 class UserType:
-    _id: Optional[str] = field(default=None, repr=False) 
+    _id: Optional[str] = field(init=False) 
     user_id: Optional[str] = None
     auth_organization: Optional[str] = None
     nickname: Optional[str] = None
