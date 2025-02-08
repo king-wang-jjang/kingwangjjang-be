@@ -116,6 +116,7 @@ jobs:
           echo "REDIRECT_URI=${{ secrets.REDIRECT_URI }}" >> .env
           echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID}}" >> .env
           echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET}}" >> .env
+          echo "WEBSITE_URL=${{ secrets.WEBSITE_URL}}" >> .env
 
       # echo "MONITER_API=${{ secrets.MONITER_API }}" >> .env
       # echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
