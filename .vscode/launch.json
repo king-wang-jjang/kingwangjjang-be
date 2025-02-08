@@ -1,36 +1,73 @@
 {
   "version": "0.2.0",
   "configurations": [
-      {
-          "name": "Debug API Gateway",
-          "type": "debugpy",
-          "request": "launch",
-          "module": "uvicorn",
-          "console": "integratedTerminal",
-          "env": {
-              "ENV_FILE": "${workspaceFolder}/.env",
-              "PYTHONPATH": "${workspaceFolder}/api-gateway"
-          },
-          "args": ["app.main:app", "--reload", "--log-level", "debug", "--port", "33330"],
-        //   "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
-          "justMyCode": false,
-          "cwd": "${workspaceFolder}/api-gateway"
+    {
+      "name": "Debug API Gateway",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "console": "integratedTerminal",
+      "env": {
+        "ENV_FILE": "${workspaceFolder}/.env",
+        "PYTHONPATH": "${workspaceFolder}/api-gateway"
       },
-      {
-          "name": "Debug Board service",
-          "type": "debugpy",
-          "request": "launch",
-          "module": "uvicorn",
-          "console": "integratedTerminal",
-          "env": {
-              "ENV_FILE": "${workspaceFolder}/.env",
-              "PYTHONPATH": "${workspaceFolder}/board-service"
-          },
-          "args": ["app.main:app", "--reload", "--log-level", "debug", "--port", "33333"],
-        // 디버깅 하기 전 작업: poetry config virtualenvs.in-project true 
-        // "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
-          "justMyCode": false,
-          "cwd": "${workspaceFolder}/board-service"
-      }
+      "args": [
+        "app.main:app",
+        "--reload",
+        "--log-level",
+        "debug",
+        "--port",
+        "33330"
+      ],
+      //   "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}/api-gateway"
+    },
+    {
+      "name": "Debug Board service",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "console": "integratedTerminal",
+      "env": {
+        "ENV_FILE": "${workspaceFolder}/.env",
+        "PYTHONPATH": "${workspaceFolder}/board-service"
+      },
+      "args": [
+        "app.main:app",
+        "--reload",
+        "--log-level",
+        "debug",
+        "--port",
+        "33333"
+      ],
+      // 디버깅 하기 전 작업: poetry config virtualenvs.in-project true
+      // "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}/board-service"
+    },
+    {
+      "name": "Debug User service",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "console": "integratedTerminal",
+      "env": {
+        "ENV_FILE": "${workspaceFolder}/.env",
+        "PYTHONPATH": "${workspaceFolder}/user-service"
+      },
+      "args": [
+        "app.main:app",
+        "--reload",
+        "--log-level",
+        "debug",
+        "--port",
+        "33334"
+      ],
+      // 디버깅 하기 전 작업: poetry config virtualenvs.in-project true
+      // "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}/user-service"
+    }
   ]
 }

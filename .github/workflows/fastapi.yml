@@ -75,6 +75,16 @@ jobs:
           platforms: |
             linux/arm64
             linux/amd64
+
+      - name: Build and push user-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./user-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/user-service:0.0.1
+          platforms: |
+            linux/arm64
+            linux/amd64
   run: # job 2
     # WAS 인스턴스에 접속, Docker 이미지 pull, run하는 Job
 
@@ -95,10 +105,6 @@ jobs:
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-          echo "FTP_HOST=${{ secrets.FTP_HOST }}" >> .env
-          echo "FTP_PASSWORD=${{ secrets.FTP_PASSWORD }}" >> .env
-          echo "FTP_USER=${{ secrets.FTP_USER }}" >> .env
-          echo "FTP_USERNAME=${{ secrets.FTP_USERNAME }}" >> .env
           echo "SERVER_RUN_MODE=${{ secrets.SERVER_RUN_MODE }}" >> .env
           echo "WEBHOOK_URL=${{ secrets.PRODUCTION_WEBHOOK_URL }}" >> .env
           echo "WAS_HOST=${{ secrets.WAS_HOST }}" >> .env
@@ -106,11 +112,17 @@ jobs:
           echo "WAS_USERNAME=${{ secrets.WAS_USERNAME }}" >> .env
           echo "SERVER_TYPE=PRODUCTION" >> .env
           echo "JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}" >> .env
-          echo "MONITER_API=${{ secrets.MONITER_API }}" >> .env
-          echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
-          echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
-          echo "AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}" >> .env
-          echo "AWS_InstanceIds=${{ secrets.AWS_InstanceIds }}" >> .env
+          echo "JWT_REFRESH_SECRET_KEY=${{ secrets.JWT_REFRESH_SECRET_KEY }}" >> .env
+          echo "REDIRECT_URI=${{ secrets.REDIRECT_URI }}" >> .env
+          echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID}}" >> .env
+          echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET}}" >> .env
+          echo "WEBSITE_URL=${{ secrets.WEBSITE_URL}}" >> .env
+
+      # echo "MONITER_API=${{ secrets.MONITER_API }}" >> .env
+      # echo "AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}" >> .env
+      # echo "AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}" >> .env
+      # echo "AWS_DEFAULT_REGION=${{ secrets.AWS_DEFAULT_REGION }}" >> .env
+      # echo "AWS_InstanceIds=${{ secrets.AWS_InstanceIds }}" >> .env
 
       - name: Tailscale
         uses: tailscale/github-action@v2
@@ -146,5 +158,6 @@ jobs:
             sudo docker-compose down
             sudo docker rmi hwanju1596/board-service:0.0.1 -f
             sudo docker rmi hwanju1596/api-gateway:0.0.1 -f
+            sudo docker rmi hwanju1596/user-service:0.0.1 -f
             sudo docker-compose up -d
-            sudo docker network connect kingwangjjang-network kingwangjjang_kingwangjjang-api-gateway_1
+    # sudo docker network connect kingwangjjang-network kingwangjjang_kingwangjjang-api-gateway_1
