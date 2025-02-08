@@ -6,6 +6,7 @@ networks:
 
 services:
   kingwangjjang-api-gateway:
+    container_name: kingwangjjang-api-gateway
     image: hwanju1596/api-gateway:0.0.1
     ports:
       - "8000:8000"
@@ -20,6 +21,7 @@ services:
       - kingwangjjang-board-service
 
   kingwangjjang-board-service:
+    container_name: kingwangjjang-board-service
     image: hwanju1596/board-service:0.0.1
     env_file:
       - .env
@@ -31,6 +33,7 @@ services:
       - kingwangjjang-user-service
 
   kingwangjjang-user-service:
+    container_name: kingwangjjang-user-service
     image: hwanju1596/user-service:0.0.1
     env_file:
       - .env
