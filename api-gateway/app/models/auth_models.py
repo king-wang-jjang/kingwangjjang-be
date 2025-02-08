@@ -1,21 +1,20 @@
 from typing import Optional
 import datetime
-from dataclasses import field  # 기본값을 설정하기 위해 필요
+from dataclasses import dataclass, field
 
+@dataclass
 class FilterType:
     key: str
     value: str
 
+@dataclass
 class UserType:
     _id: Optional[str] = None
-    # id: int = strawberry.field(name="user_id")
-    # id: int
-    user_id:  Optional[str] = None
+    user_id: Optional[str] = None
     auth_organization: Optional[str] = None
     nickname: Optional[str] = None
     filter: Optional[FilterType] = None
     profile_image: Optional[str] = None
     access_token: Optional[str] = None
     refresh_token: Optional[str] = None
-    # 현재 시간으로 기본값 설정
     create_time: datetime.datetime = field(default_factory=datetime.datetime.now)
