@@ -15,6 +15,9 @@ services:
       - ./logs:/var/log
     networks:
       - kingwangjjang-network
+    depends_on:
+      - kingwangjjang-user-service
+      - kingwangjjang-board-service
 
   kingwangjjang-board-service:
     image: hwanju1596/board-service:0.0.1
@@ -24,6 +27,8 @@ services:
       - ./logs:/var/log
     networks:
       - kingwangjjang-network
+    depends_on:
+      - kingwangjjang-user-service
 
   kingwangjjang-user-service:
     image: hwanju1596/user-service:0.0.1
