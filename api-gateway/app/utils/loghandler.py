@@ -67,3 +67,4 @@ def catch_exception(exc_type, exc_value, exc_traceback):
 # SERVER_RUN_MODE 상태 확인을 위한 디버깅 코드
 logger = setup_logger()
 logger.info((f"SERVER_RUN_MODE: {Config().get_env('SERVER_RUN_MODE')}"))
+logger.info((f"SERVER_TYPE: {Config().get_env('SERVER_TYPE')}"))
