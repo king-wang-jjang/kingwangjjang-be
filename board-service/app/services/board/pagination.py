@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from datetime import datetime
 from typing import List, Optional, Union
 from app.db.mongo_controller import MongoController
-from app.types.board_type import Realtime
+from app.graphql.modules.board.board_type import Realtime
 from app.utils.loghandler import catch_exception, setup_logger
 import sys
 
