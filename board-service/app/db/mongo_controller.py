@@ -1,4 +1,5 @@
 import logging
+from bson import ObjectId
 import pymongo
 from app.db.context import Database
 from pymongo.errors import ConnectionFailure
@@ -11,7 +12,11 @@ class MongoController(object):
             Database.client.admin.command('ping')
             self.db = Database
             logger.info("Successfully connected to the database")
+
+            self.db.get_collection("Realtime").create_index([("create_time", pymongo.DESCENDING)])
+            
         except ConnectionFailure as e:
+            self.db = None 
             logger.error("Could not connect to the database: %s", e)
 
         
@@ -31,7 +36,7 @@ class MongoController(object):
         collection = self.db.get_collection(collection_name)
         return collection.delete_one(query)
 
-    def get_real_time_best(self, index, limit):
+    def get_real_time_best(self, index=0, limit=10):
         collection = self.db.get_collection('Realtime')
         return list(collection.find().sort("create_time", pymongo.DESCENDING).skip(index * limit).limit(limit))
 

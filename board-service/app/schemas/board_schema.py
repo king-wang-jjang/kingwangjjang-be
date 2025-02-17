@@ -14,7 +14,7 @@ from strawberry.fastapi import GraphQLRouter
 from app.services.board_comment.get import board_comment_get
 from app.services.count.likes import get_likes
 from app.services.count.views import get_views
-from app.services.board.index import tag
+# from app.services.board.index import tag
 from app.services.board.pagination import get_pagination_daily_best
 from app.services.board.pagination import get_pagination_real_time_best
 from app.utils.loghandler import catch_exception
