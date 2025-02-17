@@ -1,12 +1,10 @@
-import logging
-import os
 import sys
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-sys.path.append("/Users/jason/pycharm/kingwangjjang-bes") #내부 모듈이 임포트 되기전에 가장 먼저 임포트 되야함.
 
 import uvicorn
+import logging
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
 
@@ -15,8 +13,8 @@ from app.config import Config
 from app.utils import lifespan
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
-from app.schemas.sample_schema import schema as samele
-from app.schemas.board_schema import schema 
+from app.graphql.modules.sample.sample_schema import schema as samele
+from app.graphql.modules.board.board_schema import schema 
 
 # from routes.board import board_controller
 sys.excepthook = catch_exception
