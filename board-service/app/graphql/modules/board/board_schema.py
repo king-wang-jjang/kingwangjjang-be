@@ -20,7 +20,7 @@ from app.services.board.pagination import get_pagination_real_time_best
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
 
-from app.graphql.modules.board.board_type import Daily, Realtime, Comment,CommentEntrys, Like, View, ReplyEntrys
+from app.graphql.modules.board.board_type import Daily, Realtime, Comment,CommentEntrys, Like, SearchInput, SearchResult, View, ReplyEntrys
 
 # Setup logger and exception hook
 logger = setup_logger()
@@ -81,4 +81,13 @@ class Query:
                      NOWVIEW=get_views(board_id, site))
 
 
-schema = strawberry.Schema(query=Query)
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    async def search(self, input: SearchInput) -> List[SearchResult]:
+
+        results = []
+
+        return results
+    
+schema = strawberry.Schema(query=Query, mutation=Mutation)

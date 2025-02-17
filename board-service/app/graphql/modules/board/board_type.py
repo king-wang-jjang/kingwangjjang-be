@@ -65,3 +65,11 @@ class View:
     board_id: str
     site: str
     NOWVIEW: int
+
+    # 검색 입력을 위한 Input 타입 정의
+@strawberry.input
+class SearchInput:
+    query: str  # 검색어
+
+# 타입 별칭으로 사용 (GraphQL 스키마 상에서는 동일하게 인식)
+SearchResult = Realtime
