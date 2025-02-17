@@ -11,7 +11,7 @@ from app.db.mongo_controller import MongoController
 # from app.services.web_crawling.community_website.ygosu import Ygosu
 # from app.services.web_crawling.community_website.dcinside import Dcinside
 
-from app.utils.llm import LLM
+# from app.utils.llm import LLM
 from app.utils.tag_split import Tagsplit
 
 # from app.constants import DEFAULT_GPT_ANSWER, SITE_DCINSIDE, SITE_YGOSU, SITE_PPOMPPU, SITE_THEQOO, SITE_INSTIZ, SITE_RULIWEB
