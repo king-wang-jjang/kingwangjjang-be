@@ -41,6 +41,7 @@ class Realtime:
     contents: Optional[str] = None
     gpt_answer: Optional[str] = None
     create_time: datetime
+    thumbnail: Optional[str] = None
 @strawberry.type
 class Summary:
     board_id: str

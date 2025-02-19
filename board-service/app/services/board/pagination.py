@@ -14,11 +14,27 @@ db_controller = MongoController()
 
 
 # 페이지 번호를 받아, 30개씩 데이터를 반환하는 함수
-def get_pagination_real_time_best(index: int) -> List[Realtime]:
+def get_pagination_real_time_best(index: int) -> List[Realtime]: 
     logger.info(f"real-time best page index: {index}")
     try:
         data = db_controller.get_real_time_best(index, 30)
-        return [Realtime(**item) for item in data]
+        
+        def extract_thumbnail(contents):
+            """ contents 리스트에서 첫 번째 'image' 타입의 path를 반환 """
+            if isinstance(contents, list):
+                for item in contents:
+                    if item.get("type") == "image":
+                        return item.get("path")  # 첫 번째 'image' 타입의 path 반환
+            return None  # 'image' 타입이 없으면 None 반환
+        
+        return [
+            Realtime(
+                **item,
+                thumbnail=extract_thumbnail(item.get("contents"))
+            ) 
+            for item in data
+        ]
+    
     except Exception as e:
         logger.exception(f"Error getting realtime data: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
