@@ -9,6 +9,7 @@ on:
   pull_request:
     branches: ["main", "develop"]
     # PR 발생할 시 -> main 및 develop 브랜치에서 실행
+  workflow_dispatch:
 
 # fastapi.yml (Django CI)workflow 에서 실행할 Job(작업) 정의
 jobs:
