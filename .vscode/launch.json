@@ -68,6 +68,27 @@
       // "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
       "justMyCode": false,
       "cwd": "${workspaceFolder}/user-service"
+    },
+    {
+      "name": "Debug Comment service",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "console": "integratedTerminal",
+      "env": {
+        "ENV_FILE": "${workspaceFolder}/.env",
+        "PYTHONPATH": "${workspaceFolder}/comment-service"
+      },
+      "args": [
+        "app.main:app",
+        "--reload",
+        "--log-level",
+        "debug",
+        "--port",
+        "33335"
+      ],
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}/comment-service"
     }
   ]
 }

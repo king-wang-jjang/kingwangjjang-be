@@ -69,7 +69,30 @@ graph LR
 
 ### 실행 방법
 
-#### 1) Docker Compose (추천, 가장 빠름)
+#### 1) 스크립트로 빠르게 실행 (Windows/macOS/Linux)
+Docker Desktop이 설치되어 있어야 합니다.
+
+- macOS/Linux:
+```bash
+chmod +x ./run.sh
+./run.sh up
+```
+
+- Windows PowerShell:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\run.ps1 up
+# 또는 (ExecutionPolicy가 이미 설정된 경우)
+.\run.ps1 up
+```
+
+자주 쓰는 명령어: `up`, `down`, `restart`, `logs`, `ps`, `pull`, `clean`
+
+스크립트는 아래를 자동으로 처리합니다.
+- `kingwangjjang-network` 외부 네트워크 없으면 생성
+- 루트 `logs/` 디렉터리 생성
+- 루트 `.env` 없고 `.env.example` 있으면 자동 복사
+
+#### 2) Docker Compose 수동 실행
 사전 준비: Docker, Docker Compose 설치
 
 1) 외부 네트워크 생성 (compose는 `kingwangjjang-network`를 external로 사용)
@@ -97,7 +120,7 @@ docker compose up -d
 - 사용자: `http://localhost:8000/user/graphql`
 - 로그인: `http://localhost:8000/login` → 카카오 동의 후 `REDIRECT_URI`로 콜백
 
-#### 2) 로컬 개발 (Poetry)
+#### 3) 로컬 개발 (Poetry)
 사전 준비: Python 3.12, Poetry
 
 1) 각 서비스 환경 변수 파일 생성

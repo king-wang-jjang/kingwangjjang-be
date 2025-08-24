@@ -115,7 +115,12 @@ class Query:
     @strawberry.field
     def comment(self, board_id: str, site: str) -> Comment:
         try:
-            comments = board_comment_get(board_id, site)
+            import httpx
+            url = f"http://localhost:8000/commentservice/comment?board_id={board_id}&site={site}"
+            with httpx.Client() as client:
+                resp = client.get(url)
+                resp.raise_for_status()
+                comments = resp.json()
             if not comments:
                 comments = [{"none": "none"}]
             datas = []
