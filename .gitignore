@@ -40,3 +40,6 @@ __pycache__/
 
 .vscode/
 log/
+
+# Ignore Python __init__.py files
+__init__.py
