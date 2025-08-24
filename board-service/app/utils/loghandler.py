@@ -236,7 +236,7 @@ def crawler_logger():
     return logger
 
 def setup_logger():
-    logger = logging.getLogger("top1.kr")
+    logger = logging.getLogger("마약.kr")
     logger.setLevel(logging.INFO)
 
     # 로그 폴더가 없으면 생성
