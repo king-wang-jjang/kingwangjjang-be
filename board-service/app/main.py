@@ -30,7 +30,7 @@ graphql_app = GraphQLRouter(samele)
 app.include_router(graphql_app, prefix="/sample")
 
 graphql_app = GraphQLRouter(schema)
-app.include_router(graphql_app, prefix="/graphql")
+app.include_router(graphql_app, prefix="/board-graph")
 
 if __name__ == "__main__":
     logger.info("Starting uvicorn server")
