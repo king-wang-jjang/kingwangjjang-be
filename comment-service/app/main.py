@@ -25,7 +25,7 @@ app.add_middleware(
 from app.graphql.modules.comment.comment_schema import schema as comment_schema
 
 graphql_app = GraphQLRouter(comment_schema)
-app.include_router(graphql_app, prefix="/comment-graph")
+app.include_router(graphql_app, prefix="/comment-graphql")
 
 
 if __name__ == "__main__":

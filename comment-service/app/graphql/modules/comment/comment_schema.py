@@ -18,7 +18,9 @@ class Query:
     @strawberry.field
     def comments(self, board_id: str, site: str) -> Comment:
         try:
-            rows = db_controller.find("Comment", {"board_id": board_id, "site": site})
+            # board_id를 배열 형태로 변환하여 MongoDB에서 검색
+            board_id_array = [board_id, int(board_id)] if board_id.isdigit() else [board_id]
+            rows = db_controller.find("Comment", {"board_id": board_id_array, "site": site})
             entries: List[CommentEntry] = []
             for row in rows:
                 replies = [
@@ -53,8 +55,10 @@ class Mutation:
     @strawberry.mutation
     def add_comment(self, board_id: str, site: str, user_id: str, comment: str) -> Comment:
         try:
+            # board_id를 배열 형태로 변환하여 MongoDB에 저장
+            board_id_array = [board_id, int(board_id)] if board_id.isdigit() else [board_id]
             doc = {
-                "board_id": board_id,
+                "board_id": board_id_array,
                 "site": site,
                 "user_id": user_id,
                 "comment": comment,
@@ -62,7 +66,7 @@ class Mutation:
                 "timestamp": datetime.datetime.now(),
             }
             db_controller.insert_one("Comment", doc)
-            rows = db_controller.find("Comment", {"board_id": board_id, "site": site})
+            rows = db_controller.find("Comment", {"board_id": board_id_array, "site": site})
             entries: List[CommentEntry] = []
             for row in rows:
                 entries.append(
@@ -94,8 +98,10 @@ class Mutation:
     def add_reply(self, board_id: str, site: str, user_id: str, parent_comment: str, reply: str) -> CommentEntry:
         try:
             parent = db_controller.find("Comment", {"_id": ObjectId(parent_comment)})[0]
+            # board_id를 배열 형태로 변환
+            board_id_array = [board_id, int(board_id)] if board_id.isdigit() else [board_id]
             reply_data = {
-                "board_id": board_id,
+                "board_id": board_id_array,
                 "site": site,
                 "user_id": user_id,
                 "comment": reply,
