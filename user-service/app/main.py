@@ -27,7 +27,7 @@ sys.excepthook = catch_exception
 logger = setup_logger()
 
 graphql_app = GraphQLRouter(schema)
-app.include_router(graphql_app, prefix="/user-graph") 
+app.include_router(graphql_app, prefix="/user-graphql") 
 
 if __name__ == "__main__":
     logger.info("Starting uvicorn server")
