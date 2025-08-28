@@ -27,7 +27,9 @@ class PyObjectId(ObjectId):
 
 class RealtimeDTO(BaseModel):
     id: Optional[PyObjectId] = Field(default_factory=PyObjectId, alias="_id")
-    board_id: Union[str, int]
+    # board_id: Union[str, int]
+    category: str
+    no: int
     site: str
     title: str
     url: str

@@ -19,6 +19,7 @@ services:
     depends_on:
       - kingwangjjang-user-service
       - kingwangjjang-board-service
+      - kingwangjjang-comment-service
 
   kingwangjjang-board-service:
     container_name: kingwangjjang-board-service
@@ -31,10 +32,21 @@ services:
       - kingwangjjang-network
     depends_on:
       - kingwangjjang-user-service
+      - kingwangjjang-comment-service
 
   kingwangjjang-user-service:
     container_name: kingwangjjang-user-service
     image: hwanju1596/user-service:0.0.1
+    env_file:
+      - .env
+    volumes:
+      - ./logs:/var/log
+    networks:
+      - kingwangjjang-network
+
+  kingwangjjang-comment-service:
+    container_name: kingwangjjang-comment-service
+    image: hwanju1596/comment-service:0.0.1
     env_file:
       - .env
     volumes:

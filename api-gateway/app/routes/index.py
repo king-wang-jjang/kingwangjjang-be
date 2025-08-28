@@ -18,11 +18,13 @@ def get_service_url(path: str) -> str:
     service_map = {
         "boardservice/": "kingwangjjang-board-service:33333",
         "user/": "kingwangjjang-user-service:33334",
+        "commentservice/": "kingwangjjang-comment-service:33335",
     }
     if is_server == "FALSE":
         service_map = {
             "boardservice/": "localhost:33333",
             "user/": "localhost:33334",
+            "commentservice/": "localhost:33335",
         }
     for prefix, target in service_map.items():
         if path.startswith(prefix):

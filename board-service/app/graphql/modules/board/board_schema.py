@@ -11,7 +11,7 @@ from fastapi import HTTPException
 from pydantic import BaseModel
 from strawberry.fastapi import GraphQLRouter
 
-from app.services.board_comment.get import board_comment_get
+import httpx
 from app.services.count.likes import get_likes
 from app.services.count.views import get_views
 # from app.services.board.index import tag
@@ -39,7 +39,13 @@ class Query:
     @strawberry.field
     def comment(self, board_id: str, site: str) -> Comment:
         try:
-            comments = board_comment_get(board_id, site)
+            # delegate to comment-service via API Gateway prefix
+            # When running locally, API Gateway maps commentservice/ -> localhost:33335
+            url = f"http://localhost:8000/commentservice/comment?board_id={board_id}&site={site}"
+            with httpx.Client() as client:
+                resp = client.get(url)
+                resp.raise_for_status()
+                comments = resp.json()
             if not comments:
                 comments = [{"none": "none"}]
             datas = []
