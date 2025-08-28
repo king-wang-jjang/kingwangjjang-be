@@ -7,7 +7,7 @@ networks:
 services:
   kingwangjjang-api-gateway:
     container_name: kingwangjjang-api-gateway
-    image: hwanju1596/api-gateway:0.0.1
+    image: ${DOCKERHUB_USERNAME}/api-gateway:0.0.1
     ports:
       - "8000:8000"
     env_file:
@@ -23,7 +23,7 @@ services:
 
   kingwangjjang-board-service:
     container_name: kingwangjjang-board-service
-    image: hwanju1596/board-service:0.0.1
+    image: ${DOCKERHUB_USERNAME}/board-service:0.0.1
     env_file:
       - .env
     volumes:
@@ -36,7 +36,7 @@ services:
 
   kingwangjjang-user-service:
     container_name: kingwangjjang-user-service
-    image: hwanju1596/user-service:0.0.1
+    image: ${DOCKERHUB_USERNAME}/user-service:0.0.1
     env_file:
       - .env
     volumes:
@@ -46,7 +46,7 @@ services:
 
   kingwangjjang-comment-service:
     container_name: kingwangjjang-comment-service
-    image: hwanju1596/comment-service:0.0.1
+    image: ${DOCKERHUB_USERNAME}/comment-service:0.0.1
     env_file:
       - .env
     volumes:
