@@ -33,7 +33,9 @@ class CommentEntrys:
 @strawberry.type
 class Realtime:
     _id: Optional[str] = None
-    board_id: Tuple[str, int]
+    # board_id: Tuple[str, int]
+    category: str
+    no: int
     # rank: Optional[str] = None
     site: str
     title: str
