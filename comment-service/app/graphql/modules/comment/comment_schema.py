@@ -19,8 +19,7 @@ class Query:
     def comments(self, board_id: str, site: str) -> Comment:
         try:
             # board_id를 배열 형태로 변환하여 MongoDB에서 검색
-            board_id_array = [board_id, int(board_id)] if board_id.isdigit() else [board_id]
-            rows = db_controller.find("Comment", {"board_id": board_id_array, "site": site})
+            rows = db_controller.find("Comment", {"board_id": board_id, "site": site})
             entries: List[CommentEntry] = []
             for row in rows:
                 replies = [

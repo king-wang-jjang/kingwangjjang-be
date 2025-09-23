@@ -239,6 +239,10 @@ def setup_logger():
     logger = logging.getLogger("마약.kr")
     logger.setLevel(logging.INFO)
 
+    # 이미 핸들러가 설정되어 있으면 중복 추가 방지
+    if logger.handlers:
+        return logger
+
     # 로그 폴더가 없으면 생성
     log_directory = "log"
     if not os.path.exists(log_directory):
