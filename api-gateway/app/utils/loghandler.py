@@ -7,6 +7,11 @@ init(autoreset=True)  # colorama 초기화
 
 def setup_logger():
     logger = logging.getLogger("api-gateway")
+    
+    # 이미 핸들러가 설정되어 있으면 기존 logger 반환
+    if logger.handlers:
+        return logger
+        
     logger.setLevel(logging.INFO)
 
     # 로그 폴더가 없으면 생성

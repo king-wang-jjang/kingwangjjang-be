@@ -92,14 +92,14 @@ async def callback(code: str):
             code, KAKAO_CLIENT_ID, REDIRECT_URI, KAKAO_CLIENT_SECRET
         )
         user_info = await KakaoAuthService.fetch_user_info(access_token)
-        refresh_token = JWTService.create_refresh_token(user_info.user_id)
+        refresh_token = JWTService.create_refresh_token(user_info.user_id, "kakao")
         
         # refresh_token을 DB에 저장
         await UserService.save_user_to_db(user_info, refresh_token)
         
-        jwt_token = JWTService.create_access_token(user_info.user_id)
+        jwt_token = JWTService.create_access_token(user_info.user_id, "kakao")
         
-        JWTService.decode_access_token(access_token=jwt_token)
+        JWTService.decode_access_token(access_token=jwt_token, provider="kakao")
 
         response = RedirectResponse(url=WEBSITE_URL, status_code=302)
         response.set_cookie(

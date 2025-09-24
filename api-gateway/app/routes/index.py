@@ -23,7 +23,7 @@ def get_service_url(path: str) -> str:
     if is_server == "FALSE":
         service_map = {
             "boardservice/": "localhost:33333",
-            "user/": "localhost:33334",
+            "userservice/": "localhost:33334",
             "commentservice/": "localhost:33335",
         }
     for prefix, target in service_map.items():

@@ -14,7 +14,7 @@ class UserType:
     # id: int = strawberry.field(name="user_id")
     # id: int
     user_id:  Optional[str] = None
-    auth_organization: Optional[str] = None
+    auth_provider: Optional[str] = None
     nickname: Optional[str] = None
     filter: Optional[FilterType] = None
     profile_image: Optional[str] = None

@@ -71,46 +71,48 @@ class JWTService:
     REFRESH_SECRET_KEY = config.get_env("JWT_REFRESH_SECRET_KEY")
 
     @classmethod
-    def create_access_token(cls, user_id):
+    def create_access_token(cls, user_id, provider):
         payload = {
             "user_id": user_id,
             "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
             "iat": datetime.datetime.utcnow(),
             "iss": "api-gateway",
+            "provider": provider,
         }
         return jwt.encode(payload, cls.SECRET_KEY, algorithm="HS256")
     
     @classmethod
-    def create_refresh_token(cls, user_id):
+    def create_refresh_token(cls, user_id, provider):
         payload = {
             "user_id": user_id,
             "exp": datetime.datetime.utcnow() + datetime.timedelta(days=30),
             "iat": datetime.datetime.utcnow(),
             "iss": "api-gateway",
+            "provider": provider,
         }
         return jwt.encode(payload, cls.REFRESH_SECRET_KEY, algorithm="HS256")
         
     @classmethod
-    def verify_access_token(cls, token, user_id):
+    def verify_access_token(cls, token, user_id, provider):
         try:
             decoded_payload = jwt.decode(token, cls.SECRET_KEY, algorithms=["HS256"])
             logger.debug("사용자 검증 성공", decoded_payload)
             return True
         except ExpiredSignatureError:
             logger.warn("Access Token이 만료되었습니다. Refresh Token을 사용하여 새 Access Token을 발급합니다.")
-            return cls.refresh_access_token(user_id)
+            return cls.refresh_access_token(user_id, provider)
         except InvalidTokenError:
             logger.error("유효하지 않은 토큰입니다.")
             return False
 
     @classmethod
-    def refresh_access_token(cls, user_id):
+    def refresh_access_token(cls, user_id, provider=None ):
         """우리 서비스에서 발급한 Refresh Token으로 Access Token 재발급"""
         user = db_controller.find_user({"user_id": user_id})
         if user and "refresh_token" in user:
             try:
                 jwt.decode(user["refresh_token"], cls.REFRESH_SECRET_KEY, algorithms=["HS256"])
-                new_access_token = cls.create_access_token(user_id)
+                new_access_token = cls.create_access_token(user_id, provider)
                 return new_access_token
             except ExpiredSignatureError:
                 logger.warn("Refresh Token이 만료되었습니다. 다시 로그인해야 합니다.")
@@ -118,10 +120,11 @@ class JWTService:
         return None
     
     @classmethod
-    def decode_access_token(cls, access_token):
+    def decode_access_token(cls, access_token, provider):
         try:
             decoded_payload = jwt.decode(access_token, cls.SECRET_KEY, algorithms=["HS256"])
             user_id = decoded_payload.get("user_id")
+            provider = decoded_payload.get("provider")
             return user_id
         except jwt.ExpiredSignatureError:
             logger.warn("토큰이 만료되었습니다.")
