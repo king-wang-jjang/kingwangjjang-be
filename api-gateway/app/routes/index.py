@@ -34,24 +34,25 @@ def get_service_url(path: str) -> str:
 
 def authenticate_user_request(request: Request) -> str:
     """JWT 검증 및 user_id 추출"""
-    is_graphql_generate = config.get_env('SERVER_TYPE')
-    if (is_graphql_generate == "GRAPHQL-GENERATE"):
-        logger.info(f"Skip Authenticate (is_graphql_generate): {is_graphql_generate}")
-        return 3891969863
+    # is_graphql_generate = config.get_env('SERVER_TYPE')
+    # if (is_graphql_generate == "GRAPHQL-GENERATE"):
+    #     logger.info(f"Skip Authenticate (is_graphql_generate): {is_graphql_generate}")
+    #     return 3891969863
     
     token = request.cookies.get("access_token")
+    auth_provider = request.cookies.get("auth_provider")
     if not token:
         logger.warning("Unauthorized access attempt: Missing token")
         raise HTTPException(status_code=403, detail="Access forbidden: Missing token")
 
-    decoded_token = JWTService.decode_access_token(access_token=token)
+    decoded_token = JWTService.decode_access_token(access_token=token, auth_provider=auth_provider)
     user_id = decoded_token if decoded_token else None
-
+    
     if not user_id:
         logger.warning(f"Invalid token access attempt: {token}")
         raise HTTPException(status_code=403, detail="Access forbidden: Invalid token")
     
-    return user_id
+    return user_id, auth_provider
 
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
 async def proxy(request: Request, path: str) -> Response:
@@ -60,9 +61,9 @@ async def proxy(request: Request, path: str) -> Response:
     if not url:
         raise HTTPException(status_code=404, detail="Invalid path prefix")
     
-    user_id = None
-    if path.startswith("user/"):
-        user_id = authenticate_user_request(request)
+    # user_id = None
+    # if path.startswith("userservice/"):
+    user_id, auth_provider = authenticate_user_request(request)
 
     try:
         async with httpx.AsyncClient() as client:
@@ -71,7 +72,8 @@ async def proxy(request: Request, path: str) -> Response:
             # 🔹 User-Service 요청 시 `user_id`를 Header에 추가
             if user_id:
                 headers["X-User-Id"] = str(user_id)
-                logger.info(f"Forwarding request to User-Service with X-User-Id: {user_id}")
+                headers["X-Auth-Provider"] = str(auth_provider)
+                logger.info(f"Forwarding request to User-Service with X-User-Id: {user_id} and X-Auth-Provider: {auth_provider}")
 
             response = await client.request(
                 method=request.method,

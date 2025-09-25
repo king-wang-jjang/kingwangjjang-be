@@ -99,7 +99,7 @@ async def callback(code: str):
         
         jwt_token = JWTService.create_access_token(user_info.user_id, "kakao")
         
-        JWTService.decode_access_token(access_token=jwt_token, provider="kakao")
+        JWTService.decode_access_token(access_token=jwt_token, auth_provider="kakao")
 
         response = RedirectResponse(url=WEBSITE_URL, status_code=302)
         response.set_cookie(
