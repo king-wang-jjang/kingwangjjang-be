@@ -118,14 +118,20 @@ class JWTService:
         user = db_controller.find_user({"user_id": user_id})
         if user and "refresh_token" in user:
             try:
+                # Refresh Token 검증
                 jwt.decode(user["refresh_token"], cls.REFRESH_SECRET_KEY, algorithms=["HS256"])
                 # 사용자의 auth_provider 정보를 가져와서 사용
                 user_auth_provider = user.get("auth_provider", auth_provider)
                 new_access_token = cls.create_access_token(user_id, user_auth_provider)
+                logger.info(f"새로운 Access Token 발급 완료: user_id={user_id}")
                 return new_access_token
             except ExpiredSignatureError:
                 logger.warn("Refresh Token이 만료되었습니다. 다시 로그인해야 합니다.")
                 return None
+            except InvalidTokenError:
+                logger.error("유효하지 않은 Refresh Token입니다.")
+                return None
+        logger.warn(f"사용자 {user_id}의 Refresh Token을 찾을 수 없습니다.")
         return None
     
     @classmethod
@@ -133,11 +139,24 @@ class JWTService:
         try:
             decoded_payload = jwt.decode(access_token, cls.SECRET_KEY, algorithms=["HS256"])
             user_id = decoded_payload.get("user_id")
-            # auth_provider = decoded_payload.get("auth_provider") 
             return user_id
         except jwt.ExpiredSignatureError:
-            logger.warn("토큰이 만료되었습니다.")
-            # return cls.refresh_access_token(user_id)
+            logger.warn("Access Token이 만료되었습니다. Refresh Token으로 재발급을 시도합니다.")
+            # 만료된 토큰에서 user_id 추출 시도
+            try:
+                expired_payload = jwt.decode(access_token, cls.SECRET_KEY, algorithms=["HS256"], options={"verify_exp": False})
+                user_id = expired_payload.get("user_id")
+                if user_id:
+                    # Refresh Token으로 새 Access Token 발급 시도
+                    new_token = cls.refresh_access_token(user_id, auth_provider)
+                    if new_token:
+                        logger.info(f"Access Token 자동 재발급 성공: user_id={user_id}")
+                        return {"user_id": user_id, "new_token": new_token, "auth_provider": auth_provider}
+                    else:
+                        logger.warn("Refresh Token도 만료되었거나 유효하지 않습니다.")
+                        return None
+            except Exception as e:
+                logger.error(f"만료된 토큰에서 user_id 추출 실패: {e}")
             return None
         except jwt.InvalidTokenError:
             logger.error("유효하지 않은 토큰입니다.")

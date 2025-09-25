@@ -57,12 +57,17 @@ class AuthMiddleware(BaseHTTPMiddleware):
             auth_provider = request.cookies.get("auth_provider")
             
             if token:
-                # 토큰이 있으면 검증하고 사용자 정보 추출
-                user_id, auth_provider = self._authenticate_request(request)
+                # 토큰이 있으면 검증하고 사용자 정보 추출 (자동 재발급 포함)
+                auth_result = self._authenticate_request(request)
+                user_id, auth_provider, new_token = auth_result
                 
                 # 요청에 사용자 정보 추가
                 request.state.user_id = user_id
                 request.state.auth_provider = auth_provider
+                
+                # 새 토큰이 발급된 경우 저장
+                if new_token:
+                    request.state.new_access_token = new_token
                 
                 logger.info(f"Authenticated user: {user_id} with provider: {auth_provider}")
             else:
@@ -107,8 +112,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         """인증이 필수인 경로인지 확인"""
         return any(path.startswith(auth_path) for auth_path in self.require_auth_paths)
     
-    def _authenticate_request(self, request: Request) -> tuple[str, str]:
-        """JWT 토큰 검증 및 사용자 정보 추출"""
+    def _authenticate_request(self, request: Request) -> tuple[str, str, str]:
+        """JWT 토큰 검증 및 사용자 정보 추출 (자동 재발급 포함)"""
         # 쿠키에서 토큰과 auth_provider 추출
         token = request.cookies.get("access_token")
         auth_provider = request.cookies.get("auth_provider")
@@ -117,17 +122,31 @@ class AuthMiddleware(BaseHTTPMiddleware):
             logger.warning("Unauthorized access attempt: Missing token")
             raise HTTPException(status_code=403, detail="Access forbidden: Missing token")
         
-        # JWT 토큰 검증
-        decoded_token = JWTService.decode_access_token(
+        # JWT 토큰 검증 (자동 재발급 포함)
+        decoded_result = JWTService.decode_access_token(
             access_token=token, 
             auth_provider=auth_provider
         )
         
-        if not decoded_token:
+        if not decoded_result:
             logger.warning(f"Invalid token access attempt: {token}")
             raise HTTPException(status_code=403, detail="Access forbidden: Invalid token")
         
-        return str(decoded_token), str(auth_provider) if auth_provider else ""
+        # 자동 재발급된 경우 처리
+        if isinstance(decoded_result, dict) and "new_token" in decoded_result:
+            user_id = decoded_result["user_id"]
+            new_token = decoded_result["new_token"]
+            auth_provider = decoded_result["auth_provider"]
+            
+            # 새 토큰을 request.state에 저장하여 응답에서 설정할 수 있도록 함
+            request.state.new_access_token = new_token
+            request.state.new_auth_provider = auth_provider
+            
+            logger.info(f"새로운 Access Token이 발급되었습니다: user_id={user_id}")
+            return str(user_id), str(auth_provider), new_token
+        
+        # 정상적인 토큰인 경우
+        return str(decoded_result), str(auth_provider) if auth_provider else "", ""
 
 class UserInfoMiddleware(BaseHTTPMiddleware):
     """사용자 정보를 헤더에 추가하는 미들웨어"""
@@ -144,4 +163,42 @@ class UserInfoMiddleware(BaseHTTPMiddleware):
             logger.info(f"Added user headers - X-User-Id: {request.state.user_id}, X-Auth-Provider: {request.state.auth_provider}")
         
         response = await call_next(request)
+        return response
+
+class TokenRefreshMiddleware(BaseHTTPMiddleware):
+    """새로 발급된 토큰을 쿠키에 설정하는 미들웨어"""
+    
+    async def dispatch(self, request: Request, call_next):
+        """새로 발급된 토큰을 응답 쿠키에 설정"""
+        
+        response = await call_next(request)
+        
+        # 새로 발급된 토큰이 있으면 쿠키에 설정
+        if hasattr(request.state, 'new_access_token'):
+            new_token = request.state.new_access_token
+            new_auth_provider = getattr(request.state, 'new_auth_provider', None)
+            
+            # 새 Access Token을 쿠키에 설정
+            response.set_cookie(
+                key="access_token",
+                value=new_token,
+                httponly=True,
+                secure=True,  # HTTPS에서만 전송
+                samesite="lax",
+                max_age=3600  # 1시간
+            )
+            
+            # auth_provider도 업데이트
+            if new_auth_provider:
+                response.set_cookie(
+                    key="auth_provider", 
+                    value=new_auth_provider,
+                    httponly=True,
+                    secure=True,
+                    samesite="lax",
+                    max_age=3600
+                )
+            
+            logger.info("새로운 Access Token이 쿠키에 설정되었습니다.")
+        
         return response
