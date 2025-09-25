@@ -45,11 +45,13 @@ async def proxy(request: Request, path: str) -> Response:
         async with httpx.AsyncClient() as client:
             headers = dict(request.headers)
             
-            # 미들웨어에서 추가된 사용자 정보 헤더 사용
+            # 미들웨어에서 추가된 사용자 정보 헤더 사용 (선택적)
             if hasattr(request.state, 'user_id') and hasattr(request.state, 'auth_provider'):
                 headers["X-User-Id"] = str(request.state.user_id)
                 headers["X-Auth-Provider"] = str(request.state.auth_provider)
                 logger.info(f"Forwarding request with X-User-Id: {request.state.user_id} and X-Auth-Provider: {request.state.auth_provider}")
+            else:
+                logger.info("Forwarding request without authentication")
 
             response = await client.request(
                 method=request.method,

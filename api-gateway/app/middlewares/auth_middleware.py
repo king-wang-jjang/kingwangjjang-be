@@ -7,9 +7,9 @@ from app.utils.loghandler import setup_logger
 logger = setup_logger()
 
 class AuthMiddleware(BaseHTTPMiddleware):
-    """인증 미들웨어 - JWT 토큰 검증 및 사용자 정보 추출"""
+    """인증 미들웨어 - JWT 토큰 검증 및 사용자 정보 추출 (선택적 인증)"""
     
-    def __init__(self, app, skip_paths: list = None):
+    def __init__(self, app, skip_paths: list = None, require_auth_paths: list = None):
         super().__init__(app)
         # 인증을 건너뛸 경로들 (예: 정적 파일, 헬스체크 등)
         self.skip_paths = skip_paths or [
@@ -18,25 +18,65 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/openapi.json",
             "/auth/login",
             "/auth/register",
-            "/static"
+            "/auth/logout",
+            "/static",
+            # 공개 API 경로들
+            "/boardservice/",  # 게시판 조회는 공개
+            "/commentservice/",  # 댓글 조회는 공개
+            "/userservice/public"  # 공개 사용자 정보
+        ]
+        # 인증이 필수인 경로들 (명시적으로 지정된 경로만)
+        self.require_auth_paths = require_auth_paths or [
+            "/userservice/me",
+            "/userservice/profile",
+            "/userservice/update",
+            "/userservice/delete",
+            "/boardservice/create",
+            "/boardservice/update", 
+            "/boardservice/delete",
+            "/boardservice/like",
+            "/boardservice/unlike",
+            "/commentservice/create",
+            "/commentservice/update",
+            "/commentservice/delete"
         ]
     
     async def dispatch(self, request: Request, call_next):
-        """미들웨어 처리 로직"""
+        """미들웨어 처리 로직 - 선택적 인증"""
         
         # 인증을 건너뛸 경로인지 확인
         if self._should_skip_auth(request.url.path):
             return await call_next(request)
         
+        # 인증이 필수인 경로인지 확인
+        requires_auth = self._requires_auth(request.url.path)
+        
         try:
-            # JWT 토큰 검증 및 사용자 정보 추출
-            user_id, auth_provider = self._authenticate_request(request)
+            # 토큰이 있는지 확인 (선택적)
+            token = request.cookies.get("access_token")
+            auth_provider = request.cookies.get("auth_provider")
             
-            # 요청에 사용자 정보 추가
-            request.state.user_id = user_id
-            request.state.auth_provider = auth_provider
-            
-            logger.info(f"Authenticated user: {user_id} with provider: {auth_provider}")
+            if token:
+                # 토큰이 있으면 검증하고 사용자 정보 추출
+                user_id, auth_provider = self._authenticate_request(request)
+                
+                # 요청에 사용자 정보 추가
+                request.state.user_id = user_id
+                request.state.auth_provider = auth_provider
+                
+                logger.info(f"Authenticated user: {user_id} with provider: {auth_provider}")
+            else:
+                # 토큰이 없으면 인증이 필수인지 확인
+                if requires_auth:
+                    logger.warning("Unauthorized access attempt: Missing token for required auth path")
+                    return Response(
+                        content='{"detail": "Access forbidden: Authentication required"}',
+                        status_code=401,
+                        media_type="application/json"
+                    )
+                else:
+                    # 인증이 선택적이면 토큰 없이 진행
+                    logger.info("No token provided, proceeding without authentication")
             
         except HTTPException as e:
             # 인증 실패 시 에러 반환
@@ -62,6 +102,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
     def _should_skip_auth(self, path: str) -> bool:
         """인증을 건너뛸 경로인지 확인"""
         return any(path.startswith(skip_path) for skip_path in self.skip_paths)
+    
+    def _requires_auth(self, path: str) -> bool:
+        """인증이 필수인 경로인지 확인"""
+        return any(path.startswith(auth_path) for auth_path in self.require_auth_paths)
     
     def _authenticate_request(self, request: Request) -> tuple[str, str]:
         """JWT 토큰 검증 및 사용자 정보 추출"""

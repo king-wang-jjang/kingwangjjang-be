@@ -1,14 +1,11 @@
-from dataclasses import asdict
-import datetime
+
 import sys
 import httpx
-import jwt
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from app.models.auth_models import UserType
 from app.db.mongo_controller import MongoController
 from app.config import Config
-from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from app.services.auth_services import JWTService, KakaoAuthService, UserService
 from app.utils.loghandler import catch_exception, setup_logger
 
