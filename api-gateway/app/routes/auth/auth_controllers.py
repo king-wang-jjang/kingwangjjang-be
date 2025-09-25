@@ -43,7 +43,7 @@ class KakaoAuthService:
         return token_data.get("access_token")
     
     @staticmethod
-    async def fetch_user_info(access_token: str) -> UserType:
+    async def fetch_user_info(access_token: str, auth_provider: str = "kakao") -> UserType:
         """Access Token으로 카카오 사용자 정보 가져오기"""
         user_info_url = f"{KAKAO_API_BASE}/v2/user/me"
         headers = {"Authorization": f"Bearer {access_token}"}
@@ -60,7 +60,8 @@ class KakaoAuthService:
                 logger.info("Kakao user info fetched successfully: %s", user_data)
 
                 return UserType(
-                    user_id=user_data["id"]
+                    user_id=user_data["id"],
+                    auth_provider=auth_provider
                 )
             except httpx.HTTPStatusError as e:
                 logger.error(
@@ -88,7 +89,7 @@ async def callback(code: str):
         access_token = await KakaoAuthService.fetch_access_token(
             code, KAKAO_CLIENT_ID, REDIRECT_URI, KAKAO_CLIENT_SECRET
         )
-        user_info = await KakaoAuthService.fetch_user_info(access_token)
+        user_info = await KakaoAuthService.fetch_user_info(access_token, "kakao")
         refresh_token = JWTService.create_refresh_token(user_info.user_id, "kakao")
         
         # refresh_token을 DB에 저장

@@ -61,7 +61,7 @@ def get_auth_provider_from_token(token: str) -> Optional[str]:
     """JWT 토큰에서 auth_provider를 추출"""
     payload = verify_jwt_token(token)
     if payload:
-        return payload.get("auth_provider") or payload.get("provider")
+        return payload.get("auth_provider")
     return None
 
 def get_current_user_from_request(request: Request) -> Optional[str]:

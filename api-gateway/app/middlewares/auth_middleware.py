@@ -54,7 +54,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
         try:
             # 토큰이 있는지 확인 (선택적)
             token = request.cookies.get("access_token")
-            auth_provider = request.cookies.get("auth_provider")
             
             if token:
                 # 토큰이 있으면 검증하고 사용자 정보 추출 (자동 재발급 포함)
@@ -114,19 +113,15 @@ class AuthMiddleware(BaseHTTPMiddleware):
     
     def _authenticate_request(self, request: Request) -> tuple[str, str, str]:
         """JWT 토큰 검증 및 사용자 정보 추출 (자동 재발급 포함)"""
-        # 쿠키에서 토큰과 auth_provider 추출
+        # 쿠키에서 토큰 추출 (auth_provider는 토큰에서 추출)
         token = request.cookies.get("access_token")
-        auth_provider = request.cookies.get("auth_provider")
         
         if not token:
             logger.warning("Unauthorized access attempt: Missing token")
             raise HTTPException(status_code=403, detail="Access forbidden: Missing token")
         
         # JWT 토큰 검증 (자동 재발급 포함)
-        decoded_result = JWTService.decode_access_token(
-            access_token=token, 
-            auth_provider=auth_provider
-        )
+        decoded_result = JWTService.decode_access_token(access_token=token)
         
         if not decoded_result:
             logger.warning(f"Invalid token access attempt: {token}")
@@ -146,7 +141,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return str(user_id), str(auth_provider), new_token
         
         # 정상적인 토큰인 경우
-        return str(decoded_result), str(auth_provider) if auth_provider else "", ""
+        user_id = decoded_result["user_id"]
+        auth_provider = decoded_result["auth_provider"]
+        return str(user_id), str(auth_provider), ""
 
 class UserInfoMiddleware(BaseHTTPMiddleware):
     """사용자 정보를 헤더에 추가하는 미들웨어"""

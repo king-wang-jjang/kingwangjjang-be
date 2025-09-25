@@ -37,7 +37,7 @@ class KakaoAuthService:
         return token_data.get("access_token")
     
     @staticmethod
-    async def fetch_user_info(access_token: str) -> UserType:
+    async def fetch_user_info(access_token: str, auth_provider: str = "kakao") -> UserType:
         """Access Token으로 카카오 사용자 정보 가져오기"""
         user_info_url = f"{KAKAO_API_BASE}/v2/user/me"
         headers = {"Authorization": f"Bearer {access_token}"}
@@ -49,7 +49,7 @@ class KakaoAuthService:
 
         return UserType(
             user_id=user_data["id"],
-            auth_provider="kakao"
+            auth_provider=auth_provider
         )
 
 class UserService:
@@ -135,23 +135,25 @@ class JWTService:
         return None
     
     @classmethod
-    def decode_access_token(cls, access_token, auth_provider = "kakao"):
+    def decode_access_token(cls, access_token, auth_provider = None):
         try:
             decoded_payload = jwt.decode(access_token, cls.SECRET_KEY, algorithms=["HS256"])
             user_id = decoded_payload.get("user_id")
-            return user_id
+            token_auth_provider = decoded_payload.get("auth_provider")
+            return {"user_id": user_id, "auth_provider": token_auth_provider}
         except jwt.ExpiredSignatureError:
             logger.warn("Access Token이 만료되었습니다. Refresh Token으로 재발급을 시도합니다.")
-            # 만료된 토큰에서 user_id 추출 시도
+            # 만료된 토큰에서 user_id와 auth_provider 추출 시도
             try:
                 expired_payload = jwt.decode(access_token, cls.SECRET_KEY, algorithms=["HS256"], options={"verify_exp": False})
                 user_id = expired_payload.get("user_id")
+                token_auth_provider = expired_payload.get("auth_provider")
                 if user_id:
                     # Refresh Token으로 새 Access Token 발급 시도
-                    new_token = cls.refresh_access_token(user_id, auth_provider)
+                    new_token = cls.refresh_access_token(user_id, token_auth_provider)
                     if new_token:
                         logger.info(f"Access Token 자동 재발급 성공: user_id={user_id}")
-                        return {"user_id": user_id, "new_token": new_token, "auth_provider": auth_provider}
+                        return {"user_id": user_id, "new_token": new_token, "auth_provider": token_auth_provider}
                     else:
                         logger.warn("Refresh Token도 만료되었거나 유효하지 않습니다.")
                         return None

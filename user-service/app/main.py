@@ -26,11 +26,8 @@ app.add_middleware(
 sys.excepthook = catch_exception
 logger = setup_logger()
 
-# GraphQL 컨텍스트 함수 정의
-def get_context(request):
-    return {"request": request}
-
-graphql_app = GraphQLRouter(schema, context_getter=get_context)
+# GraphQL 라우터 설정 (context_getter 없이)
+graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/user-graphql") 
 
 if __name__ == "__main__":

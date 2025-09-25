@@ -9,7 +9,8 @@ mongo = MongoController()
 
 def extract_user_info_from_context(info: Info) -> tuple[Optional[str], Optional[str]]:
     """GraphQL Context에서 user_id와 auth_provider를 추출 (JWT 토큰 우선, 헤더 대체)"""
-    request: Request = info.context.get("request")  # FastAPI의 Request 객체 가져오기
+    # Strawberry GraphQL에서 Request 객체 접근 방식
+    request = info.context.get("request")
     if not request:
         return None, None
     
@@ -30,7 +31,7 @@ async def get_user_by_id(info: Info, id: Optional[str] = None) -> Optional[UserT
         user_id, auth_provider = extract_user_info_from_context(info)  # 🔹 GraphQL Context에서 user_id와 auth_provider 가져오기
     else:
         # id가 제공된 경우, auth_provider만 헤더에서 추출
-        request: Request = info.context.get("request")
+        request = info.context.get("request")
         auth_provider = None
         if request:
             auth_provider = request.headers.get("x-auth-provider") or request.headers.get("X-Auth-Provider")
