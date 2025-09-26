@@ -236,7 +236,7 @@ def crawler_logger():
     return logger
 
 def setup_logger():
-    logger = logging.getLogger("마약.kr")
+    logger = logging.getLogger("board-service")
     logger.setLevel(logging.INFO)
 
     # 이미 핸들러가 설정되어 있으면 중복 추가 방지

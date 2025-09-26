@@ -8,10 +8,10 @@ mongo = MongoController()
 @strawberry.type
 class UserMutation:
     @strawberry.mutation
-    async def create_user(self, info, auth_organization: str, user_id: int, nickname: str, profile_image: str) -> UserType:
+    async def create_user(self, info, auth_provider: str, user_id: int, nickname: str, profile_image: str) -> UserType:
         user_data = UserType(
             id=user_id,
-            auth_organization=auth_organization,
+            auth_provider=auth_provider,
             nickname=nickname,
             profile_image=profile_image,
             create_time=datetime.utcnow()

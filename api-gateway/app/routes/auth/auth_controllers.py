@@ -1,14 +1,11 @@
-from dataclasses import asdict
-import datetime
+
 import sys
 import httpx
-import jwt
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import RedirectResponse
 from app.models.auth_models import UserType
 from app.db.mongo_controller import MongoController
 from app.config import Config
-from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from app.services.auth_services import JWTService, KakaoAuthService, UserService
 from app.utils.loghandler import catch_exception, setup_logger
 
@@ -46,7 +43,7 @@ class KakaoAuthService:
         return token_data.get("access_token")
     
     @staticmethod
-    async def fetch_user_info(access_token: str) -> UserType:
+    async def fetch_user_info(access_token: str, auth_provider: str = "kakao") -> UserType:
         """Access Token으로 카카오 사용자 정보 가져오기"""
         user_info_url = f"{KAKAO_API_BASE}/v2/user/me"
         headers = {"Authorization": f"Bearer {access_token}"}
@@ -63,7 +60,8 @@ class KakaoAuthService:
                 logger.info("Kakao user info fetched successfully: %s", user_data)
 
                 return UserType(
-                    user_id=user_data["id"]
+                    user_id=user_data["id"],
+                    auth_provider=auth_provider
                 )
             except httpx.HTTPStatusError as e:
                 logger.error(
@@ -91,15 +89,15 @@ async def callback(code: str):
         access_token = await KakaoAuthService.fetch_access_token(
             code, KAKAO_CLIENT_ID, REDIRECT_URI, KAKAO_CLIENT_SECRET
         )
-        user_info = await KakaoAuthService.fetch_user_info(access_token)
-        refresh_token = JWTService.create_refresh_token(user_info.user_id)
+        user_info = await KakaoAuthService.fetch_user_info(access_token, "kakao")
+        refresh_token = JWTService.create_refresh_token(user_info.user_id, "kakao")
         
         # refresh_token을 DB에 저장
         await UserService.save_user_to_db(user_info, refresh_token)
         
-        jwt_token = JWTService.create_access_token(user_info.user_id)
+        jwt_token = JWTService.create_access_token(user_info.user_id, "kakao")
         
-        JWTService.decode_access_token(access_token=jwt_token)
+        JWTService.decode_access_token(access_token=jwt_token, auth_provider="kakao")
 
         response = RedirectResponse(url=WEBSITE_URL, status_code=302)
         response.set_cookie(

@@ -26,6 +26,7 @@ app.add_middleware(
 sys.excepthook = catch_exception
 logger = setup_logger()
 
+# GraphQL 라우터 설정 (context_getter 없이)
 graphql_app = GraphQLRouter(schema)
 app.include_router(graphql_app, prefix="/user-graphql") 
 

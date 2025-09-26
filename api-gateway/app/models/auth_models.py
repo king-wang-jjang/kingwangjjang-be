@@ -11,7 +11,7 @@ class FilterType:
 class UserType:
     # _id: Optional[str] = field(init=False) 
     user_id: Optional[str] = None
-    auth_organization: Optional[str] = None
+    auth_provider: Optional[str] = None
     nickname: Optional[str] = None
     filter: Optional[FilterType] = None
     profile_image: Optional[str] = None

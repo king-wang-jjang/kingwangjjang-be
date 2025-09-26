@@ -4,7 +4,7 @@ from fastapi import APIRouter, Request, Response, HTTPException
 import sys
 
 from app.utils.loghandler import Config
-from app.services.auth_services import JWTService
+# JWTService는 이제 AuthMiddleware에서 사용됩니다.
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
 
@@ -23,7 +23,7 @@ def get_service_url(path: str) -> str:
     if is_server == "FALSE":
         service_map = {
             "boardservice/": "localhost:33333",
-            "user/": "localhost:33334",
+            "userservice/": "localhost:33334",
             "commentservice/": "localhost:33335",
         }
     for prefix, target in service_map.items():
@@ -32,26 +32,7 @@ def get_service_url(path: str) -> str:
     return ""
 
 
-def authenticate_user_request(request: Request) -> str:
-    """JWT 검증 및 user_id 추출"""
-    is_graphql_generate = config.get_env('SERVER_TYPE')
-    if (is_graphql_generate == "GRAPHQL-GENERATE"):
-        logger.info(f"Skip Authenticate (is_graphql_generate): {is_graphql_generate}")
-        return 3891969863
-    
-    token = request.cookies.get("access_token")
-    if not token:
-        logger.warning("Unauthorized access attempt: Missing token")
-        raise HTTPException(status_code=403, detail="Access forbidden: Missing token")
-
-    decoded_token = JWTService.decode_access_token(access_token=token)
-    user_id = decoded_token if decoded_token else None
-
-    if not user_id:
-        logger.warning(f"Invalid token access attempt: {token}")
-        raise HTTPException(status_code=403, detail="Access forbidden: Invalid token")
-    
-    return user_id
+# 인증 로직은 이제 AuthMiddleware에서 처리됩니다.
 
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
 async def proxy(request: Request, path: str) -> Response:
@@ -59,19 +40,18 @@ async def proxy(request: Request, path: str) -> Response:
     url = get_service_url(path)
     if not url:
         raise HTTPException(status_code=404, detail="Invalid path prefix")
-    
-    user_id = None
-    if path.startswith("user/"):
-        user_id = authenticate_user_request(request)
 
     try:
         async with httpx.AsyncClient() as client:
             headers = dict(request.headers)
             
-            # 🔹 User-Service 요청 시 `user_id`를 Header에 추가
-            if user_id:
-                headers["X-User-Id"] = str(user_id)
-                logger.info(f"Forwarding request to User-Service with X-User-Id: {user_id}")
+            # 미들웨어에서 추가된 사용자 정보 헤더 사용 (선택적)
+            if hasattr(request.state, 'user_id') and hasattr(request.state, 'auth_provider'):
+                headers["X-User-Id"] = str(request.state.user_id)
+                headers["X-Auth-Provider"] = str(request.state.auth_provider)
+                logger.info(f"Forwarding request with X-User-Id: {request.state.user_id} and X-Auth-Provider: {request.state.auth_provider}")
+            else:
+                logger.info("Forwarding request without authentication")
 
             response = await client.request(
                 method=request.method,
