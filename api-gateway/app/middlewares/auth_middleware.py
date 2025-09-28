@@ -3,53 +3,21 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 from app.services.auth_services import JWTService
 from app.utils.loghandler import setup_logger
+import jwt
+from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 
 logger = setup_logger()
 
 class AuthMiddleware(BaseHTTPMiddleware):
     """인증 미들웨어 - JWT 토큰 검증 및 사용자 정보 추출 (선택적 인증)"""
     
-    def __init__(self, app, skip_paths: list = None, require_auth_paths: list = None):
+    def __init__(self, app):
         super().__init__(app)
-        # 인증을 건너뛸 경로들 (예: 정적 파일, 헬스체크 등)
-        self.skip_paths = skip_paths or [
-            "/docs",
-            "/redoc", 
-            "/openapi.json",
-            "/auth/login",
-            "/auth/register",
-            "/auth/logout",
-            "/static",
-            # 공개 API 경로들
-            "/boardservice/",  # 게시판 조회는 공개
-            "/commentservice/",  # 댓글 조회는 공개
-            "/userservice/public"  # 공개 사용자 정보
-        ]
-        # 인증이 필수인 경로들 (명시적으로 지정된 경로만)
-        self.require_auth_paths = require_auth_paths or [
-            "/userservice/me",
-            "/userservice/profile",
-            "/userservice/update",
-            "/userservice/delete",
-            "/boardservice/create",
-            "/boardservice/update", 
-            "/boardservice/delete",
-            "/boardservice/like",
-            "/boardservice/unlike",
-            "/commentservice/create",
-            "/commentservice/update",
-            "/commentservice/delete"
-        ]
     
     async def dispatch(self, request: Request, call_next):
         """미들웨어 처리 로직 - 선택적 인증"""
         
-        # 인증을 건너뛸 경로인지 확인
-        if self._should_skip_auth(request.url.path):
-            return await call_next(request)
-        
-        # 인증이 필수인 경로인지 확인
-        requires_auth = self._requires_auth(request.url.path)
+        # 모든 경로에서 동일한 선택적 인증을 수행합니다.
         
         try:
             # 토큰이 있는지 확인 (선택적)
@@ -70,17 +38,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 
                 logger.info(f"Authenticated user: {user_id} with provider: {auth_provider}")
             else:
-                # 토큰이 없으면 인증이 필수인지 확인
-                if requires_auth:
-                    logger.warning("Unauthorized access attempt: Missing token for required auth path")
-                    return Response(
-                        content='{"detail": "Access forbidden: Authentication required"}',
-                        status_code=401,
-                        media_type="application/json"
-                    )
-                else:
-                    # 인증이 선택적이면 토큰 없이 진행
-                    logger.info("No token provided, proceeding without authentication")
+                # 인증이 선택적이면 토큰 없이 진행
+                logger.info("No token provided, proceeding without authentication")
             
         except HTTPException as e:
             # 인증 실패 시 에러 반환
@@ -103,14 +62,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         return response
     
-    def _should_skip_auth(self, path: str) -> bool:
-        """인증을 건너뛸 경로인지 확인"""
-        return any(path.startswith(skip_path) for skip_path in self.skip_paths)
-    
-    def _requires_auth(self, path: str) -> bool:
-        """인증이 필수인 경로인지 확인"""
-        return any(path.startswith(auth_path) for auth_path in self.require_auth_paths)
-    
     def _authenticate_request(self, request: Request) -> tuple[str, str, str]:
         """JWT 토큰 검증 및 사용자 정보 추출 (자동 재발급 포함)"""
         # 쿠키에서 토큰 추출 (auth_provider는 토큰에서 추출)
@@ -120,29 +71,22 @@ class AuthMiddleware(BaseHTTPMiddleware):
             logger.warning("Unauthorized access attempt: Missing token")
             raise HTTPException(status_code=403, detail="Access forbidden: Missing token")
         
-        # JWT 토큰 검증 (자동 재발급 포함)
-        decoded_result = JWTService.decode_access_token(access_token=token)
-        
-        if not decoded_result:
-            logger.warning(f"Invalid token access attempt: {token}")
+        # JWT 토큰 만료만 검증 (자동 재발급 제거)
+        try:
+            decoded_payload = jwt.decode(token, JWTService.SECRET_KEY, algorithms=["HS256"])
+        except ExpiredSignatureError:
+            logger.warning("Access Token expired")
+            raise HTTPException(status_code=401, detail="Access token expired")
+        except InvalidTokenError:
+            logger.warning("Invalid access token")
             raise HTTPException(status_code=403, detail="Access forbidden: Invalid token")
-        
-        # 자동 재발급된 경우 처리
-        if isinstance(decoded_result, dict) and "new_token" in decoded_result:
-            user_id = decoded_result["user_id"]
-            new_token = decoded_result["new_token"]
-            auth_provider = decoded_result["auth_provider"]
-            
-            # 새 토큰을 request.state에 저장하여 응답에서 설정할 수 있도록 함
-            request.state.new_access_token = new_token
-            request.state.new_auth_provider = auth_provider
-            
-            logger.info(f"새로운 Access Token이 발급되었습니다: user_id={user_id}")
-            return str(user_id), str(auth_provider), new_token
-        
-        # 정상적인 토큰인 경우
-        user_id = decoded_result["user_id"]
-        auth_provider = decoded_result["auth_provider"]
+
+        user_id = decoded_payload.get("user_id")
+        auth_provider = decoded_payload.get("auth_provider")
+
+        if user_id is None:
+            raise HTTPException(status_code=403, detail="Access forbidden: Invalid token")
+
         return str(user_id), str(auth_provider), ""
 
 class UserInfoMiddleware(BaseHTTPMiddleware):
