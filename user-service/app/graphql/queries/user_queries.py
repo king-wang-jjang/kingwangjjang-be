@@ -1,6 +1,6 @@
 from typing import Optional
 import strawberry
-from app.graphql.resolvers import get_user_by_id
+from app.graphql.resolvers import get_user_by_id, require_authenticated_user
 from app.models.auth_models import UserType
 from strawberry.types import Info  
 
@@ -12,6 +12,7 @@ class UserQuery:
     
     @strawberry.field
     async def me(self, info: Info) -> Optional[UserType]:
-        # 현재 인증된 사용자 정보를 반환
-        # JWT 토큰에서 사용자 ID를 추출하여 사용자 정보 조회
-        return await get_user_by_id(info, None)  # None을 전달하면 자동으로 context에서 사용자 ID 추출
+        # 인증 강제: 게이트웨이 헤더 기반으로 검증
+        require_authenticated_user(info)
+        # 인증 통과 시 현재 사용자 정보 반환
+        return await get_user_by_id(info, None)

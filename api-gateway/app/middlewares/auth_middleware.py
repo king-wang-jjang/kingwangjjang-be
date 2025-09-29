@@ -31,6 +31,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 # 요청에 사용자 정보 추가
                 request.state.user_id = user_id
                 request.state.auth_provider = auth_provider
+                request.state.auth_status = "authenticated"
+                # 이전 에러 상태가 있었다면 초기화
+                if hasattr(request.state, 'auth_error'):
+                    delattr(request.state, 'auth_error')
                 
                 # 새 토큰이 발급된 경우 저장
                 if new_token:
@@ -39,24 +43,30 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 logger.info(f"Authenticated user: {user_id} with provider: {auth_provider}")
             else:
                 # 인증이 선택적이면 토큰 없이 진행
+                request.state.auth_status = "unauthenticated"
+                request.state.auth_error = "no_token"
                 logger.info("No token provided, proceeding without authentication")
             
         except HTTPException as e:
-            # 인증 실패 시 에러 반환
-            logger.warning(f"Authentication failed: {e.detail}")
-            return Response(
-                content=f'{{"detail": "{e.detail}"}}',
-                status_code=e.status_code,
-                media_type="application/json"
-            )
+            # 인증 실패 시 요청은 계속 진행하되 상태/에러 정보를 기록
+            request.state.auth_status = "unauthenticated"
+            # 에러명을 표준화하여 다운스트림 서비스로 전달
+            detail = str(e.detail) if hasattr(e, 'detail') else "auth_error"
+            if e.status_code == 401:
+                request.state.auth_error = "token_expired"
+            elif e.status_code == 403:
+                if "Invalid token" in detail:
+                    request.state.auth_error = "invalid_token"
+                else:
+                    request.state.auth_error = "forbidden"
+            else:
+                request.state.auth_error = "auth_error"
+            logger.warning(f"Authentication failed, skipping auth: {detail}")
         except Exception as e:
-            # 예상치 못한 에러
-            logger.error(f"Authentication error: {e}")
-            return Response(
-                content='{"detail": "Internal authentication error"}',
-                status_code=500,
-                media_type="application/json"
-            )
+            # 예상치 못한 에러 - 요청은 계속 진행하되 에러 코드만 기록
+            request.state.auth_status = "unauthenticated"
+            request.state.auth_error = "internal_auth_error"
+            logger.error(f"Authentication error, skipping auth: {e}")
         
         # 다음 미들웨어/라우터로 전달
         response = await call_next(request)

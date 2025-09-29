@@ -44,6 +44,11 @@ async def proxy(request: Request, path: str) -> Response:
     try:
         async with httpx.AsyncClient() as client:
             headers = dict(request.headers)
+            # 보안: 클라이언트 스푸핑 방지 - 게이트웨이가 책임지고 설정
+            headers.pop("X-User-Id", None)
+            headers.pop("X-Auth-Provider", None)
+            headers.pop("X-Auth-Status", None)
+            headers.pop("X-Auth-Error", None)
             
             # 미들웨어에서 추가된 사용자 정보 헤더 사용 (선택적)
             if hasattr(request.state, 'user_id') and hasattr(request.state, 'auth_provider'):
@@ -52,6 +57,13 @@ async def proxy(request: Request, path: str) -> Response:
                 logger.info(f"Forwarding request with X-User-Id: {request.state.user_id} and X-Auth-Provider: {request.state.auth_provider}")
             else:
                 logger.info("Forwarding request without authentication")
+
+            # 인증 상태/에러 컨텍스트 전달 (항상 세팅)
+            auth_status = getattr(request.state, 'auth_status', 'unauthenticated')
+            headers["X-Auth-Status"] = str(auth_status)
+            auth_error = getattr(request.state, 'auth_error', None)
+            if auth_error:
+                headers["X-Auth-Error"] = str(auth_error)
 
             response = await client.request(
                 method=request.method,

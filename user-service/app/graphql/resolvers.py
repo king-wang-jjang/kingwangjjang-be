@@ -2,7 +2,7 @@ from typing import Optional
 from app.db.mongo_controller import MongoController
 from app.models.auth_models import UserType
 from app.utils.jwt_handler import get_current_user_from_request, get_current_user_info_from_request
-from fastapi import Request
+from fastapi import Request, HTTPException
 from strawberry.types import Info  
 
 mongo = MongoController()
@@ -51,3 +51,22 @@ async def get_user_by_id(info: Info, id: Optional[str] = None) -> Optional[UserT
         user_data = {k: v for k, v in user.items() if k in UserType.__annotations__}  
         return UserType(**user_data)
     return None
+
+def require_authenticated_user(info: Info) -> str:
+    """게이트웨이 헤더를 기준으로 인증을 강제. 실패 시 적절한 상태코드/에러명으로 예외 발생"""
+    request = info.context.get("request")
+    if not request:
+        raise HTTPException(status_code=500, detail="missing_request_context")
+
+    status = request.headers.get("X-Auth-Status") or request.headers.get("x-auth-status")
+    if status != "authenticated":
+        err = request.headers.get("X-Auth-Error") or request.headers.get("x-auth-error") or "auth_required"
+        if err in ("no_token", "token_expired", "invalid_token", "auth_required"):
+            raise HTTPException(status_code=401, detail=err)
+        raise HTTPException(status_code=403, detail=err)
+
+    # 상태가 authenticated면 최소한 사용자 식별자가 있는지 확인
+    user_id, _ = extract_user_info_from_context(info)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="auth_required")
+    return str(user_id)
