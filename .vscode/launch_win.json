@@ -22,7 +22,7 @@
       ],
       "python": "${workspaceFolder}/api-gateway/.venv/Scripts/python.exe",
       "justMyCode": false,
-      "preLaunchTask": "Poetry Install API Gateway"
+      "preLaunchTask": "Poetry Install All Services"
     },
     {
       "name": "Debug Board service",
@@ -45,7 +45,7 @@
       ],
       "python": "${workspaceFolder}/board-service/.venv/Scripts/python.exe",
       "justMyCode": false,
-      "preLaunchTask": "Poetry Install Board Service"
+      "preLaunchTask": "Poetry Install All Services"
     },
     {
       "name": "Debug User service",
@@ -68,7 +68,7 @@
       ],
       "python": "${workspaceFolder}/user-service/.venv/Scripts/python.exe",
       "justMyCode": false,
-      "preLaunchTask": "Poetry Install User Service"
+      "preLaunchTask": "Poetry Install All Services"
     },
     {
       "name": "Debug Comment service",
@@ -91,10 +91,23 @@
       ],
       "python": "${workspaceFolder}/comment-service/.venv/Scripts/python.exe",
       "justMyCode": false,
-      "preLaunchTask": "Poetry Install Comment Service"
+      "preLaunchTask": "Poetry Install All Services"
     },
   ],
   "compounds": [
+    {
+      "name": "Install All Dependencies",
+      "preLaunchTask": "Poetry Install All Services",
+      "configurations": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      }
+    },
     {
       "name": "Start All Services",
       "configurations": [
@@ -103,7 +116,18 @@
         "Debug User service",
         "Debug Comment service"
       ],
-      "stopAll": true
+      "stopAll": true,
+      "delayBetweenConfigurations": 5000
+    },
+    {
+      "name": "Start Core Services",
+      "configurations": [
+        "Debug API Gateway",
+        "Debug Board service",
+        "Debug User service"
+      ],
+      "stopAll": true,
+      "delayBetweenConfigurations": 3000
     }
   ]
 }
