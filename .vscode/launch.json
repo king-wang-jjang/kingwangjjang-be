@@ -15,15 +15,12 @@
       },
       "args": [
         "app.main:app",
-        "--host",
-        "0.0.0.0",
+        "--host", "0.0.0.0",
         "--reload",
-        "--log-level",
-        "debug",
-        "--port",
-        "33330"
+        "--log-level", "debug",
+        "--port", "33330"
       ],
-      "python": "${workspaceFolder}/api-gateway/.venv/bin/python3",
+      "python": "${workspaceFolder}/api-gateway/.venv/Scripts/python.exe",
       "justMyCode": false,
       "preLaunchTask": "Poetry Install API Gateway"
     },
@@ -41,15 +38,12 @@
       },
       "args": [
         "app.main:app",
-        "--host",
-        "0.0.0.0",
+        "--host", "0.0.0.0",
         "--reload",
-        "--log-level",
-        "debug",
-        "--port",
-        "33333"
+        "--log-level", "debug",
+        "--port", "33333"
       ],
-      "python": "${workspaceFolder}/board-service/.venv/bin/python3",
+      "python": "${workspaceFolder}/board-service/.venv/Scripts/python.exe",
       "justMyCode": false,
       "preLaunchTask": "Poetry Install Board Service"
     },
@@ -67,15 +61,12 @@
       },
       "args": [
         "app.main:app",
-        "--host",
-        "0.0.0.0",
+        "--host", "0.0.0.0",
         "--reload",
-        "--log-level",
-        "debug",
-        "--port",
-        "33334"
+        "--log-level", "debug",
+        "--port", "33334"
       ],
-      "python": "${workspaceFolder}/user-service/.venv/bin/python3",
+      "python": "${workspaceFolder}/user-service/.venv/Scripts/python.exe",
       "justMyCode": false,
       "preLaunchTask": "Poetry Install User Service"
     },
@@ -93,18 +84,15 @@
       },
       "args": [
         "app.main:app",
-        "--host",
-        "0.0.0.0",
+        "--host", "0.0.0.0",
         "--reload",
-        "--log-level",
-        "debug",
-        "--port",
-        "33335"
+        "--log-level", "debug",
+        "--port", "33335"
       ],
-      "python": "${workspaceFolder}/comment-service/.venv/bin/python3",
+      "python": "${workspaceFolder}/comment-service/.venv/Scripts/python.exe",
       "justMyCode": false,
       "preLaunchTask": "Poetry Install Comment Service"
-    }
+    },
   ],
   "compounds": [
     {

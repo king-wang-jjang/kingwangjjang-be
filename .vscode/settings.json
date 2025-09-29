@@ -1,0 +1,23 @@
+{
+    "python.analysis.extraPaths": [
+        "./api-gateway",
+        "./board-service",
+        "./comment-service",
+        "./user-service",
+        "./notification-service",
+        "./gpt-service"
+    ],
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.autoSearchPaths": true,
+    "python.analysis.diagnosticMode": "workspace",
+    "python.defaultInterpreterPath": "./comment-service/.venv/Scripts/python.exe",
+    "python.terminal.activateEnvironment": true,
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Enabled": true,
+    "python.formatting.provider": "black",
+    "editor.formatOnSave": true,
+    "python.analysis.stubPath": "./typings",
+    "python.analysis.completeFunctionParens": true
+}
