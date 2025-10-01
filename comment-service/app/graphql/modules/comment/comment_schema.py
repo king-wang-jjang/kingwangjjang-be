@@ -99,8 +99,12 @@ class Query:
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def create_comment(self, input: CreateCommentInput) -> CommentEntry:
+    def create_comment(self, input: CreateCommentInput, info) -> CommentEntry:
         try:
+            # API Gateway에서 전달받은 사용자 정보 가져오기
+            from app.utils.auth_utils import get_authenticated_user_id
+            user_id = get_authenticated_user_id(info)
+            
             now = datetime.datetime.now()
             board_id = ObjectId(input.board_id)
             
@@ -119,7 +123,7 @@ class Mutation:
                 "board_id": board_id,
                 "parent_id": ObjectId(input.parent_id) if input.parent_id else None,
                 "content": input.content,
-                "user_id": ObjectId(input.user_id),
+                "user_id": ObjectId(user_id),
                 "like_count": 0,
                 "reply_count": 0,
                 "is_deleted": False,
@@ -157,14 +161,18 @@ class Mutation:
             raise HTTPException(status_code=500, detail="Failed to create comment")
     
     @strawberry.mutation
-    def update_comment(self, input: UpdateCommentInput) -> CommentEntry:
+    def update_comment(self, input: UpdateCommentInput, info) -> CommentEntry:
         try:
+            # API Gateway에서 전달받은 사용자 정보 가져오기
+            from app.utils.auth_utils import get_authenticated_user_id
+            user_id = get_authenticated_user_id(info)
+            
             # 댓글 존재 확인 및 권한 확인
             comment = db_controller.find_one("Comment", {"_id": ObjectId(input.comment_id)})
             if not comment:
                 raise HTTPException(status_code=404, detail="Comment not found")
             
-            if str(comment["user_id"]) != input.user_id:
+            if str(comment["user_id"]) != user_id:
                 raise HTTPException(status_code=403, detail="Not authorized to update this comment")
             
             if comment.get("is_deleted", False):
@@ -204,14 +212,18 @@ class Mutation:
             raise HTTPException(status_code=500, detail="Failed to update comment")
     
     @strawberry.mutation
-    def delete_comment(self, input: DeleteCommentInput) -> bool:
+    def delete_comment(self, input: DeleteCommentInput, info) -> bool:
         try:
+            # API Gateway에서 전달받은 사용자 정보 가져오기
+            from app.utils.auth_utils import get_authenticated_user_id
+            user_id = get_authenticated_user_id(info)
+            
             # 댓글 존재 확인 및 권한 확인
             comment = db_controller.find_one("Comment", {"_id": ObjectId(input.comment_id)})
             if not comment:
                 raise HTTPException(status_code=404, detail="Comment not found")
             
-            if str(comment["user_id"]) != input.user_id:
+            if str(comment["user_id"]) != user_id:
                 raise HTTPException(status_code=403, detail="Not authorized to delete this comment")
             
             if comment.get("is_deleted", False):
@@ -236,8 +248,12 @@ class Mutation:
             raise HTTPException(status_code=500, detail="Failed to delete comment")
     
     @strawberry.mutation
-    def like_comment(self, input: LikeCommentInput) -> CommentEntry:
+    def like_comment(self, input: LikeCommentInput, info) -> CommentEntry:
         try:
+            # API Gateway에서 전달받은 사용자 정보 가져오기
+            from app.utils.auth_utils import get_authenticated_user_id
+            user_id = get_authenticated_user_id(info)
+            
             # 댓글 존재 확인
             comment = db_controller.find_one("Comment", {"_id": ObjectId(input.comment_id)})
             if not comment:
