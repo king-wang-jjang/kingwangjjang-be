@@ -29,24 +29,20 @@ class CreateCommentInput:
     board_id: str
     parent_id: Optional[str] = None  # 대댓글인 경우 부모 댓글 ID
     content: str
-    user_id: str
 
 
 @strawberry.input
 class UpdateCommentInput:
     comment_id: str
     content: str
-    user_id: str
 
 
 @strawberry.input
 class DeleteCommentInput:
     comment_id: str
-    user_id: str
 
 
 @strawberry.input
 class LikeCommentInput:
     comment_id: str
-    user_id: str
 
