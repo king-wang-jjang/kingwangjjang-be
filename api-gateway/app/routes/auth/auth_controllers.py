@@ -90,6 +90,12 @@ async def callback(code: str):
             code, KAKAO_CLIENT_ID, REDIRECT_URI, KAKAO_CLIENT_SECRET
         )
         user_info = await KakaoAuthService.fetch_user_info(access_token, "kakao")
+        
+        # user_info가 None인지 체크
+        if user_info is None:
+            logger.error("Failed to fetch user info from Kakao")
+            raise HTTPException(status_code=500, detail="Failed to fetch user info from Kakao")
+        
         refresh_token = JWTService.create_refresh_token(user_info.user_id, "kakao")
         
         # refresh_token을 DB에 저장
