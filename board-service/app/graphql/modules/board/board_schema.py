@@ -37,44 +37,6 @@ class Query:
         return get_pagination_daily_best(index)
 
     @strawberry.field
-    def comment(self, board_id: str, site: str) -> Comment:
-        try:
-            # delegate to comment-service via API Gateway prefix
-            # When running locally, API Gateway maps commentservice/ -> localhost:33335
-            url = f"http://localhost:8000/commentservice/comment?board_id={board_id}&site={site}"
-            with httpx.Client() as client:
-                resp = client.get(url)
-                resp.raise_for_status()
-                comments = resp.json()
-            if not comments:
-                comments = [{"none": "none"}]
-            datas = []
-            for comment in comments:
-                tmp_replys = []
-                for data in comment["reply"]:
-                    logger.debug(f"Reply to comment {data}")
-                    tmp_replys.append(ReplyEntrys(board_id=data["board_id"], site=data["site"], user_id=data["user_id"],
-                                                  comment=data["comment"], timestamp=data["timestamp"]))
-                datas.append(
-                    CommentEntrys(
-                        _id=comment["_id"],
-                        board_id=data["board_id"],
-                        site=data["site"],
-                        user_id=data["user_id"],
-                        comment=data["comment"],
-                        reply=tmp_replys,
-                        timestamp=data["timestamp"]
-                    )
-                )
-            return Comment(board_id=board_id,
-                           site=site,
-                           Comments=datas)
-        except Exception as e:
-            logger.exception(f"Error creating summary board: {e}")
-            raise HTTPException(status_code=500,
-                                detail="Internal server error")
-
-    @strawberry.field
     def get_like(self, board_id: str, site: str) -> Like:
         return Like(board_id=board_id,
                      site=site,
