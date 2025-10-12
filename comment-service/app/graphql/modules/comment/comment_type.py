@@ -10,6 +10,7 @@ class CommentEntry:
     parent_id: Optional[str]  # 부모 댓글 ID (최상위면 null)
     content: str
     user_id: str
+    user_nickname: Optional[str]  # 사용자 닉네임
     like_count: int          # 좋아요 수
     reply_count: int         # 직계 자식 수 (대댓글 수)
     is_deleted: bool         # 소프트 삭제 여부

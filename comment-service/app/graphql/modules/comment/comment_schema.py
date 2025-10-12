@@ -1,5 +1,5 @@
 import datetime
-from typing import List, Optional
+from typing import List, Optional, Dict
 import strawberry
 from fastapi import HTTPException
 from bson.objectid import ObjectId
@@ -15,17 +15,51 @@ db_controller = MongoController()
 
 class CommentService:
     @staticmethod
+    def get_user_nickname(user_id: str) -> Optional[str]:
+        """user_id로 사용자 닉네임 조회"""
+        try:
+            user = db_controller.find_one("users", {"_id": ObjectId(user_id)})
+            if user:
+                return user.get("nickname")
+            return None
+        except Exception as e:
+            logger.exception(f"Error fetching user nickname for user_id={user_id}: {e}")
+            return None
+    
+    @staticmethod
+    def get_user_nicknames_batch(user_ids: List[str]) -> Dict[str, str]:
+        """여러 user_id에 대한 닉네임을 배치로 조회"""
+        try:
+            user_object_ids = [ObjectId(uid) for uid in user_ids]
+            users = db_controller.find("users", {"_id": {"$in": user_object_ids}})
+            
+            nickname_map = {}
+            for user in users:
+                nickname_map[str(user["_id"])] = user.get("nickname", "알 수 없음")
+            
+            return nickname_map
+        except Exception as e:
+            logger.exception(f"Error batch fetching user nicknames: {e}")
+            return {}
+    
+    @staticmethod
     def convert_to_comment_entries(comments: List[dict]) -> List[CommentEntry]:
         """댓글 목록을 CommentEntry로 변환"""
         comment_entries = []
         
+        # 모든 댓글의 user_id를 수집하여 배치로 닉네임 조회
+        user_ids = list(set([str(comment["user_id"]) for comment in comments]))
+        nickname_map = CommentService.get_user_nicknames_batch(user_ids)
+        
         for comment in comments:
+            user_id = str(comment["user_id"])
             comment_entry = CommentEntry(
                 _id=str(comment["_id"]),
                 board_id=str(comment["board_id"]),
                 parent_id=str(comment["parent_id"]) if comment.get("parent_id") else None,
                 content=comment["content"],
-                user_id=str(comment["user_id"]),
+                user_id=user_id,
+                user_nickname=nickname_map.get(user_id, "알 수 없음"),
                 like_count=comment.get("like_count", 0),
                 reply_count=comment.get("reply_count", 0),
                 is_deleted=comment.get("is_deleted", False),
@@ -142,12 +176,16 @@ class Mutation:
             # 생성된 댓글 조회
             created_comment = db_controller.find_one("Comment", {"_id": comment_id})
             
+            # 사용자 닉네임 조회
+            user_nickname = CommentService.get_user_nickname(str(created_comment["user_id"]))
+            
             return CommentEntry(
                 _id=str(created_comment["_id"]),
                 board_id=str(created_comment["board_id"]),
                 parent_id=str(created_comment["parent_id"]) if created_comment.get("parent_id") else None,
                 content=created_comment["content"],
                 user_id=str(created_comment["user_id"]),
+                user_nickname=user_nickname,
                 like_count=created_comment.get("like_count", 0),
                 reply_count=created_comment.get("reply_count", 0),
                 is_deleted=created_comment.get("is_deleted", False),
@@ -193,12 +231,16 @@ class Mutation:
             # 업데이트된 댓글 조회
             updated_comment = db_controller.find_one("Comment", {"_id": ObjectId(input.comment_id)})
             
+            # 사용자 닉네임 조회
+            user_nickname = CommentService.get_user_nickname(str(updated_comment["user_id"]))
+            
             return CommentEntry(
                 _id=str(updated_comment["_id"]),
                 board_id=str(updated_comment["board_id"]),
                 parent_id=str(updated_comment["parent_id"]) if updated_comment.get("parent_id") else None,
                 content=updated_comment["content"],
                 user_id=str(updated_comment["user_id"]),
+                user_nickname=user_nickname,
                 like_count=updated_comment.get("like_count", 0),
                 reply_count=updated_comment.get("reply_count", 0),
                 is_deleted=updated_comment.get("is_deleted", False),
@@ -275,12 +317,16 @@ class Mutation:
             # 업데이트된 댓글 조회
             updated_comment = db_controller.find_one("Comment", {"_id": ObjectId(input.comment_id)})
             
+            # 사용자 닉네임 조회
+            user_nickname = CommentService.get_user_nickname(str(updated_comment["user_id"]))
+            
             return CommentEntry(
                 _id=str(updated_comment["_id"]),
                 board_id=str(updated_comment["board_id"]),
                 parent_id=str(updated_comment["parent_id"]) if updated_comment.get("parent_id") else None,
                 content=updated_comment["content"],
                 user_id=str(updated_comment["user_id"]),
+                user_nickname=user_nickname,
                 like_count=updated_comment.get("like_count", 0),
                 reply_count=updated_comment.get("reply_count", 0),
                 is_deleted=updated_comment.get("is_deleted", False),
