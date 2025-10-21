@@ -44,6 +44,7 @@ class Realtime:
     gpt_answer: Optional[str] = None
     create_time: datetime
     thumbnail: Optional[str] = None
+    comment_count: Optional[int] = None
 @strawberry.type
 class Summary:
     board_id: str

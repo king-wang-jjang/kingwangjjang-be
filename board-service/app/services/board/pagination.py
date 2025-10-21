@@ -2,9 +2,11 @@ from fastapi import HTTPException
 from datetime import datetime
 from typing import List, Optional, Union
 from app.db.mongo_controller import MongoController
+from app.db.context import Database
 from app.graphql.modules.board.board_type import Realtime
 from app.utils.loghandler import catch_exception, setup_logger
 import sys
+from pymongo import UpdateOne
 
 # 예외 처리 및 로거 설정
 sys.excepthook = catch_exception
@@ -17,7 +19,37 @@ db_controller = MongoController()
 def get_pagination_real_time_best(index: int) -> List[Realtime]: 
     logger.info(f"real-time best page index: {index}")
     try:
-        data = db_controller.get_real_time_best(index, 30)
+        collection = Database.get_collection('Realtime')
+        data = list(
+            collection.find()
+            .sort("create_time", -1)
+            .skip(index * 30)
+            .limit(30)
+        )
+
+        # Compute comment counts for these realtime ids and write back to Realtime
+        ids = [doc.get("_id") for doc in data if doc.get("_id") is not None]
+        id_to_count = {}
+        if ids:
+            comment_coll = Database.get_collection('Comment')
+            agg = comment_coll.aggregate([
+                {"$match": {"board_id": {"$in": ids}, "is_deleted": False}},
+                {"$group": {"_id": "$board_id", "count": {"$sum": 1}}}
+            ])
+            for row in agg:
+                id_to_count[row.get("_id")] = int(row.get("count", 0))
+
+            # Bulk update Realtime.comment_count
+            operations = [
+                UpdateOne({"_id": rid}, {"$set": {"comment_count": id_to_count.get(rid, 0)}})
+                for rid in ids
+            ]
+            if operations:
+                try:
+                    collection.bulk_write(operations, ordered=False)
+                except Exception:
+                    # Non-fatal: continue to return counts even if write fails
+                    pass
         
         def extract_thumbnail(contents):
             """ contents 리스트에서 첫 번째 'image' 타입의 path를 반환 """
@@ -29,7 +61,7 @@ def get_pagination_real_time_best(index: int) -> List[Realtime]:
         
         return [
             Realtime(
-                **item,
+                **({**item, "comment_count": id_to_count.get(item.get("_id"), item.get("comment_count", 0))}),
                 thumbnail=extract_thumbnail(item.get("contents"))
             ) 
             for item in data
