@@ -50,6 +50,8 @@ def get_pagination_real_time_best(index: int) -> List[Realtime]:
                 except Exception:
                     # Non-fatal: continue to return counts even if write fails
                     pass
+
+        # Like counts are stored directly on Realtime.like_count (no Count collection usage)
         
         def extract_thumbnail(contents):
             """ contents 리스트에서 첫 번째 'image' 타입의 path를 반환 """
@@ -62,7 +64,8 @@ def get_pagination_real_time_best(index: int) -> List[Realtime]:
         return [
             Realtime(
                 **({**item, "comment_count": id_to_count.get(item.get("_id"), item.get("comment_count", 0))}),
-                thumbnail=extract_thumbnail(item.get("contents"))
+                thumbnail=extract_thumbnail(item.get("contents")),
+                likeCount=item.get("like_count", 0)
             ) 
             for item in data
         ]

@@ -45,6 +45,7 @@ class Realtime:
     create_time: datetime
     thumbnail: Optional[str] = None
     comment_count: Optional[int] = None
+    likeCount: Optional[int] = None
 @strawberry.type
 class Summary:
     board_id: str
@@ -62,7 +63,7 @@ class Comment:
 class Like:
     board_id: str
     site: str
-    NOWLIKE: int
+    likeCount: int
 
 @strawberry.type
 class View:
