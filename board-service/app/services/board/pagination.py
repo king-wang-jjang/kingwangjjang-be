@@ -63,10 +63,10 @@ def get_pagination_real_time_best(index: int) -> List[Realtime]:
         
         return [
             Realtime(
-                **({**item, "comment_count": id_to_count.get(item.get("_id"), item.get("comment_count", 0))}),
+                **{k: v for k, v in {**item, "comment_count": id_to_count.get(item.get("_id"), item.get("comment_count", 0))}.items() if k != "like_count"},
                 thumbnail=extract_thumbnail(item.get("contents")),
-                likeCount=item.get("like_count", 0)
-            ) 
+                likeCount=int(item.get("like_count", 0) or 0)
+            )
             for item in data
         ]
     
@@ -80,7 +80,13 @@ def get_pagination_daily_best(index: int) -> List[Realtime]:
     try:
         data = db_controller.get_daily_best(index, 30)
         logger.info(f"Successfully fetched {len(data)} records for daily best.")
-        return [Realtime(**item) for item in data]
+        return [
+            Realtime(
+                **{k: v for k, v in item.items() if k != "like_count"},
+                likeCount=int(item.get("like_count", 0) or 0)
+            )
+            for item in data
+        ]
     except Exception as e:
         logger.exception(f"Error getting daily data: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")

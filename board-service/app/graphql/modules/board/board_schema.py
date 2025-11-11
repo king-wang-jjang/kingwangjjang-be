@@ -23,6 +23,8 @@ from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
 
 from app.graphql.modules.board.board_type import Daily, Realtime, Comment,CommentEntrys, Like, SearchInput, SearchResult, View, ReplyEntrys
+from strawberry.types import Info
+from app.utils.auth_utils import get_authenticated_user_id
 
 # Setup logger and exception hook
 logger = setup_logger()
@@ -55,8 +57,11 @@ class Mutation:
         return results
     
     @strawberry.mutation
-    def add_like(self, board_id: str) -> Like:
+    def add_like(self, board_id: str, info: Info) -> Like:
         try:
+            # 간단 인증: 헬퍼 사용
+            user_id = get_authenticated_user_id(info)
+
             collection = Database.get_collection('Realtime')
             try:
                 oid = ObjectId(board_id)
