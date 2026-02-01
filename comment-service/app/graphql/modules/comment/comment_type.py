@@ -12,6 +12,7 @@ class CommentEntry:
     user_id: str
     user_nickname: Optional[str]  # 사용자 닉네임
     like_count: int          # 좋아요 수
+    is_liked: bool           # 현재 요청 사용자가 좋아요 했는지 여부
     reply_count: int         # 직계 자식 수 (대댓글 수)
     is_deleted: bool         # 소프트 삭제 여부
     created_at: datetime
@@ -40,10 +41,5 @@ class UpdateCommentInput:
 
 @strawberry.input
 class DeleteCommentInput:
-    comment_id: str
-
-
-@strawberry.input
-class LikeCommentInput:
     comment_id: str
 
