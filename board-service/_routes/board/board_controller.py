@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from strawberry.fastapi import GraphQLRouter
 
 from app.services.board_comment.get import board_comment_get
-from app.services.count.likes import get_likes
+from app.services.count.likes import get_likes_info, toggle_like
 from app.services.count.views import get_views
 from app.services.web_crawling.index import tag
 from app.services.web_crawling.pagination import get_pagination_daily_best
@@ -84,7 +84,8 @@ class Comment:
 class Like:
     board_id: str
     site: str
-    NOWLIKE: int
+    total_likes: int
+    is_liked: bool
 
 @strawberry.type
 class View:
@@ -150,10 +151,14 @@ class Query:
                                 detail="Internal server error")
 
     @strawberry.field
-    def get_like(self, board_id: str, site: str) -> Like:
-        return Like(board_id=board_id,
-                     site=site,
-                     NOWLIKE=get_likes(board_id, site))
+    def get_likes_info(self, board_id: str, site: str, user_id: Optional[str] = None) -> Like:
+        likes_info = get_likes_info(board_id, site, user_id)
+        return Like(
+            board_id=board_id,
+            site=site,
+            total_likes=likes_info['total_likes'],
+            is_liked=likes_info['is_liked']
+        )
 
     @strawberry.field
     def get_views(self, board_id: str, site: str) -> View:
@@ -162,5 +167,20 @@ class Query:
                      NOWVIEW=get_views(board_id, site))
 
 
-schema = strawberry.Schema(query=Query)
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def toggle_like(self, board_id: str, site: str, user_id: str) -> Like:
+        if not user_id:
+            raise HTTPException(status_code=401, detail="로그인이 필요합니다.")
+        
+        updated_likes_info = toggle_like(board_id, site, user_id)
+        return Like(
+            board_id=board_id,
+            site=site,
+            total_likes=updated_likes_info['total_likes'],
+            is_liked=updated_likes_info['is_liked']
+        )
+
+schema = strawberry.Schema(query=Query, mutation=Mutation)
 graphql_app = GraphQLRouter(schema=schema)

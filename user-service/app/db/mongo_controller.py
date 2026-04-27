@@ -24,3 +24,8 @@ class MongoController(object):
     def find_user(self, query):
         collection = self.db.get_collection('users')
         return collection.find_one(query)
+
+    def update_user(self, query, update_values):
+        collection = self.db.get_collection('users')
+        collection.update_one(query, {"$set": update_values})
+        return True
