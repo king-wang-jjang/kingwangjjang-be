@@ -1,0 +1,5 @@
+﻿
+api-gateway 22624 8000 C:\Users\hwanj\workspace\kingwangjjang\kingwangjjang-be\logs\dev\api-gateway.log
+board-service 58640 33333 C:\Users\hwanj\workspace\kingwangjjang\kingwangjjang-be\logs\dev\board-service.log
+user-service 61404 33334 C:\Users\hwanj\workspace\kingwangjjang\kingwangjjang-be\logs\dev\user-service.log
+comment-service 60564 33335 C:\Users\hwanj\workspace\kingwangjjang\kingwangjjang-be\logs\dev\comment-service.log
