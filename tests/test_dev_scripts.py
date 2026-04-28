@@ -37,3 +37,13 @@ def test_dev_scripts_expose_operational_commands():
         assert "restart" in content
         assert "logs" in content
         assert "ps" in content
+
+
+def test_dev_scripts_export_database_url_for_local_services():
+    sh_content = (ROOT / "dev.sh").read_text(encoding="utf-8")
+    ps1_content = (ROOT / "dev.ps1").read_text(encoding="utf-8")
+
+    assert "DATABASE_URL=<from .env>" in sh_content
+    assert "DATABASE_URL=<from .env>" in ps1_content
+    assert "load_dev_env_file" in sh_content
+    assert "Import-DevEnvFile" in ps1_content

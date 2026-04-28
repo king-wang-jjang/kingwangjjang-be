@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from strawberry.fastapi import GraphQLRouter
 
+from app.routes.comments import router as comments_router
 from app.utils.loghandler import catch_exception, setup_logger
 
 sys.excepthook = catch_exception
@@ -23,6 +24,8 @@ app.add_middleware(
 )
 
 from app.graphql.modules.comment.comment_schema import schema as comment_schema
+
+app.include_router(comments_router)
 
 graphql_app = GraphQLRouter(comment_schema)
 app.include_router(graphql_app, prefix="/comment-graphql")

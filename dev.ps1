@@ -11,7 +11,7 @@ $LogDir = Join-Path $RootDir 'logs\dev'
 $PidFile = Join-Path $RootDir '.dev-pids'
 
 # Kept as a literal for testability and for grep-friendly operational checks.
-$DevEnv = 'SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE'
+$DevEnv = 'SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL=<from .env>'
 
 $Services = @(
   @{ Name = 'api-gateway'; Port = 8000 },
@@ -27,6 +27,32 @@ function Ensure-Dirs {
 function Ensure-Env {
   if (-not (Test-Path (Join-Path $RootDir '.env'))) {
     Write-Warning ".env not found under $RootDir. Services may fail to start."
+  }
+}
+
+function Import-DevEnvFile {
+  $envPath = Join-Path $RootDir '.env'
+  if (-not (Test-Path $envPath)) {
+    return
+  }
+
+  foreach ($rawLine in Get-Content $envPath) {
+    $line = $rawLine.Trim()
+    if ($line -eq '' -or $line.StartsWith('#') -or -not $line.Contains('=')) {
+      continue
+    }
+
+    $parts = $line -split '=', 2
+    $name = $parts[0].Trim()
+    $value = $parts[1].Trim()
+
+    if ($value.Length -ge 2 -and (($value.StartsWith('"') -and $value.EndsWith('"')) -or ($value.StartsWith("'") -and $value.EndsWith("'")))) {
+      $value = $value.Substring(1, $value.Length - 2)
+    }
+
+    if ($name -match '^[A-Za-z_][A-Za-z0-9_]*$' -and -not [Environment]::GetEnvironmentVariable($name, 'Process')) {
+      [Environment]::SetEnvironmentVariable($name, $value, 'Process')
+    }
   }
 }
 
@@ -53,7 +79,12 @@ function Start-DevService {
     throw "service directory not found: $serviceDir"
   }
 
-  $command = "`$env:SERVER_RUN_MODE='FALSE'; `$env:AUTH_COOKIE_SECURE='FALSE'; poetry run uvicorn app.main:app --host 0.0.0.0 --port $Port *> '$logFile'"
+  $databaseUrl = [Environment]::GetEnvironmentVariable('DATABASE_URL', 'Process')
+  if (-not $databaseUrl) {
+    throw 'DATABASE_URL is required. Set it in .env or the current shell.'
+  }
+  $escapedDatabaseUrl = $databaseUrl.Replace("'", "''")
+  $command = "`$env:SERVER_RUN_MODE='FALSE'; `$env:AUTH_COOKIE_SECURE='FALSE'; `$env:DATABASE_URL='$escapedDatabaseUrl'; poetry run uvicorn app.main:app --host 0.0.0.0 --port $Port *> '$logFile'"
   $process = Start-Process `
     -FilePath 'powershell' `
     -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', $command) `
@@ -68,6 +99,7 @@ function Start-DevService {
 function Cmd-Up {
   Ensure-Dirs
   Ensure-Env
+  Import-DevEnvFile
   Cmd-Down | Out-Null
   Set-Content -Encoding UTF8 -Path $PidFile -Value ''
 

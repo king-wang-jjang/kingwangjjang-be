@@ -7,7 +7,7 @@ LOG_DIR="$ROOT_DIR/logs/dev"
 PID_FILE="$ROOT_DIR/.dev-pids"
 
 # Kept as a literal for testability and for grep-friendly operational checks.
-DEV_ENV="SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE"
+DEV_ENV="SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL=<from .env>"
 
 SERVICES=(
   "api-gateway:8000"
@@ -24,6 +24,34 @@ ensure_env() {
   if [[ ! -f "$ROOT_DIR/.env" ]]; then
     echo "[WARN] .env not found under $ROOT_DIR. Services may fail to start." >&2
   fi
+}
+
+load_dev_env_file() {
+  local env_file="$ROOT_DIR/.env"
+  [[ -f "$env_file" ]] || return 0
+
+  while IFS= read -r raw_line || [[ -n "$raw_line" ]]; do
+    local line="${raw_line#"${raw_line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    [[ -z "$line" || "${line:0:1}" == "#" || "$line" != *=* ]] && continue
+
+    local key="${line%%=*}"
+    local value="${line#*=}"
+    key="${key#"${key%%[![:space:]]*}"}"
+    key="${key%"${key##*[![:space:]]}"}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+
+    if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+      value="${value:1:${#value}-2}"
+    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+      value="${value:1:${#value}-2}"
+    fi
+
+    if [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ && -z "${!key+x}" ]]; then
+      export "$key=$value"
+    fi
+  done < "$env_file"
 }
 
 is_running() {
@@ -44,7 +72,8 @@ start_service() {
 
   (
     cd "$service_dir"
-    env SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE poetry run uvicorn app.main:app --host 0.0.0.0 --port "$port" >"$log_file" 2>&1
+    : "${DATABASE_URL:?DATABASE_URL is required. Set it in .env or the current shell.}"
+    env SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL="$DATABASE_URL" poetry run uvicorn app.main:app --host 0.0.0.0 --port "$port" >"$log_file" 2>&1
   ) &
 
   local pid=$!
@@ -55,6 +84,7 @@ start_service() {
 cmd_up() {
   ensure_dirs
   ensure_env
+  load_dev_env_file
   cmd_down >/dev/null 2>&1 || true
   : > "$PID_FILE"
 

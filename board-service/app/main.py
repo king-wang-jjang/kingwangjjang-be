@@ -15,6 +15,7 @@ from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
 from app.graphql.modules.sample.sample_schema import schema as samele
 from app.graphql.modules.board.board_schema import schema 
+from app.routes.boards import router as boards_router
 
 # from routes.board import board_controller
 sys.excepthook = catch_exception
@@ -25,6 +26,7 @@ if Config.get_env("SERVER_RUN_MODE") == "TRUE":
     logging.getLogger("uvicorn.access").handlers = [logger.handlers[1]]
     logging.getLogger("uvicorn.error").handlers = [logger.handlers[1]]
 # static_middleware.add(app)
+app.include_router(boards_router)
 
 graphql_app = GraphQLRouter(samele)
 app.include_router(graphql_app, prefix="/sample")

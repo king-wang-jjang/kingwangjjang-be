@@ -39,6 +39,16 @@ def test_gateway_routes_auth_and_user_traffic_to_user_service_prefix():
     assert "headers=_response_headers(response)" in routes
 
 
+def test_gateway_proxy_keeps_rest_and_graphql_service_prefixes():
+    routes = read(API_GATEWAY_APP / "routes" / "index.py")
+
+    assert '"boardservice/"' in routes
+    assert '"userservice/"' in routes
+    assert '"commentservice/"' in routes
+    assert "path.startswith(prefix)" in routes
+    assert "path[len(prefix):]" in routes
+
+
 def test_user_service_owns_login_callback_and_token_persistence():
     main = read(USER_SERVICE_APP / "main.py")
     auth_route = USER_SERVICE_APP / "routes" / "auth.py"
