@@ -34,7 +34,7 @@ and forwards trusted auth context to downstream services.
 
 ## Data Boundary
 
-The gateway must not import `app.db`, `MongoController`, or `pymongo`.
+The gateway must not import service database modules or database drivers.
 If gateway logic needs user state, add or consume a user-service API instead.
 
 ## Security Rules
@@ -60,4 +60,3 @@ python -m pytest tests -q
 ```powershell
 .\api-gateway\.venv\Scripts\python.exe -m compileall app -q
 ```
-

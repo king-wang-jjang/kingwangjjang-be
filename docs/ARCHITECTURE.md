@@ -8,7 +8,7 @@
 
 ## 서비스 간 호출 관계
 
-서비스 간 통신은 주로 동기 방식의 REST API 또는 GraphQL 호출을 통해 이루어집니다. `docker-compose.yml` 기준으로 주요 서비스 의존성은 다음과 같습니다.
+서비스 간 통신은 주로 동기 방식의 REST API 호출을 통해 이루어집니다. `docker-compose.yml` 기준으로 주요 서비스 의존성은 다음과 같습니다.
 
 ```mermaid
 graph TD
@@ -31,9 +31,9 @@ graph TD
     end
 
     subgraph "Database Layer"
-        UserService --> DB_Users[(User DB)]
-        BoardService --> DB_Boards[(Board DB)]
-        CommentService --> DB_Comments[(Comment DB)]
+        UserService --> UsersDB[(User DB)]
+        BoardService --> BoardsDB[(Board DB)]
+        CommentService --> CommentsDB[(Comment DB)]
     end
 
     style Client fill:#d4f3ff

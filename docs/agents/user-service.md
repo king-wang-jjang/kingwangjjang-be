@@ -2,8 +2,7 @@
 
 ## Purpose
 
-`user-service` owns user identity, login callbacks, JWT issuing, refresh-token
-persistence, and user GraphQL queries.
+`user-service` owns user identity, login callbacks, JWT issuing, refresh-token persistence, and user REST APIs.
 
 ## Owns
 
@@ -11,7 +10,7 @@ persistence, and user GraphQL queries.
 - Access token and refresh token creation.
 - Refresh-token persistence in `users`.
 - User profile records.
-- User GraphQL schema.
+- User REST endpoints.
 
 ## Does Not Own
 
@@ -25,7 +24,7 @@ persistence, and user GraphQL queries.
 | --- | --- |
 | `/login` | Redirects to Kakao OAuth authorization. |
 | `/callback` | Exchanges Kakao code, persists refresh token, sets access-token cookie. |
-| `/user-graphql` | User GraphQL API. |
+| `/api/users/me` | Returns the current authenticated user. |
 
 ## Data Boundary
 
@@ -51,4 +50,3 @@ services must use gateway-provided identity headers or user-service APIs.
 .\.venv\Scripts\python.exe -m unittest discover -s tests -q
 .\.venv\Scripts\python.exe -m compileall app -q
 ```
-

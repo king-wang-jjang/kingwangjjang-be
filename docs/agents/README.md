@@ -20,7 +20,7 @@ and prevent cross-service shortcuts.
 - Keep business ownership inside the service that owns the domain.
 - Do not read or write another service's collections directly.
 - Do not add DB dependencies to `api-gateway`.
-- Expose cross-service data through HTTP/GraphQL APIs or purpose-built read models.
+- Expose cross-service data through REST APIs or purpose-built read models.
 - Preserve trusted identity headers from gateway only: `X-User-Id`, `X-Auth-Provider`, `X-Auth-Status`, `X-Auth-Error`.
 - Strip client-supplied identity headers at the gateway before forwarding.
 - If a change needs another service's data, update the producer service API first instead of importing its DB layer.
@@ -54,4 +54,3 @@ python -m pytest tests -q
 .\api-gateway\.venv\Scripts\python.exe -m compileall app -q
 .\user-service\.venv\Scripts\python.exe -m compileall app -q
 ```
-

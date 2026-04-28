@@ -48,7 +48,7 @@ def build_client(monkeypatch):
     return TestClient(app)
 
 
-def test_realtime_returns_graphql_compatible_shape(monkeypatch):
+def test_realtime_returns_rest_shape(monkeypatch):
     client = build_client(monkeypatch)
 
     response = client.get("/api/boards/realtime")
@@ -59,7 +59,7 @@ def test_realtime_returns_graphql_compatible_shape(monkeypatch):
     assert response.json()[0]["create_time"] == "2026-04-28T00:00:00Z"
 
 
-def test_daily_returns_graphql_compatible_shape(monkeypatch):
+def test_daily_returns_rest_shape(monkeypatch):
     client = build_client(monkeypatch)
 
     response = client.get("/api/boards/daily")

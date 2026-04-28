@@ -2,15 +2,14 @@
 
 ## Purpose
 
-`board-service` owns board/feed data, board GraphQL queries, views, likes, and
-content aggregation behavior.
+`board-service` owns board/feed data, board REST endpoints, views, likes, and content aggregation behavior.
 
 ## Owns
 
-- `Realtime` and `Daily` board/feed collections.
+- `Realtime` and `Daily` board/feed tables.
 - Board pagination and board view models.
 - Board likes and view counts currently stored with board-domain data.
-- Board GraphQL schema under `/board-graphql`.
+- Board REST endpoints under `/api/boards`.
 
 ## Does Not Own
 
@@ -23,8 +22,9 @@ content aggregation behavior.
 
 | Path | Description |
 | --- | --- |
-| `/board-graphql` | Board GraphQL API. |
-| `/sample` | Sample GraphQL API; avoid expanding it for production behavior. |
+| `/api/boards/realtime` | Realtime board list. |
+| `/api/boards/daily` | Daily board list. |
+| `/api/boards/{board_id}/likes` | Board like endpoint. |
 
 ## Data Boundary
 
@@ -37,15 +37,13 @@ need comment or user data, prefer one of these patterns:
 
 ## Current Boundary Debt
 
-Some existing board code still reads comment-related collections for counts.
-Do not expand this pattern. When touching board pagination, plan a migration
-toward API/read-model based counts.
+Board read models should remain in PostgreSQL. Prefer service APIs or explicit read models for cross-service data.
 
 ## Change Checklist
 
-- Keep board logic inside `app/graphql/modules/board` or `app/services/board`.
+- Keep board logic inside `app/routes` and `app/repositories`.
 - Do not import user-service or comment-service internals.
-- Ensure gateway path remains `/boardservice/board-graphql`.
+- Ensure gateway path remains under `/boardservice/api/boards`.
 - Add tests around pagination, likes, or views before changing behavior.
 
 ## Verification
@@ -53,4 +51,3 @@ toward API/read-model based counts.
 ```powershell
 .\.venv\Scripts\python.exe -m compileall app -q
 ```
-

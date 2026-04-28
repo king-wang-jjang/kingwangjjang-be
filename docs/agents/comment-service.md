@@ -2,14 +2,13 @@
 
 ## Purpose
 
-`comment-service` owns comment CRUD, replies, comment likes, and comment GraphQL
-behavior.
+`comment-service` owns comment CRUD, replies, comment likes, and comment REST behavior.
 
 ## Owns
 
-- `Comment` collection.
+- `comments` and `comment_likes` tables.
 - Comment creation, update, soft delete, reply counts, and comment likes.
-- Comment GraphQL schema under `/comment-graphql`.
+- Comment REST endpoints under `/api/comments`.
 
 ## Does Not Own
 
@@ -22,7 +21,9 @@ behavior.
 
 | Path | Description |
 | --- | --- |
-| `/comment-graphql` | Comment GraphQL API. |
+| `/api/comments` | Comment list/create API. |
+| `/api/comments/{comment_id}` | Comment update/delete API. |
+| `/api/comments/{comment_id}/like` | Comment like API. |
 
 ## Data Boundary
 
@@ -36,9 +37,7 @@ need display names, prefer one of these:
 
 ## Current Boundary Debt
 
-Some existing code directly looks up `users` for nicknames and DB user IDs.
-Do not add more direct user collection reads. Plan a migration when changing
-comment identity or display-name behavior.
+Comment identity should come from trusted gateway headers. User display snapshots should be stored on write or fetched through user-service APIs.
 
 ## Change Checklist
 
@@ -52,4 +51,3 @@ comment identity or display-name behavior.
 ```powershell
 .\.venv\Scripts\python.exe -m compileall app -q
 ```
-

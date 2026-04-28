@@ -2,10 +2,7 @@ import logging
 import requests
 from colorama import Fore, init, Style
 from app.config import Config
-from app.db.mongo_controller import MongoController
 import threading
-import bson
-import uuid
 from logging.handlers import TimedRotatingFileHandler
 import os 
 init(autoreset=True)  # colorama 초기화
@@ -154,53 +151,6 @@ class SlackWebhookHandler(BaseWebhookHandler):
             {"title": "ERROR LINE", "value": record.lineno, "short": True}
         ]
 
-class DBLOGHandler(logging.Handler):
-    """ MongoDB에 로그를 저장하는 핸들러 """
-
-    def __init__(self):
-        super().__init__()
-        if Config().get_env("SERVER_RUN_MODE") == "TRUE":
-            self.db_controller = MongoController()
-
-    def emit(self, record):
-        log_entry = self.format(record)
-        if Config().get_env("SERVER_RUN_MODE") == "TRUE":
-            self.record_db(record)
-        else:
-            self.print_colored_log(log_entry, record.levelname)
-
-    def print_colored_log(self, message, level):
-        color_map = {
-            "DEBUG": Fore.LIGHTBLACK_EX,
-            "INFO": Fore.GREEN,
-            "WARNING": Fore.YELLOW,
-            "ERROR": Fore.RED,
-            "CRITICAL": Fore.RED + Style.BRIGHT,
-        }
-        color = color_map.get(level, Fore.WHITE)
-        print(f"{color}{message}")
-
-    def record_db(self, record):
-        data = dict(record.__dict__)
-        data["server"] = Config().get_env("SERVER_TYPE")
-
-        # Add unique ID or timestamp to prevent duplicate handling
-        if "unique_id" not in data:
-            data["unique_id"] = str(uuid.uuid4())
-
-        # Remove or convert non-serializable types to string
-        for key, value in data.items():
-            try:
-                bson.BSON.encode({key: value})
-            except Exception:
-                data[key] = str(value)
-
-        try:
-            self.db_controller.insert_one("log", data)
-            print("Log successfully recorded in DB.")
-        except Exception as e:
-            print(f"Error recording log to DB: {e}")
-
 def crawler_logger():
     logger = logging.getLogger("crawler")
     logger.setLevel(logging.INFO)
@@ -224,11 +174,6 @@ def crawler_logger():
     # 기본 핸들러 추가
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
-
-    # # 추가 핸들러 등록
-    # logger.addHandler(db_handler)
-    # logger.addHandler(discord_handler)
-    # logger.addHandler(slack_handler)
 
     # 상위 로거로 전파 방지
     logger.propagate = False
@@ -263,11 +208,6 @@ def setup_logger():
     logger.addHandler(file_handler)
     logger.addHandler(stream_handler)
 
-    # # 추가 핸들러 설정
-    # db_handler = DBLOGHandler()
-    # db_handler.setLevel(logging.DEBUG)
-    # db_handler.setFormatter(formatter)
-
     # discord_handler = DiscordWebhookHandler()
     # discord_handler.setLevel(logging.ERROR)
     # discord_handler.setFormatter(formatter)
@@ -277,7 +217,6 @@ def setup_logger():
     # slack_handler.setFormatter(formatter)
 
     # # 추가 핸들러 등록
-    # logger.addHandler(db_handler)
     # logger.addHandler(discord_handler)
     # logger.addHandler(slack_handler)
 

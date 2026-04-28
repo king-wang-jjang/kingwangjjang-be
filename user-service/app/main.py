@@ -7,9 +7,7 @@ import uvicorn
 from fastapi import FastAPI
 
 from fastapi.middleware.cors import CORSMiddleware
-from strawberry.fastapi import GraphQLRouter
 
-from app.graphql.schema import schema
 from app.routes.auth import router as auth_router
 from app.routes.users import router as users_router
 from app.utils.loghandler import catch_exception
@@ -28,11 +26,8 @@ app.add_middleware(
 sys.excepthook = catch_exception
 logger = setup_logger()
 
-# GraphQL 라우터 설정 (context_getter 없이)
-graphql_app = GraphQLRouter(schema)
 app.include_router(auth_router)
 app.include_router(users_router)
-app.include_router(graphql_app, prefix="/user-graphql") 
 
 if __name__ == "__main__":
     logger.info("Starting uvicorn server")

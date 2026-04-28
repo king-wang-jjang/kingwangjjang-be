@@ -9,11 +9,7 @@
 ### 사전 요구사항
 
 1.  **Docker & Docker Compose**: [Docker Desktop](https://www.docker.com/products/docker-desktop/) 설치가 필요합니다.
-2.  **외부 데이터베이스**: `docker-compose.yml`에 데이터베이스가 정의되어 있지 않습니다. MongoDB와 같은 데이터베이스가 외부에서 실행되고 접근 가능해야 합니다. Docker를 사용하여 별도로 실행하거나 클라우드 서비스를 이용할 수 있습니다.
-    ```bash
-    # 예시: Docker로 MongoDB 실행
-    docker run -d -p 27017:27017 --name my-mongo mongo
-    ```
+2.  **PostgreSQL**: `docker-compose.yml`에 정의된 `kingwangjjang-postgres`를 사용하거나, 외부 PostgreSQL을 실행하고 `DATABASE_URL`을 설정합니다.
 
 ### 실행 단계
 
@@ -29,15 +25,16 @@
     # Docker 이미지 가져올 때 사용할 DockerHub 사용자 이름
     DOCKERHUB_USERNAME=your-dockerhub-username
 
-    # 데이터베이스 연결 정보
-    DB_HOST=mongodb://<your-db-host>:<port> # 로컬 Docker 실행 시: mongodb://host.docker.internal:27017
-    DB_USER=
-    DB_PASS=
-    DB_NAME=kingwangjjang
+    # PostgreSQL 연결 정보
+    POSTGRES_DB=kingwangjjang
+    POSTGRES_USER=kingwangjjang
+    POSTGRES_PASSWORD=change-me
+    DATABASE_URL=postgresql+psycopg://kingwangjjang:change-me@localhost:5432/kingwangjjang
+    DOCKER_DATABASE_URL=postgresql+psycopg://kingwangjjang:change-me@kingwangjjang-postgres:5432/kingwangjjang
 
     # JWT 인증을 위한 시크릿 키
-    JWT_SECRET=your-super-secret-key
-    JWT_ALGORITHM=HS256
+    JWT_SECRET_KEY=your-access-secret
+    JWT_REFRESH_SECRET_KEY=your-refresh-secret
     ```
 
 3.  **서비스 실행**:
@@ -58,7 +55,7 @@
 1.  **Error: `service ... is unhealthy` 또는 `Connection refused`**
     *   **원인**: 서비스가 의존하는 다른 서비스(예: 데이터베이스, 다른 마이크로서비스)에 연결하지 못했습니다.
     *   **해결**:
-        *   `.env` 파일의 `DB_HOST` 등 연결 정보가 올바른지 확인하세요.
+        *   `.env` 파일의 `DATABASE_URL` 또는 `DOCKER_DATABASE_URL` 연결 정보가 올바른지 확인하세요.
         *   `docker-compose.yml`의 `depends_on` 설정을 확인하고, 의존하는 서비스가 먼저 정상적으로 시작되었는지 로그를 통해 확인하세요.
 
 2.  **Error: `Cannot connect to the Docker daemon`**

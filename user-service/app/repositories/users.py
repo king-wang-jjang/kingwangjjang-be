@@ -14,24 +14,50 @@ class UserRepository:
             raise ValueError("principal.user_id is required")
 
         auth_provider = principal.auth_provider or "unknown"
+        return self.get_or_create_user(
+            user_id=principal.user_id,
+            auth_provider=auth_provider,
+            nickname="dev-user",
+            profile_image=None,
+        )
+
+    def get_or_create_user(
+        self,
+        user_id: str,
+        auth_provider: str,
+        nickname: str | None = None,
+        profile_image: str | None = None,
+        refresh_token: str | None = None,
+    ) -> dict:
+        if not user_id:
+            raise ValueError("user_id is required")
 
         with get_session_factory()() as session:
             user = session.scalar(
                 select(User).where(
-                    User.user_id == principal.user_id,
+                    User.user_id == str(user_id),
                     User.auth_provider == auth_provider,
                 )
             )
             if user is None:
                 user = User(
-                    user_id=principal.user_id,
+                    user_id=str(user_id),
                     auth_provider=auth_provider,
-                    nickname="dev-user",
-                    profile_image=None,
+                    nickname=nickname,
+                    profile_image=profile_image,
+                    refresh_token=refresh_token,
                 )
                 session.add(user)
-                session.commit()
-                session.refresh(user)
+            else:
+                if refresh_token is not None:
+                    user.refresh_token = refresh_token
+                if nickname is not None:
+                    user.nickname = nickname
+                if profile_image is not None:
+                    user.profile_image = profile_image
+
+            session.commit()
+            session.refresh(user)
 
             return {
                 "id": user.id,

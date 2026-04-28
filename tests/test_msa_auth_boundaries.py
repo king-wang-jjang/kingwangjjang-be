@@ -23,9 +23,8 @@ def test_gateway_does_not_own_auth_database_or_oauth_flow():
 
     assert "auth_controllers" not in main
     assert "from app.services.auth_services import JWTService" not in middleware
-    assert "MongoController" not in gateway_source
     assert "from app.db" not in gateway_source
-    assert "pymongo" not in pyproject
+    assert "DATABASE_URL" not in gateway_source
 
 
 def test_gateway_routes_auth_and_user_traffic_to_user_service_prefix():
@@ -39,7 +38,7 @@ def test_gateway_routes_auth_and_user_traffic_to_user_service_prefix():
     assert "headers=_response_headers(response)" in routes
 
 
-def test_gateway_proxy_keeps_rest_and_graphql_service_prefixes():
+def test_gateway_proxy_keeps_rest_service_prefixes():
     routes = read(API_GATEWAY_APP / "routes" / "index.py")
 
     assert '"boardservice/"' in routes

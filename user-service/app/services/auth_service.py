@@ -9,6 +9,7 @@ from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 
 from app.config import Config
 from app.models.auth_models import UserType
+from app.repositories.users import UserRepository
 
 
 KAKAO_API_BASE = "https://kapi.kakao.com"
@@ -69,9 +70,7 @@ class UserService:
         db_controller=None,
     ) -> dict:
         if db_controller is None:
-            from app.db.mongo_controller import MongoController
-
-            db_controller = MongoController()
+            return UserService._save_user_to_postgres(user_info, refresh_token)
 
         controller = db_controller
         user_id = str(user_info.user_id)
@@ -96,6 +95,16 @@ class UserService:
         }
         controller.insert_user(user_document)
         return user_document
+
+    @staticmethod
+    def _save_user_to_postgres(user_info: UserType, refresh_token: str) -> dict:
+        return UserRepository().get_or_create_user(
+            user_id=str(user_info.user_id),
+            auth_provider=user_info.auth_provider,
+            nickname=getattr(user_info, "nickname", None),
+            profile_image=getattr(user_info, "profile_image", None),
+            refresh_token=refresh_token,
+        )
 
 
 class JWTService:
