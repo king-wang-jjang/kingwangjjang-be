@@ -114,16 +114,21 @@ jobs:
           POSTGRES_DB="${{ secrets.POSTGRES_DB }}"
           POSTGRES_USER="${{ secrets.POSTGRES_USER }}"
           POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
-          DATABASE_URL="${{ secrets.DATABASE_URL }}"
-          DOCKER_DATABASE_URL="${{ secrets.DOCKER_DATABASE_URL }}"
           SERVER_RUN_MODE="${{ secrets.SERVER_RUN_MODE }}"
           AUTH_COOKIE_SECURE="${{ secrets.AUTH_COOKIE_SECURE }}"
 
           : "${POSTGRES_DB:?POSTGRES_DB secret is required}"
           : "${POSTGRES_USER:?POSTGRES_USER secret is required}"
           : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD secret is required}"
-          : "${DATABASE_URL:?DATABASE_URL secret is required}"
-          : "${DOCKER_DATABASE_URL:?DOCKER_DATABASE_URL secret is required}"
+
+          urlencode() {
+            VALUE="$1" python3 -c 'import os; from urllib.parse import quote; print(quote(os.environ["VALUE"], safe=""))'
+          }
+
+          POSTGRES_USER_ENCODED="$(urlencode "${POSTGRES_USER}")"
+          POSTGRES_PASSWORD_ENCODED="$(urlencode "${POSTGRES_PASSWORD}")"
+          DATABASE_URL="postgresql+psycopg://${POSTGRES_USER_ENCODED}:${POSTGRES_PASSWORD_ENCODED}@localhost:5432/${POSTGRES_DB}"
+          DOCKER_DATABASE_URL="postgresql+psycopg://${POSTGRES_USER_ENCODED}:${POSTGRES_PASSWORD_ENCODED}@kingwangjjang-postgres:5432/${POSTGRES_DB}"
 
           echo "BE_DEV_VERSION=${{ secrets.BE_DEV_VERSION }}" >> .env
           echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" >> .env
