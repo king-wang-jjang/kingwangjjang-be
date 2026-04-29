@@ -116,9 +116,9 @@ jobs:
           POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
           SERVER_RUN_MODE="${{ secrets.SERVER_RUN_MODE }}"
           AUTH_COOKIE_SECURE="${{ secrets.AUTH_COOKIE_SECURE }}"
+          POSTGRES_DB="${POSTGRES_DB:-kingwangjjang_dev}"
+          POSTGRES_USER="${POSTGRES_USER:-kingwangjjang}"
 
-          : "${POSTGRES_DB:?POSTGRES_DB secret is required}"
-          : "${POSTGRES_USER:?POSTGRES_USER secret is required}"
           : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD secret is required}"
 
           urlencode() {
