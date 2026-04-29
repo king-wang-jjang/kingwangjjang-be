@@ -189,5 +189,10 @@ jobs:
             sudo docker version
             cd kingwangjjang
             sudo docker-compose down
-            sudo docker-compose up -d
+            sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/api-gateway:0.0.1 -f || true
+            sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/board-service:0.0.1 -f || true
+            sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/user-service:0.0.1 -f || true
+            sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/comment-service:0.0.1 -f || true
+            sudo docker-compose pull
+            sudo docker-compose up -d --force-recreate
     # sudo docker network connect kingwangjjang-network kingwangjjang_kingwangjjang-api-gateway_1
