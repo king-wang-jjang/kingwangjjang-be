@@ -14,7 +14,9 @@ vendor/
 
 # Ignore environment configuration files
 .env
+.env.*
 *.env
+!.env.example
 
 # Ignore compiled binaries
 *.exe
