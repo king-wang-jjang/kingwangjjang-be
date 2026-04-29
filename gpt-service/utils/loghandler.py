@@ -6,7 +6,7 @@ import os
 init(autoreset=True)  # colorama 초기화
 
 def setup_logger():
-    logger = logging.getLogger("마약.kr")
+    logger = logging.getLogger("gpt-service")
     logger.setLevel(logging.INFO)
 
     # 로그 폴더가 없으면 생성

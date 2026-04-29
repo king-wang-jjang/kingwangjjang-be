@@ -1,0 +1,158 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Poetry Install API Gateway",
+      "type": "shell",
+      "command": "poetry",
+      "args": ["install"],
+      "options": {
+        "cwd": "${workspaceFolder}/api-gateway"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Poetry Install Board Service",
+      "type": "shell",
+      "command": "poetry",
+      "args": ["install"],
+      "options": {
+        "cwd": "${workspaceFolder}/board-service"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Poetry Install User Service",
+      "type": "shell",
+      "command": "poetry",
+      "args": ["install"],
+      "options": {
+        "cwd": "${workspaceFolder}/user-service"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Poetry Install Comment Service",
+      "type": "shell",
+      "command": "poetry",
+      "args": ["install"],
+      "options": {
+        "cwd": "${workspaceFolder}/comment-service"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Poetry Install All Services",
+      "dependsOrder": "parallel",
+      "dependsOn": [
+        "Poetry Install API Gateway",
+        "Poetry Install Board Service",
+        "Poetry Install User Service",
+        "Poetry Install Comment Service"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Poetry Update All Services",
+      "type": "shell",
+      "command": "poetry",
+      "args": ["update"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Poetry Build All Services",
+      "type": "shell",
+      "command": "poetry",
+      "args": ["build"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Poetry Export Requirements",
+      "type": "shell",
+      "command": "poetry",
+      "args": ["export", "-f", "requirements.txt", "--output", "requirements.txt"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": true,
+        "clear": false
+      },
+      "problemMatcher": []
+    }
+  ]
+}

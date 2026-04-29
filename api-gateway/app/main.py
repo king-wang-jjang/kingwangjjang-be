@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from app.routes import index
-from app.routes.auth import auth_controllers
+from app.middlewares.auth_middleware import AuthMiddleware, UserInfoMiddleware, TokenRefreshMiddleware
 from fastapi import FastAPI
 
 app = FastAPI()
@@ -15,6 +15,7 @@ origins = [
     "https://xn--hz2b47s.kr",
 ]
 
+# CORS 미들웨어
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -23,6 +24,14 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-app.include_router(auth_controllers.router)
+# 인증 미들웨어 (CORS 이후, 라우터 이전에 등록)
+app.add_middleware(AuthMiddleware)
+
+# 사용자 정보 헤더 추가 미들웨어
+app.add_middleware(UserInfoMiddleware)
+
+# 토큰 자동 갱신 미들웨어 (응답 처리)
+app.add_middleware(TokenRefreshMiddleware)
+
 app.include_router(index.router)
 

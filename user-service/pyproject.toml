@@ -4,16 +4,17 @@ version = "0.1.0"
 description = "user service"
 authors = ["woody <woody@aicess.ai>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
 uvicorn = "^0.32.1"
 fastapi = "^0.115.6"
-graphql-core = "^3.2.6"
-strawberry-graphql = "^0.236.0"
-pymongo = "^4.11"
 python-dotenv = "^1.0.1"
 colorama = "^0.4.6"
+PyJWT = "^2.8.0"
+sqlalchemy = "^2.0.36"
+psycopg = { extras = ["binary"], version = "^3.2.3" }
 
 [build-system]
 requires = ["poetry-core"]

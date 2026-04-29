@@ -10,7 +10,7 @@ class Config:
     def __init__(self):
         if find_dotenv() == "":
             logger.info("ENV로더 : env 파일이 감지되지 않음.")
-            if os.getenv("DB_HOST") is None:
+            if os.getenv("DATABASE_URL") is None:
                 logger.error("ENV가 설정되지 않음!!")
         else:
             load_dotenv(find_dotenv())
@@ -22,5 +22,4 @@ class Config:
             return None
         else:
             return os.getenv(env)
-
 

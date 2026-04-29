@@ -6,8 +6,8 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from strawberry.fastapi import GraphQLRouter
 
+from app.routes.comments import router as comments_router
 from app.utils.loghandler import catch_exception, setup_logger
 
 sys.excepthook = catch_exception
@@ -22,14 +22,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from app.graphql.modules.comment.comment_schema import schema as comment_schema
-
-graphql_app = GraphQLRouter(comment_schema)
-app.include_router(graphql_app, prefix="/comment-graphql")
+app.include_router(comments_router)
 
 
 if __name__ == "__main__":
     logger.info("Starting uvicorn server (comment-service)")
     uvicorn.run("app.main:app", host="0.0.0.0", port=33335, reload=True)
-
 

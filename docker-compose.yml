@@ -1,10 +1,32 @@
-version: "3.3"
-
 networks:
   kingwangjjang-network:
     external: true
 
+volumes:
+  kingwangjjang-postgres-data:
+
 services:
+  kingwangjjang-postgres:
+    container_name: kingwangjjang-postgres
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - kingwangjjang-postgres-data:/var/lib/postgresql/data
+    networks:
+      - kingwangjjang-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   kingwangjjang-api-gateway:
     container_name: kingwangjjang-api-gateway
     image: ${DOCKERHUB_USERNAME}/api-gateway:0.0.1
@@ -26,11 +48,14 @@ services:
     image: ${DOCKERHUB_USERNAME}/board-service:0.0.1
     env_file:
       - .env
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL}
     volumes:
       - ./logs:/var/log
     networks:
       - kingwangjjang-network
     depends_on:
+      - kingwangjjang-postgres
       - kingwangjjang-user-service
       - kingwangjjang-comment-service
 
@@ -39,17 +64,25 @@ services:
     image: ${DOCKERHUB_USERNAME}/user-service:0.0.1
     env_file:
       - .env
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL}
     volumes:
       - ./logs:/var/log
     networks:
       - kingwangjjang-network
+    depends_on:
+      - kingwangjjang-postgres
 
   kingwangjjang-comment-service:
     container_name: kingwangjjang-comment-service
     image: ${DOCKERHUB_USERNAME}/comment-service:0.0.1
     env_file:
       - .env
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL}
     volumes:
       - ./logs:/var/log
     networks:
       - kingwangjjang-network
+    depends_on:
+      - kingwangjjang-postgres

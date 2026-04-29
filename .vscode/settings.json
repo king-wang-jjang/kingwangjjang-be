@@ -1,0 +1,32 @@
+{
+  "debug.allowBreakpointsEverywhere": true,
+  "debug.console.fontSize": 14,
+  "debug.console.lineHeight": 22,
+  "debug.console.wordWrap": true,
+  "debug.inlineValues": "auto",
+  "debug.openDebug": "openOnDebugBreak",
+  "debug.showBreakpointsInOverviewRuler": true,
+  "debug.showInlineBreakpointCandidates": true,
+  "python.debugging.console": "integratedTerminal",
+  "python.debugging.debugJustMyCode": false,
+  "python.debugging.autoReload": {
+    "enable": true
+  },
+  "python.terminal.activateEnvironment": true,
+  "python.terminal.activateEnvInCurrentTerminal": true,
+  "debug.allowBreakpointsEverywhere": true,
+  "debug.console.fontSize": 14,
+  "debug.console.lineHeight": 22,
+  "debug.console.wordWrap": true,
+  "debug.inlineValues": "auto",
+  "debug.openDebug": "openOnDebugBreak",
+  "debug.showBreakpointsInOverviewRuler": true,
+  "debug.showInlineBreakpointCandidates": true,
+  "python.debugging.console": "integratedTerminal",
+  "python.debugging.debugJustMyCode": false,
+  "python.debugging.autoReload": {
+    "enable": true
+  },
+  "python.terminal.activateEnvironment": true,
+  "python.terminal.activateEnvInCurrentTerminal": true
+}

@@ -1,95 +1,102 @@
-from fastapi.responses import RedirectResponse
-import httpx
-from fastapi import APIRouter, Request, Response, HTTPException
 import sys
 
-from app.utils.loghandler import Config
-from app.services.auth_services import JWTService
-from app.utils.loghandler import catch_exception
-from app.utils.loghandler import setup_logger
+import httpx
+from fastapi import APIRouter, HTTPException, Request, Response
+
+from app.utils.loghandler import Config, catch_exception, setup_logger
+
 
 sys.excepthook = catch_exception
 logger = setup_logger()
 router = APIRouter()
 config = Config()
 
+
+SERVER_SERVICE_MAP = {
+    "boardservice/": "kingwangjjang-board-service:33333",
+    "userservice/": "kingwangjjang-user-service:33334",
+    "commentservice/": "kingwangjjang-comment-service:33335",
+}
+LOCAL_SERVICE_MAP = {
+    "boardservice/": "localhost:33333",
+    "userservice/": "localhost:33334",
+    "commentservice/": "localhost:33335",
+}
+SERVER_AUTH_PATHS = {
+    "login": "kingwangjjang-user-service:33334",
+    "callback": "kingwangjjang-user-service:33334",
+}
+LOCAL_AUTH_PATHS = {
+    "login": "localhost:33334",
+    "callback": "localhost:33334",
+}
+
+
 def get_service_url(path: str) -> str:
-    is_server = config.get_env('SERVER_RUN_MODE')
-    service_map = {
-        "boardservice/": "kingwangjjang-board-service:33333",
-        "user/": "kingwangjjang-user-service:33334",
-        "commentservice/": "kingwangjjang-comment-service:33335",
-    }
-    if is_server == "FALSE":
-        service_map = {
-            "boardservice/": "localhost:33333",
-            "user/": "localhost:33334",
-            "commentservice/": "localhost:33335",
-        }
+    is_local = config.get_env("SERVER_RUN_MODE") == "FALSE"
+    service_map = LOCAL_SERVICE_MAP if is_local else SERVER_SERVICE_MAP
+    auth_paths = LOCAL_AUTH_PATHS if is_local else SERVER_AUTH_PATHS
+
+    if path in auth_paths:
+        return f"http://{auth_paths[path]}/{path}"
+
     for prefix, target in service_map.items():
         if path.startswith(prefix):
             return f"http://{target}/{path[len(prefix):]}"
     return ""
 
 
-def authenticate_user_request(request: Request) -> str:
-    """JWT 검증 및 user_id 추출"""
-    is_graphql_generate = config.get_env('SERVER_TYPE')
-    if (is_graphql_generate == "GRAPHQL-GENERATE"):
-        logger.info(f"Skip Authenticate (is_graphql_generate): {is_graphql_generate}")
-        return 3891969863
-    
-    token = request.cookies.get("access_token")
-    if not token:
-        logger.warning("Unauthorized access attempt: Missing token")
-        raise HTTPException(status_code=403, detail="Access forbidden: Missing token")
+def _target_url_with_query(url: str, request: Request) -> str:
+    if request.url.query:
+        return f"{url}?{request.url.query}"
+    return url
 
-    decoded_token = JWTService.decode_access_token(access_token=token)
-    user_id = decoded_token if decoded_token else None
 
-    if not user_id:
-        logger.warning(f"Invalid token access attempt: {token}")
-        raise HTTPException(status_code=403, detail="Access forbidden: Invalid token")
-    
-    return user_id
+def _response_headers(response: httpx.Response) -> dict[str, str]:
+    headers = dict(response.headers)
+    headers.pop("transfer-encoding", None)
+    headers.pop("content-encoding", None)
+    headers.pop("content-length", None)
+    return headers
+
 
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
 async def proxy(request: Request, path: str) -> Response:
-    """프록시 요청을 처리합니다."""
     url = get_service_url(path)
     if not url:
         raise HTTPException(status_code=404, detail="Invalid path prefix")
-    
-    user_id = None
-    if path.startswith("user/"):
-        user_id = authenticate_user_request(request)
 
     try:
         async with httpx.AsyncClient() as client:
             headers = dict(request.headers)
-            
-            # 🔹 User-Service 요청 시 `user_id`를 Header에 추가
-            if user_id:
-                headers["X-User-Id"] = str(user_id)
-                logger.info(f"Forwarding request to User-Service with X-User-Id: {user_id}")
+            headers.pop("X-User-Id", None)
+            headers.pop("X-Auth-Provider", None)
+            headers.pop("X-Auth-Status", None)
+            headers.pop("X-Auth-Error", None)
+
+            if hasattr(request.state, "user_id") and hasattr(request.state, "auth_provider"):
+                headers["X-User-Id"] = str(request.state.user_id)
+                headers["X-Auth-Provider"] = str(request.state.auth_provider)
+
+            headers["X-Auth-Status"] = str(getattr(request.state, "auth_status", "unauthenticated"))
+            auth_error = getattr(request.state, "auth_error", None)
+            if auth_error:
+                headers["X-Auth-Error"] = str(auth_error)
 
             response = await client.request(
                 method=request.method,
-                url=url,
+                url=_target_url_with_query(url, request),
                 headers=headers,
                 cookies=request.cookies,
                 data=await request.body(),
             )
 
-            if response.is_redirect:
-                return RedirectResponse(url=response.headers["Location"], status_code=response.status_code)
-
             return Response(
                 content=response.content,
                 status_code=response.status_code,
-                media_type=response.headers.get('Content-Type')
+                headers=_response_headers(response),
+                media_type=response.headers.get("Content-Type"),
             )
-
-    except Exception as e:
-        logger.error(f"Error forwarding request to {url}: {e}")
-        raise HTTPException(status_code=500, detail="Error forwarding request to proxy server")
+    except Exception as exc:
+        logger.error("Error forwarding request to %s: %s", url, exc)
+        raise HTTPException(status_code=500, detail="Error forwarding request to proxy server") from exc
