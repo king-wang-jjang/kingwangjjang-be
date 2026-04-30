@@ -67,34 +67,8 @@ class UserService:
     def save_user_to_db(
         user_info: UserType,
         refresh_token: str,
-        db_controller=None,
     ) -> dict:
-        if db_controller is None:
-            return UserService._save_user_to_postgres(user_info, refresh_token)
-
-        controller = db_controller
-        user_id = str(user_info.user_id)
-        auth_provider = user_info.auth_provider
-        existing_user = controller.find_user({"user_id": user_id})
-
-        if existing_user:
-            update_data = {
-                "refresh_token": refresh_token,
-                "auth_provider": auth_provider,
-            }
-            controller.update_user({"user_id": user_id}, update_data)
-            return {**existing_user, **update_data}
-
-        user_document = {
-            "user_id": user_id,
-            "auth_provider": auth_provider,
-            "refresh_token": refresh_token,
-            "nickname": getattr(user_info, "nickname", None),
-            "profile_image": getattr(user_info, "profile_image", None),
-            "create_time": datetime.datetime.now(datetime.UTC),
-        }
-        controller.insert_user(user_document)
-        return user_document
+        return UserService._save_user_to_postgres(user_info, refresh_token)
 
     @staticmethod
     def _save_user_to_postgres(user_info: UserType, refresh_token: str) -> dict:
