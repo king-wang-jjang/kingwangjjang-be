@@ -1,8 +1,11 @@
+import builtins
 import datetime
 import os
 import sys
+import types
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 SERVICE_ROOT = Path(__file__).resolve().parents[1]
@@ -14,28 +17,6 @@ os.environ.setdefault("JWT_REFRESH_SECRET_KEY", "test-refresh-secret")
 from app.models.auth_models import UserType
 from app.routes.auth import _cookie_secure
 from app.services.auth_service import JWTService, UserService
-
-
-class FakeUsers:
-    def __init__(self):
-        self.user = None
-        self.updated = None
-        self.inserted = None
-
-    def find_user(self, query):
-        if self.user and self.user.get("user_id") == query.get("user_id"):
-            return self.user
-        return None
-
-    def insert_user(self, document):
-        self.inserted = document
-        self.user = document
-        return True
-
-    def update_user(self, query, update_values):
-        self.updated = (query, update_values)
-        self.user.update(update_values)
-        return True
 
 
 class AuthServiceTests(unittest.TestCase):
@@ -57,33 +38,25 @@ class AuthServiceTests(unittest.TestCase):
         self.assertEqual(decoded["user_id"], "123")
         self.assertEqual(decoded["auth_provider"], "kakao")
 
-    def test_save_user_to_db_inserts_new_user_with_refresh_token(self):
-        users = FakeUsers()
+    def test_save_user_to_db_uses_user_repository(self):
+        class FakeRepository:
+            def __init__(self):
+                self.saved = None
+
+            def get_or_create_user(self, user_id, auth_provider, nickname=None, profile_image=None, refresh_token=None):
+                self.saved = (user_id, auth_provider, refresh_token)
+                return {"user_id": user_id, "refresh_token": refresh_token}
+
+        repository = FakeRepository()
+        fake_users_module = types.ModuleType("app.repositories.users")
+        fake_users_module.UserRepository = lambda: repository
+        
         user_info = UserType(user_id="123", auth_provider="kakao")
+        with patch.dict(sys.modules, {"app.repositories.users": fake_users_module}):
+            saved = UserService.save_user_to_db(user_info, "refresh-token")
 
-        saved = UserService.save_user_to_db(user_info, "refresh-token", users)
-
-        self.assertEqual(saved["user_id"], "123")
-        self.assertEqual(saved["auth_provider"], "kakao")
-        self.assertEqual(saved["refresh_token"], "refresh-token")
-        self.assertIsInstance(saved["create_time"], datetime.datetime)
-
-    def test_save_user_to_db_updates_existing_refresh_token_without_insert(self):
-        users = FakeUsers()
-        users.user = {"user_id": "123", "auth_provider": "kakao", "refresh_token": "old"}
-        user_info = UserType(user_id="123", auth_provider="kakao")
-
-        saved = UserService.save_user_to_db(user_info, "new-refresh-token", users)
-
-        self.assertEqual(saved["user_id"], "123")
-        self.assertIsNone(users.inserted)
-        self.assertEqual(
-            users.updated,
-            (
-                {"user_id": "123"},
-                {"refresh_token": "new-refresh-token", "auth_provider": "kakao"},
-            ),
-        )
+        self.assertEqual(saved, {"user_id": "123", "refresh_token": "refresh-token"})
+        self.assertEqual(repository.saved, ("123", "kakao", "refresh-token"))
 
 
 if __name__ == "__main__":
