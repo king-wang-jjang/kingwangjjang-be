@@ -1,4 +1,4 @@
-﻿api-gateway 35204 33330 C:\Users\hwanj\workspace\kingwangjjang\kingwangjjang-be\logs\dev\api-gateway.out.log C:\Users\hwanj\workspace\kingwangjjang\kingwangjjang-be\logs\dev\api-gateway.err.log
-board-service 45396 33333 C:\Users\hwanj\workspace\kingwangjjang\kingwangjjang-be\logs\dev\board-service.out.log C:\Users\hwanj\workspace\kingwangjjang\kingwangjjang-be\logs\dev\board-service.err.log
-user-service 51840 33334 C:\Users\hwanj\workspace\kingwangjjang\kingwangjjang-be\logs\dev\user-service.out.log C:\Users\hwanj\workspace\kingwangjjang\kingwangjjang-be\logs\dev\user-service.err.log
-comment-service 49616 33335 C:\Users\hwanj\workspace\kingwangjjang\kingwangjjang-be\logs\dev\comment-service.out.log C:\Users\hwanj\workspace\kingwangjjang\kingwangjjang-be\logs\dev\comment-service.err.log
+api-gateway 15716 8000 /home/hj/workspace/kingwangjjang/kingwangjjang-be/logs/dev/api-gateway.log
+board-service 15717 33333 /home/hj/workspace/kingwangjjang/kingwangjjang-be/logs/dev/board-service.log
+user-service 15719 33334 /home/hj/workspace/kingwangjjang/kingwangjjang-be/logs/dev/user-service.log
+comment-service 15721 33335 /home/hj/workspace/kingwangjjang/kingwangjjang-be/logs/dev/comment-service.log
