@@ -26,11 +26,13 @@
     DOCKERHUB_USERNAME=your-dockerhub-username
 
     # PostgreSQL 연결 정보
+    POSTGRES_PORT=15432
     POSTGRES_DB=kingwangjjang
     POSTGRES_USER=kingwangjjang
     POSTGRES_PASSWORD=change-me
-    DATABASE_URL=postgresql+psycopg://kingwangjjang:change-me@localhost:5432/kingwangjjang
+    DATABASE_URL=postgresql+psycopg://kingwangjjang:change-me@localhost:15432/kingwangjjang
     DOCKER_DATABASE_URL=postgresql+psycopg://kingwangjjang:change-me@kingwangjjang-postgres:5432/kingwangjjang
+    DEV_DATABASE_TARGET=local
 
     # JWT 인증을 위한 시크릿 키
     JWT_SECRET_KEY=your-access-secret
@@ -48,6 +50,13 @@
 
     # 서비스 중지
     ./run.sh down
+    ```
+
+4.  **로컬 개발 DB 초기화/seed**:
+    상위 통합 루트의 개발 스크립트를 사용하면 로컬 PostgreSQL을 준비한 뒤 정적 개발 데이터와 크롤링된 게시글 데이터를 같은 DB에 넣습니다.
+    ```bash
+    cd ..
+    ./dev.sh seed
     ```
 
 ## 자주 발생하는 에러 및 해결법

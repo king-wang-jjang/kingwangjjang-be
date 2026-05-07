@@ -46,3 +46,13 @@ def seed_comments(dry_run: bool = False) -> list[dict]:
         session.commit()
 
     return rows
+
+
+def main() -> int:
+    rows = seed_comments()
+    print(f"seeded comments: {len(rows)}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

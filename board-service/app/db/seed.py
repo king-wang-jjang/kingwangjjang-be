@@ -62,8 +62,14 @@ def seed_boards(dry_run: bool = False) -> list[dict]:
 
     from app.db.models import Board
     from app.db.postgres import Base, get_engine, get_session_factory
+    from sqlalchemy import text
 
-    Base.metadata.create_all(bind=get_engine())
+    engine = get_engine()
+    Base.metadata.create_all(bind=engine)
+    if engine.dialect.name == "postgresql":
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE boards ALTER COLUMN no TYPE BIGINT"))
+
     with get_session_factory()() as session:
         for row in rows:
             if session.get(Board, row["id"]) is None:
@@ -71,3 +77,13 @@ def seed_boards(dry_run: bool = False) -> list[dict]:
         session.commit()
 
     return rows
+
+
+def main() -> int:
+    rows = seed_boards()
+    print(f"seeded boards: {len(rows)}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

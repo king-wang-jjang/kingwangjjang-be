@@ -1,5 +1,3 @@
-version: '3.3'
-
 networks:
   kingwangjjang-network:
     external: true
@@ -12,7 +10,7 @@ services:
     container_name: kingwangjjang-postgres
     image: postgres:16-alpine
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     env_file:
       - .env
     environment:

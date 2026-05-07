@@ -4,7 +4,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$ROOT_DIR/logs/dev"
-PID_FILE="$ROOT_DIR/.dev-pids"
+PID_FILE="$LOG_DIR/.dev-pids"
 
 # Kept as a literal for testability and for grep-friendly operational checks.
 DEV_ENV="SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL=<from .env>"
@@ -24,6 +24,10 @@ ensure_env() {
   if [[ ! -f "$ROOT_DIR/.env" ]]; then
     echo "[WARN] .env not found under $ROOT_DIR. Services may fail to start." >&2
   fi
+}
+
+has_cmd() {
+  command -v "$1" >/dev/null 2>&1
 }
 
 load_dev_env_file() {
@@ -54,6 +58,90 @@ load_dev_env_file() {
   done < "$env_file"
 }
 
+urlencode_component() {
+  local value="$1"
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "[ERROR] python3 is required to encode DB credentials for DATABASE_URL." >&2
+    exit 1
+  fi
+
+  VALUE="$value" python3 -c 'import os, urllib.parse; print(urllib.parse.quote(os.environ["VALUE"], safe=""))'
+}
+
+server_database_reachable() {
+  local host="${DB_HOST:-}"
+  local port="${DB_PORT:-5432}"
+  [[ -n "$host" ]] || return 1
+
+  if command -v nc >/dev/null 2>&1; then
+    nc -z -w 2 "$host" "$port" >/dev/null 2>&1
+    return $?
+  fi
+
+  if command -v timeout >/dev/null 2>&1; then
+    timeout 2 bash -c "</dev/tcp/$host/$port" >/dev/null 2>&1
+    return $?
+  fi
+
+  return 1
+}
+
+should_use_server_database() {
+  local target="${DEV_DATABASE_TARGET:-local}"
+
+  if [[ "${USE_SERVER_DB:-}" == "1" || "$target" == "server" ]]; then
+    return 0
+  fi
+
+  if [[ "$target" == "auto" && -n "${DB_HOST:-}" && -n "${DB_NAME:-}" && -n "${DB_USER:-}" && -n "${DB_PASSWORD:-}" ]]; then
+    server_database_reachable
+    return $?
+  fi
+
+  return 1
+}
+
+configure_server_database_env() {
+  : "${DB_HOST:?DB_HOST is required when DEV_DATABASE_TARGET=server.}"
+  : "${DB_NAME:?DB_NAME is required when DEV_DATABASE_TARGET=server.}"
+  : "${DB_USER:?DB_USER is required when DEV_DATABASE_TARGET=server.}"
+  : "${DB_PASSWORD:?DB_PASSWORD is required when DEV_DATABASE_TARGET=server.}"
+
+  local port="${DB_PORT:-5432}"
+  local encoded_user encoded_password
+  encoded_user="$(urlencode_component "$DB_USER")"
+  encoded_password="$(urlencode_component "$DB_PASSWORD")"
+
+  export DATABASE_URL="postgresql+psycopg://${encoded_user}:${encoded_password}@${DB_HOST}:${port}/${DB_NAME}"
+  echo "[INFO] using external server database ${DB_HOST}:${port}/${DB_NAME}"
+}
+
+configure_local_database_url() {
+  [[ -z "${DATABASE_URL:-}" ]] || return 0
+  [[ -n "${POSTGRES_USER:-}" && -n "${POSTGRES_PASSWORD:-}" && -n "${POSTGRES_DB:-}" ]] || return 0
+
+  local host="${POSTGRES_HOST:-localhost}"
+  local port="${POSTGRES_PORT:-5432}"
+  local encoded_user encoded_password
+  encoded_user="$(urlencode_component "$POSTGRES_USER")"
+  encoded_password="$(urlencode_component "$POSTGRES_PASSWORD")"
+
+  export DATABASE_URL="postgresql+psycopg://${encoded_user}:${encoded_password}@${host}:${port}/${POSTGRES_DB}"
+}
+
+configure_database_env() {
+  if should_use_server_database; then
+    configure_server_database_env
+    return
+  fi
+
+  if [[ "${DEV_DATABASE_TARGET:-}" == "auto" && -n "${DB_HOST:-}" ]]; then
+    echo "[WARN] external server database ${DB_HOST}:${DB_PORT:-5432} is not reachable; using local dev database"
+  fi
+
+  configure_local_database_url
+}
+
 is_running() {
   local pid="$1"
   kill -0 "$pid" >/dev/null 2>&1
@@ -70,21 +158,67 @@ start_service() {
     exit 1
   fi
 
+  : "${DATABASE_URL:?DATABASE_URL is required. Set it in .env or the current shell.}"
+  (
+    cd "$service_dir"
+    if has_cmd setsid; then
+      setsid env SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL="$DATABASE_URL" poetry run uvicorn app.main:app --host 0.0.0.0 --port "$port" >"$log_file" 2>&1 < /dev/null &
+    else
+      nohup env SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL="$DATABASE_URL" poetry run uvicorn app.main:app --host 0.0.0.0 --port "$port" >"$log_file" 2>&1 < /dev/null &
+    fi
+    echo "$!" > "$LOG_DIR/$name.pid"
+  )
+
+  local pid
+  pid="$(cat "$LOG_DIR/$name.pid")"
+  rm -f "$LOG_DIR/$name.pid"
+  echo "$name $pid $port $log_file" >> "$PID_FILE"
+  echo "[INFO] started $name on :$port pid=$pid log=$log_file"
+}
+
+stop_port() {
+  local port="$1"
+  local pids=""
+
+  if has_cmd lsof; then
+    pids="$(lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true)"
+  fi
+
+  if [[ -z "$pids" ]] && has_cmd fuser; then
+    pids="$(fuser "$port"/tcp 2>/dev/null || true)"
+  fi
+
+  for pid in $pids; do
+    if [[ -n "$pid" ]] && is_running "$pid"; then
+      kill "$pid" >/dev/null 2>&1 || true
+      echo "[INFO] stopped process on :$port pid=$pid"
+    fi
+  done
+
+  [[ -z "$pids" ]] || sleep 1
+}
+
+seed_service() {
+  local name="$1"
+  local service_dir="$ROOT_DIR/$name"
+
+  if [[ ! -d "$service_dir" ]]; then
+    echo "[ERROR] service directory not found: $service_dir" >&2
+    exit 1
+  fi
+
   (
     cd "$service_dir"
     : "${DATABASE_URL:?DATABASE_URL is required. Set it in .env or the current shell.}"
-    env SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL="$DATABASE_URL" poetry run uvicorn app.main:app --host 0.0.0.0 --port "$port" >"$log_file" 2>&1
-  ) &
-
-  local pid=$!
-  echo "$name $pid $port $log_file" >> "$PID_FILE"
-  echo "[INFO] started $name on :$port pid=$pid log=$log_file"
+    env SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL="$DATABASE_URL" poetry run python -m app.db.seed
+  )
 }
 
 cmd_up() {
   ensure_dirs
   ensure_env
   load_dev_env_file
+  configure_database_env
   cmd_down >/dev/null 2>&1 || true
   : > "$PID_FILE"
 
@@ -96,19 +230,33 @@ cmd_up() {
   cmd_ps
 }
 
+cmd_seed() {
+  ensure_dirs
+  ensure_env
+  load_dev_env_file
+  configure_database_env
+
+  seed_service "user-service"
+  seed_service "board-service"
+  seed_service "comment-service"
+}
+
 cmd_down() {
-  if [[ ! -f "$PID_FILE" ]]; then
-    return 0
+  if [[ -f "$PID_FILE" ]]; then
+    while read -r name pid port log_file; do
+      if [[ -n "${pid:-}" ]] && is_running "$pid"; then
+        kill "$pid" >/dev/null 2>&1 || true
+        echo "[INFO] stopped $name pid=$pid"
+      fi
+    done < "$PID_FILE"
+
+    rm -f "$PID_FILE"
   fi
 
-  while read -r name pid port log_file; do
-    if [[ -n "${pid:-}" ]] && is_running "$pid"; then
-      kill "$pid" >/dev/null 2>&1 || true
-      echo "[INFO] stopped $name pid=$pid"
-    fi
-  done < "$PID_FILE"
-
-  rm -f "$PID_FILE"
+  for spec in "${SERVICES[@]}"; do
+    IFS=":" read -r _name port <<< "$spec"
+    stop_port "$port"
+  done
 }
 
 cmd_restart() {
@@ -146,9 +294,11 @@ Commands:
   restart   Restart local source services
   logs      Follow local service logs
   ps        Show local service process status
+  seed      Create tables and insert deterministic development seed data
 
 Examples:
   ./dev.sh up
+  ./dev.sh seed
   ./dev.sh logs
 USAGE
 }
@@ -161,6 +311,7 @@ main() {
     restart) cmd_restart ;;
     logs) cmd_logs ;;
     ps) cmd_ps ;;
+    seed) cmd_seed ;;
     -h|--help|help|"") usage ;;
     *) echo "Unknown command: $cmd" >&2; echo; usage; exit 1 ;;
   esac

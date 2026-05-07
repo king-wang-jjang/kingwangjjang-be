@@ -37,6 +37,7 @@ def test_dev_scripts_expose_operational_commands():
         assert "restart" in content
         assert "logs" in content
         assert "ps" in content
+        assert "seed" in content
 
 
 def test_dev_scripts_export_database_url_for_local_services():

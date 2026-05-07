@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, UniqueConstraint
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, JSON, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.postgres import Base
@@ -13,7 +13,7 @@ class Board(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     source_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
     category: Mapped[str] = mapped_column(String(100), nullable=False)
-    no: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    no: Mapped[int] = mapped_column(BigInteger, nullable=False, default=0)
     site: Mapped[str] = mapped_column(String(100), nullable=False)
     title: Mapped[str] = mapped_column(String(500), nullable=False)
     url: Mapped[str] = mapped_column(String(2048), nullable=False)

@@ -23,3 +23,13 @@ def seed_users(dry_run: bool = False) -> list[dict]:
         session.commit()
 
     return rows
+
+
+def main() -> int:
+    rows = seed_users()
+    print(f"seeded users: {len(rows)}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

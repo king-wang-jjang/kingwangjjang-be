@@ -8,7 +8,7 @@ $ErrorActionPreference = 'Stop'
 
 $RootDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $LogDir = Join-Path $RootDir 'logs\dev'
-$PidFile = Join-Path $RootDir '.dev-pids'
+$PidFile = Join-Path $LogDir '.dev-pids'
 
 # Kept as a literal for testability and for grep-friendly operational checks.
 $DevEnv = 'SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL=<from .env>'
@@ -96,6 +96,30 @@ function Start-DevService {
   Write-Host "[INFO] started $Name on :$Port pid=$($process.Id) log=$logFile"
 }
 
+function Invoke-SeedService {
+  param([string]$Name)
+
+  $serviceDir = Join-Path $RootDir $Name
+  if (-not (Test-Path $serviceDir)) {
+    throw "service directory not found: $serviceDir"
+  }
+
+  $databaseUrl = [Environment]::GetEnvironmentVariable('DATABASE_URL', 'Process')
+  if (-not $databaseUrl) {
+    throw 'DATABASE_URL is required. Set it in .env or the current shell.'
+  }
+
+  Push-Location $serviceDir
+  try {
+    $env:SERVER_RUN_MODE = 'FALSE'
+    $env:AUTH_COOKIE_SECURE = 'FALSE'
+    $env:DATABASE_URL = $databaseUrl
+    poetry run python -m app.db.seed
+  } finally {
+    Pop-Location
+  }
+}
+
 function Cmd-Up {
   Ensure-Dirs
   Ensure-Env
@@ -108,6 +132,16 @@ function Cmd-Up {
   }
 
   Cmd-Ps
+}
+
+function Cmd-Seed {
+  Ensure-Dirs
+  Ensure-Env
+  Import-DevEnvFile
+
+  Invoke-SeedService -Name 'user-service'
+  Invoke-SeedService -Name 'board-service'
+  Invoke-SeedService -Name 'comment-service'
 }
 
 function Cmd-Down {
@@ -166,9 +200,11 @@ Commands:
   restart   Restart local source services
   logs      Follow local service logs
   ps        Show local service process status
+  seed      Create tables and insert deterministic development seed data
 
 Examples:
   powershell -ExecutionPolicy Bypass -File .\dev.ps1 up
+  .\dev.ps1 seed
   .\dev.ps1 logs
 '@ | Write-Host
 }
@@ -179,6 +215,7 @@ switch ($Command) {
   'restart'  { Cmd-Restart }
   'logs'     { Cmd-Logs }
   'ps'       { Cmd-Ps }
+  'seed'     { Cmd-Seed }
   { $_ -in @('', 'help', '-h', '--help') } { Show-Usage }
   default    { Write-Host "Unknown command: $Command`n"; Show-Usage; exit 1 }
 }

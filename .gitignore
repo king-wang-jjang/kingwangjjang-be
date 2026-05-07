@@ -35,6 +35,7 @@ yarn.lock
 # Ignore temporary files
 *.tmp
 *.swp
+.dev-pids
 
 # Ignore FastAPI specific files
 __pycache__/
