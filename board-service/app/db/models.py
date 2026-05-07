@@ -19,6 +19,7 @@ class Board(Base):
     url: Mapped[str] = mapped_column(String(2048), nullable=False)
     contents: Mapped[list | dict | str | None] = mapped_column(JSON, nullable=True)
     gpt_answer: Mapped[str | None] = mapped_column(String, nullable=True)
+    tags: Mapped[list | None] = mapped_column(JSON, nullable=True)
     thumbnail: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     comment_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     like_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

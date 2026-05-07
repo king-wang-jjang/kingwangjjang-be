@@ -25,6 +25,7 @@ class FakeRepository:
                 "url": "https://example.com/post/1",
                 "contents": [],
                 "gpt_answer": None,
+                "tags": ["유머", "이슈"],
                 "created_at": "2026-04-28T00:00:00Z",
                 "thumbnail": None,
                 "comment_count": 2,
@@ -37,6 +38,16 @@ class FakeRepository:
 
     def add_like(self, board_id: str, user_id: str):
         return {"board_id": board_id, "site": "dcinside", "like_count": 1}
+
+    def analyze_board(self, board_id: str):
+        if board_id == "missing":
+            return None
+
+        return {
+            "board_id": board_id,
+            "summary": "요약 결과",
+            "tags": ["유머", "이슈"],
+        }
 
 
 def build_client(monkeypatch):
@@ -57,6 +68,7 @@ def test_realtime_returns_rest_shape(monkeypatch):
     assert response.json()[0]["_id"] == "11111111-1111-1111-1111-111111111111"
     assert response.json()[0]["likeCount"] == 0
     assert response.json()[0]["create_time"] == "2026-04-28T00:00:00Z"
+    assert response.json()[0]["tags"] == ["유머", "이슈"]
 
 
 def test_daily_returns_rest_shape(monkeypatch):
@@ -95,3 +107,24 @@ def test_add_like_returns_like_count(monkeypatch):
         "site": "dcinside",
         "likeCount": 1,
     }
+
+
+def test_analyze_board_returns_summary_and_tags(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.post("/api/boards/11111111-1111-1111-1111-111111111111/ai")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "boardId": "11111111-1111-1111-1111-111111111111",
+        "summary": "요약 결과",
+        "tags": ["유머", "이슈"],
+    }
+
+
+def test_analyze_board_returns_404_for_unknown_board(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.post("/api/boards/missing/ai")
+
+    assert response.status_code == 404

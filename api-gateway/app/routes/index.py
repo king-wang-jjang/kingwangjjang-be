@@ -10,6 +10,7 @@ sys.excepthook = catch_exception
 logger = setup_logger()
 router = APIRouter()
 config = Config()
+PROXY_TIMEOUT_SECONDS = 90.0
 
 
 SERVER_SERVICE_MAP = {
@@ -67,7 +68,7 @@ async def proxy(request: Request, path: str) -> Response:
         raise HTTPException(status_code=404, detail="Invalid path prefix")
 
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(PROXY_TIMEOUT_SECONDS)) as client:
             headers = dict(request.headers)
             headers.pop("X-User-Id", None)
             headers.pop("X-Auth-Provider", None)

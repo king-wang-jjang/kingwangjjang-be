@@ -48,6 +48,14 @@ def test_gateway_proxy_keeps_rest_service_prefixes():
     assert "path[len(prefix):]" in routes
 
 
+def test_gateway_proxy_allows_slow_ai_analysis_requests():
+    routes = read(API_GATEWAY_APP / "routes" / "index.py")
+
+    assert "PROXY_TIMEOUT_SECONDS = 90.0" in routes
+    assert "httpx.Timeout(PROXY_TIMEOUT_SECONDS)" in routes
+    assert "AsyncClient(timeout=" in routes
+
+
 def test_user_service_owns_login_callback_and_token_persistence():
     main = read(USER_SERVICE_APP / "main.py")
     auth_route = USER_SERVICE_APP / "routes" / "auth.py"
