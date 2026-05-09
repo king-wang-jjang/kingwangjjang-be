@@ -1,7 +1,10 @@
 from contextlib import asynccontextmanager
+import asyncio
+import contextlib
 
 from fastapi import FastAPI
 from app.utils.loghandler import catch_exception
+from app.services.analysis_worker import analysis_worker_enabled, run_analysis_worker
 import sys
 sys.excepthook = catch_exception
 # from db import context
@@ -20,6 +23,18 @@ async def lifespan(app: FastAPI):
     # fx db initialization
     # context.init()
     
+    stop_event = asyncio.Event()
+    worker_task = None
+    if analysis_worker_enabled():
+        worker_task = asyncio.create_task(run_analysis_worker(stop_event))
+
     # before start
-    yield
+    try:
+        yield
+    finally:
+        if worker_task:
+            stop_event.set()
+            worker_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await worker_task
     # before stop

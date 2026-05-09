@@ -26,6 +26,9 @@ class FakeRepository:
                 "contents": [],
                 "gpt_answer": None,
                 "tags": ["유머", "이슈"],
+                "analysis_status": "pending",
+                "analysis_retry_count": 0,
+                "analysis_error": None,
                 "created_at": "2026-04-28T00:00:00Z",
                 "thumbnail": None,
                 "comment_count": 2,
@@ -39,14 +42,36 @@ class FakeRepository:
     def add_like(self, board_id: str, user_id: str):
         return {"board_id": board_id, "site": "dcinside", "like_count": 1}
 
-    def analyze_board(self, board_id: str):
+    def request_analysis(self, board_id: str):
         if board_id == "missing":
             return None
 
         return {
             "board_id": board_id,
+            "status": "pending",
+            "summary": None,
+            "tags": [],
+            "retry_count": 0,
+            "error": None,
+            "requested_at": "2026-04-28T00:01:00Z",
+            "started_at": None,
+            "updated_at": "2026-04-28T00:01:00Z",
+        }
+
+    def get_analysis(self, board_id: str):
+        if board_id == "missing":
+            return None
+
+        return {
+            "board_id": board_id,
+            "status": "done",
             "summary": "요약 결과",
             "tags": ["유머", "이슈"],
+            "retry_count": 0,
+            "error": None,
+            "requested_at": "2026-04-28T00:01:00Z",
+            "started_at": "2026-04-28T00:01:01Z",
+            "updated_at": "2026-04-28T00:01:10Z",
         }
 
 
@@ -109,16 +134,41 @@ def test_add_like_returns_like_count(monkeypatch):
     }
 
 
-def test_analyze_board_returns_summary_and_tags(monkeypatch):
+def test_request_analysis_returns_accepted_queue_status(monkeypatch):
     client = build_client(monkeypatch)
 
     response = client.post("/api/boards/11111111-1111-1111-1111-111111111111/ai")
 
+    assert response.status_code == 202
+    assert response.json() == {
+        "boardId": "11111111-1111-1111-1111-111111111111",
+        "status": "pending",
+        "summary": None,
+        "tags": [],
+        "retryCount": 0,
+        "error": None,
+        "requestedAt": "2026-04-28T00:01:00Z",
+        "startedAt": None,
+        "updatedAt": "2026-04-28T00:01:00Z",
+    }
+
+
+def test_get_analysis_returns_summary_and_tags(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.get("/api/boards/11111111-1111-1111-1111-111111111111/ai")
+
     assert response.status_code == 200
     assert response.json() == {
         "boardId": "11111111-1111-1111-1111-111111111111",
+        "status": "done",
         "summary": "요약 결과",
         "tags": ["유머", "이슈"],
+        "retryCount": 0,
+        "error": None,
+        "requestedAt": "2026-04-28T00:01:00Z",
+        "startedAt": "2026-04-28T00:01:01Z",
+        "updatedAt": "2026-04-28T00:01:10Z",
     }
 
 
