@@ -47,3 +47,4 @@ log/
 __init__.py
 
 .venv/
+.worktrees/
