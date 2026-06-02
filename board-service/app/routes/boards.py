@@ -1,12 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi.responses import JSONResponse
 
 from app.auth.dependencies import require_principal
 from app.auth.principal import Principal
 from app.repositories.boards import BoardRepository
+from app.services.analysis_jobs import BoardAnalysisJobStore
 from app.utils.llm import LLMError
 
 
 router = APIRouter(prefix="/api/boards", tags=["boards"])
+analysis_jobs = BoardAnalysisJobStore()
+ANALYSIS_ESTIMATED_SECONDS = 60
 
 
 def _to_board_response(board: dict) -> dict:
@@ -63,16 +67,60 @@ def get_board_analysis(board_id: str):
     return _to_analysis_response(result)
 
 
-@router.post("/{board_id}/ai", status_code=status.HTTP_202_ACCEPTED)
-def request_board_analysis(board_id: str):
-    try:
-        result = BoardRepository().request_analysis(board_id)
-    except LLMError as exc:
-        raise HTTPException(status_code=502, detail="AI analysis failed") from exc
-    if result is None:
+@router.get("/ai/jobs/{job_id}")
+def get_analysis_job(job_id: str, _principal: Principal = Depends(require_principal)):
+    job = analysis_jobs.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Analysis job not found")
+
+    return job.to_response()
+
+
+@router.post("/{board_id}/ai")
+def analyze_board(
+    board_id: str,
+    background_tasks: BackgroundTasks,
+    _principal: Principal = Depends(require_principal),
+):
+    repository = BoardRepository()
+    current_analysis = repository.get_analysis_status(board_id)
+    if current_analysis is None:
         raise HTTPException(status_code=404, detail="Board not found")
 
-    return _to_analysis_response(result)
+    if current_analysis["is_complete"]:
+        job = analysis_jobs.completed(
+            board_id=current_analysis["board_id"],
+            summary=current_analysis["summary"],
+            tags=current_analysis["tags"],
+        )
+        return job.to_response()
+
+    job, created = analysis_jobs.start(
+        board_id=current_analysis["board_id"],
+        estimated_seconds=ANALYSIS_ESTIMATED_SECONDS,
+    )
+    if created:
+        background_tasks.add_task(_run_analysis_job, job.job_id, current_analysis["board_id"])
+
+    return JSONResponse(status_code=202, content=job.to_response())
+
+
+def _run_analysis_job(job_id: str, board_id: str) -> None:
+    analysis_jobs.mark_running(job_id, estimated_seconds=max(ANALYSIS_ESTIMATED_SECONDS - 15, 1))
+    try:
+        result = BoardRepository().analyze_board(board_id)
+    except LLMError:
+        analysis_jobs.mark_failed(job_id, "AI analysis failed")
+        return
+    except Exception as exc:
+        analysis_jobs.mark_failed(job_id, str(exc))
+        return
+
+    if result is None:
+        analysis_jobs.mark_failed(job_id, "Board not found")
+        return
+
+    analysis_jobs.mark_completed(job_id, summary=result["summary"], tags=result["tags"])
 
 
 @router.post("/{board_id}/likes")

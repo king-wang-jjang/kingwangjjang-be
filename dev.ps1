@@ -14,7 +14,7 @@ $PidFile = Join-Path $LogDir '.dev-pids'
 $DevEnv = 'SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL=<from .env>'
 
 $Services = @(
-  @{ Name = 'api-gateway'; Port = 8000 },
+  @{ Name = 'api-gateway'; Port = 33330 },
   @{ Name = 'board-service'; Port = 33333 },
   @{ Name = 'user-service'; Port = 33334 },
   @{ Name = 'comment-service'; Port = 33335 }
@@ -66,6 +66,22 @@ function Test-ProcessRunning {
   }
 }
 
+function Resolve-PythonExecutable {
+  param([string]$ProjectDir)
+
+  $venvPython = Join-Path $ProjectDir '.venv\Scripts\python.exe'
+  if (Test-Path -LiteralPath $venvPython) {
+    return $venvPython
+  }
+
+  return 'python'
+}
+
+function ConvertTo-QuotedPowerShellValue {
+  param([string]$Value)
+  return "'" + $Value.Replace("'", "''") + "'"
+}
+
 function Start-DevService {
   param(
     [string]$Name,
@@ -83,8 +99,11 @@ function Start-DevService {
   if (-not $databaseUrl) {
     throw 'DATABASE_URL is required. Set it in .env or the current shell.'
   }
-  $escapedDatabaseUrl = $databaseUrl.Replace("'", "''")
-  $command = "`$env:SERVER_RUN_MODE='FALSE'; `$env:AUTH_COOKIE_SECURE='FALSE'; `$env:DATABASE_URL='$escapedDatabaseUrl'; poetry run uvicorn app.main:app --host 0.0.0.0 --port $Port *> '$logFile'"
+  $pythonRunner = Resolve-PythonExecutable -ProjectDir $serviceDir
+  $quotedPythonRunner = ConvertTo-QuotedPowerShellValue $pythonRunner
+  $quotedDatabaseUrl = ConvertTo-QuotedPowerShellValue $databaseUrl
+  $quotedLogFile = ConvertTo-QuotedPowerShellValue $logFile
+  $command = "`$env:SERVER_RUN_MODE='FALSE'; `$env:AUTH_COOKIE_SECURE='FALSE'; `$env:DATABASE_URL=$quotedDatabaseUrl; & $quotedPythonRunner -m uvicorn app.main:app --host 0.0.0.0 --port $Port *> $quotedLogFile"
   $process = Start-Process `
     -FilePath 'powershell' `
     -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', $command) `
@@ -114,7 +133,8 @@ function Invoke-SeedService {
     $env:SERVER_RUN_MODE = 'FALSE'
     $env:AUTH_COOKIE_SECURE = 'FALSE'
     $env:DATABASE_URL = $databaseUrl
-    poetry run python -m app.db.seed
+    $pythonRunner = Resolve-PythonExecutable -ProjectDir $serviceDir
+    & $pythonRunner -m app.db.seed
   } finally {
     Pop-Location
   }

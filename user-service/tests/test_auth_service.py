@@ -2,7 +2,6 @@ import builtins
 import datetime
 import os
 import sys
-import types
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -48,11 +47,8 @@ class AuthServiceTests(unittest.TestCase):
                 return {"user_id": user_id, "refresh_token": refresh_token}
 
         repository = FakeRepository()
-        fake_users_module = types.ModuleType("app.repositories.users")
-        fake_users_module.UserRepository = lambda: repository
-        
         user_info = UserType(user_id="123", auth_provider="kakao")
-        with patch.dict(sys.modules, {"app.repositories.users": fake_users_module}):
+        with patch("app.services.auth_service.UserRepository", lambda: repository):
             saved = UserService.save_user_to_db(user_info, "refresh-token")
 
         self.assertEqual(saved, {"user_id": "123", "refresh_token": "refresh-token"})

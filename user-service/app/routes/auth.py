@@ -1,6 +1,7 @@
 import os
+from urllib.parse import urlencode
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
 from app.config import Config
@@ -9,30 +10,61 @@ from app.services.auth_service import JWTService, KakaoAuthService, UserService
 
 router = APIRouter()
 config = Config()
+LOCAL_HOSTNAMES = {"localhost", "127.0.0.1", "::1", "0.0.0.0"}
 
 
 def _cookie_secure() -> bool:
     return os.getenv("AUTH_COOKIE_SECURE", "TRUE").upper() not in {"0", "FALSE", "NO"}
 
 
+def _is_private_ipv4_hostname(hostname: str) -> bool:
+    if hostname.startswith("10.") or hostname.startswith("192.168."):
+        return True
+
+    parts = hostname.split(".")
+    if len(parts) < 2 or parts[0] != "172":
+        return False
+
+    try:
+        second_octet = int(parts[1])
+    except ValueError:
+        return False
+
+    return 16 <= second_octet <= 31
+
+
+def _is_local_hostname(hostname: str | None) -> bool:
+    if not hostname:
+        return False
+    return hostname in LOCAL_HOSTNAMES or _is_private_ipv4_hostname(hostname)
+
+
+def _callback_redirect_uri(request: Request) -> str:
+    if config.get_env("SERVER_RUN_MODE") == "FALSE" and _is_local_hostname(request.url.hostname):
+        return str(request.url.replace(path="/callback", query=""))
+
+    return config.get_env("REDIRECT_URI")
+
+
 @router.get("/login")
-def login():
-    kakao_oauth_url = (
-        "https://kauth.kakao.com/oauth/authorize"
-        f"?client_id={config.get_env('KAKAO_CLIENT_ID')}"
-        f"&redirect_uri={config.get_env('REDIRECT_URI')}"
-        "&response_type=code"
+def login(request: Request):
+    kakao_oauth_url = "https://kauth.kakao.com/oauth/authorize?" + urlencode(
+        {
+            "client_id": config.get_env("KAKAO_CLIENT_ID"),
+            "redirect_uri": _callback_redirect_uri(request),
+            "response_type": "code",
+        }
     )
     return RedirectResponse(url=kakao_oauth_url, status_code=302)
 
 
 @router.get("/callback")
-async def callback(code: str):
+async def callback(request: Request, code: str):
     try:
         access_token = await KakaoAuthService.fetch_access_token(
             code,
             config.get_env("KAKAO_CLIENT_ID"),
-            config.get_env("REDIRECT_URI"),
+            _callback_redirect_uri(request),
             config.get_env("KAKAO_CLIENT_SECRET"),
         )
         user_info = await KakaoAuthService.fetch_user_info(access_token, "kakao")

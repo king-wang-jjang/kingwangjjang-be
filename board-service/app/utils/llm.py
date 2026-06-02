@@ -32,10 +32,13 @@ class LLM:
     def __init__(
         self,
         base_url: str | None = None,
+        base_urls: list[str] | None = None,
         model: str | None = None,
         timeout_seconds: float | None = None,
     ):
-        self.base_url = (base_url or os.getenv("OLLAMA_BASE_URL") or self.DEFAULT_BASE_URL).rstrip("/")
+        self.base_urls = self._resolve_base_urls(base_url=base_url, base_urls=base_urls)
+        self.base_url = self.base_urls[0]
+        self._next_base_url_index = 0
         self.model = model or os.getenv("OLLAMA_MODEL") or self.DEFAULT_MODEL
         self.timeout_seconds = self._resolve_timeout(timeout_seconds)
 
@@ -62,16 +65,7 @@ class LLM:
         if response_format:
             payload["format"] = response_format
 
-        try:
-            response = httpx.post(
-                f"{self.base_url}/api/chat",
-                json=payload,
-                timeout=self.timeout_seconds,
-            )
-            response.raise_for_status()
-            response_data = response.json()
-        except (httpx.HTTPError, ValueError) as exc:
-            raise LLMError(str(exc)) from exc
+        response_data = self._post_chat(payload)
 
         message = response_data.get("message", {})
         answer = message.get("content") if isinstance(message, dict) else None
@@ -79,6 +73,29 @@ class LLM:
             raise LLMError("Ollama chat response did not include message.content")
 
         return answer
+
+    def _post_chat(self, payload: dict) -> dict:
+        start_index = self._next_base_url_index
+        last_error: Exception | None = None
+
+        for offset in range(len(self.base_urls)):
+            index = (start_index + offset) % len(self.base_urls)
+            base_url = self.base_urls[index]
+            try:
+                response = httpx.post(
+                    f"{base_url}/api/chat",
+                    json=payload,
+                    timeout=self.timeout_seconds,
+                )
+                response.raise_for_status()
+                response_data = response.json()
+                self._next_base_url_index = (index + 1) % len(self.base_urls)
+                return response_data
+            except (httpx.HTTPError, ValueError) as exc:
+                last_error = exc
+                logger.warning("Ollama endpoint failed (%s): %s", base_url, exc)
+
+        raise LLMError(str(last_error) if last_error else "Ollama chat request failed")
 
     def _parse_analysis(self, answer: str) -> dict:
         raw_answer = answer.strip()
@@ -123,3 +140,26 @@ class LLM:
         except ValueError:
             logger.warning("Invalid OLLAMA_TIMEOUT_SECONDS; using default timeout")
             return self.DEFAULT_TIMEOUT_SECONDS
+
+    def _resolve_base_urls(
+        self,
+        base_url: str | None,
+        base_urls: list[str] | None,
+    ) -> list[str]:
+        candidates = base_urls or self._split_base_urls(os.getenv("OLLAMA_BASE_URLS"))
+        if not candidates:
+            candidates = [base_url or os.getenv("OLLAMA_BASE_URL") or self.DEFAULT_BASE_URL]
+
+        normalized_urls = []
+        for candidate in candidates:
+            normalized_url = candidate.strip().rstrip("/")
+            if normalized_url and normalized_url not in normalized_urls:
+                normalized_urls.append(normalized_url)
+
+        return normalized_urls or [self.DEFAULT_BASE_URL]
+
+    @staticmethod
+    def _split_base_urls(raw_value: str | None) -> list[str]:
+        if not raw_value:
+            return []
+        return [value.strip() for value in raw_value.split(",") if value.strip()]

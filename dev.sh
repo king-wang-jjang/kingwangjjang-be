@@ -10,7 +10,7 @@ PID_FILE="$LOG_DIR/.dev-pids"
 DEV_ENV="SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL=<from .env>"
 
 SERVICES=(
-  "api-gateway:8000"
+  "api-gateway:33330"
   "board-service:33333"
   "user-service:33334"
   "comment-service:33335"
@@ -28,6 +28,23 @@ ensure_env() {
 
 has_cmd() {
   command -v "$1" >/dev/null 2>&1
+}
+
+resolve_python_executable() {
+  local project_dir="$1"
+  local venv_python="$project_dir/.venv/bin/python"
+
+  if [[ -x "$venv_python" ]]; then
+    echo "$venv_python"
+    return 0
+  fi
+
+  if has_cmd python3; then
+    echo "python3"
+    return 0
+  fi
+
+  echo "python"
 }
 
 load_dev_env_file() {
@@ -159,12 +176,14 @@ start_service() {
   fi
 
   : "${DATABASE_URL:?DATABASE_URL is required. Set it in .env or the current shell.}"
+  local python_runner
+  python_runner="$(resolve_python_executable "$service_dir")"
   (
     cd "$service_dir"
     if has_cmd setsid; then
-      setsid env SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL="$DATABASE_URL" poetry run uvicorn app.main:app --host 0.0.0.0 --port "$port" >"$log_file" 2>&1 < /dev/null &
+      setsid env SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL="$DATABASE_URL" "$python_runner" -m uvicorn app.main:app --host 0.0.0.0 --port "$port" >"$log_file" 2>&1 < /dev/null &
     else
-      nohup env SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL="$DATABASE_URL" poetry run uvicorn app.main:app --host 0.0.0.0 --port "$port" >"$log_file" 2>&1 < /dev/null &
+      nohup env SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL="$DATABASE_URL" "$python_runner" -m uvicorn app.main:app --host 0.0.0.0 --port "$port" >"$log_file" 2>&1 < /dev/null &
     fi
     echo "$!" > "$LOG_DIR/$name.pid"
   )
@@ -210,7 +229,9 @@ seed_service() {
   (
     cd "$service_dir"
     : "${DATABASE_URL:?DATABASE_URL is required. Set it in .env or the current shell.}"
-    env SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL="$DATABASE_URL" poetry run python -m app.db.seed
+    local python_runner
+    python_runner="$(resolve_python_executable "$service_dir")"
+    env SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL="$DATABASE_URL" "$python_runner" -m app.db.seed
   )
 }
 

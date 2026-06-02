@@ -8,14 +8,20 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
-uvicorn = "^0.32.1"
-fastapi = "^0.115.6"
-python-dotenv = "^1.0.1"
+uvicorn = "^0.48.0"
+fastapi = "^0.136.3"
+python-dotenv = "^1.2.2"
 colorama = "^0.4.6"
-PyJWT = "^2.8.0"
-sqlalchemy = "^2.0.36"
-psycopg = { extras = ["binary"], version = "^3.2.3" }
+PyJWT = "^2.13.0"
+sqlalchemy = "^2.0.50"
+psycopg = {extras = ["binary"], version = "^3.3.4"}
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.3,<10.0.0)",
+    "httpx (>=0.28.1,<0.29.0)"
+]

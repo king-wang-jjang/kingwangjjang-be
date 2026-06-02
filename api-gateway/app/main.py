@@ -1,4 +1,3 @@
-# from typing import Union
 import os
 import sys
 from pathlib import Path
@@ -13,9 +12,17 @@ from app.middlewares.auth_middleware import AuthMiddleware, UserInfoMiddleware, 
 from fastapi import FastAPI
 
 app = FastAPI()
-origins = [
+CORS_ORIGINS = [
     "http://localhost:8083",  
+    "http://localhost:8084",
+    "http://127.0.0.1:8083",
+    "http://127.0.0.1:8084",
     "https://xn--hz2b47s.kr",
+]
+origins = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", ",".join(CORS_ORIGINS)).split(",")
+    if origin.strip()
 ]
 
 # CORS 미들웨어

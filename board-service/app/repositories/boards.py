@@ -56,6 +56,27 @@ class BoardRepository:
                 "like_count": int(board.like_count or 0),
             }
 
+    def get_analysis_status(self, board_id: str) -> dict | None:
+        with get_session_factory()() as session:
+            board = session.get(Board, board_id)
+            if board is None:
+                return None
+
+            if self._has_stored_analysis(board):
+                return {
+                    "board_id": board.id,
+                    "summary": board.gpt_answer,
+                    "tags": board.tags or [],
+                    "is_complete": True,
+                }
+
+            return {
+                "board_id": board.id,
+                "summary": None,
+                "tags": board.tags or [],
+                "is_complete": False,
+            }
+
     def analyze_board(self, board_id: str, analyzer: LLM | None = None) -> dict | None:
         analyzer = analyzer or LLM()
 

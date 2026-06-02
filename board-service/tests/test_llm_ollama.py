@@ -69,6 +69,45 @@ def test_call_returns_fallback_when_ollama_request_fails(monkeypatch):
     assert result == LLM.FALLBACK_MESSAGE
 
 
+def test_call_rotates_across_configured_ollama_endpoints(monkeypatch):
+    calls = []
+
+    def fake_post(url, json, timeout):
+        calls.append(url)
+        return DummyResponse({"message": {"content": url}})
+
+    monkeypatch.setattr(llm_module.httpx, "post", fake_post)
+
+    llm = LLM(base_urls=["http://llm-a.local", "http://llm-b.local"], model="gemma4:e4b")
+
+    first = llm.call("first")
+    second = llm.call("second")
+
+    assert first == "http://llm-a.local/api/chat"
+    assert second == "http://llm-b.local/api/chat"
+    assert calls == ["http://llm-a.local/api/chat", "http://llm-b.local/api/chat"]
+
+
+def test_call_fails_over_to_next_ollama_endpoint(monkeypatch):
+    calls = []
+
+    def fake_post(url, json, timeout):
+        calls.append(url)
+        if "llm-a" in url:
+            request = httpx.Request("POST", url)
+            raise httpx.ConnectError("connection failed", request=request)
+        return DummyResponse({"message": {"content": "backup ok"}})
+
+    monkeypatch.setattr(llm_module.httpx, "post", fake_post)
+
+    result = LLM(base_urls=["http://llm-a.local", "http://llm-b.local"], model="gemma4:e4b").call(
+        "private content"
+    )
+
+    assert result == "backup ok"
+    assert calls == ["http://llm-a.local/api/chat", "http://llm-b.local/api/chat"]
+
+
 def test_constructor_uses_ollama_environment_defaults(monkeypatch):
     monkeypatch.setenv("OLLAMA_BASE_URL", "http://llm.example:11434/")
     monkeypatch.setenv("OLLAMA_MODEL", "custom-model")
@@ -79,6 +118,16 @@ def test_constructor_uses_ollama_environment_defaults(monkeypatch):
     assert llm.base_url == "http://llm.example:11434"
     assert llm.model == "custom-model"
     assert llm.timeout_seconds == 7.5
+
+
+def test_constructor_prefers_ollama_base_urls_for_multiple_servers(monkeypatch):
+    monkeypatch.setenv("OLLAMA_BASE_URLS", "http://llm-a:11434/, http://llm-b:11434")
+    monkeypatch.setenv("OLLAMA_BASE_URL", "http://single-llm:11434")
+
+    llm = LLM()
+
+    assert llm.base_urls == ["http://llm-a:11434", "http://llm-b:11434"]
+    assert llm.base_url == "http://llm-a:11434"
 
 
 def test_analyze_returns_summary_and_tags_from_json_response(monkeypatch):

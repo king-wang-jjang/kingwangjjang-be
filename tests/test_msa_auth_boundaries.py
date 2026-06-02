@@ -48,6 +48,16 @@ def test_gateway_proxy_keeps_rest_service_prefixes():
     assert "path[len(prefix):]" in routes
 
 
+def test_gateway_cors_allows_local_frontend_dev_ports():
+    main = read(API_GATEWAY_APP / "main.py")
+
+    assert "CORS_ORIGINS" in main
+    assert '"http://localhost:8083"' in main
+    assert '"http://localhost:8084"' in main
+    assert '"http://127.0.0.1:8083"' in main
+    assert '"http://127.0.0.1:8084"' in main
+
+
 def test_gateway_proxy_allows_slow_ai_analysis_requests():
     routes = read(API_GATEWAY_APP / "routes" / "index.py")
 

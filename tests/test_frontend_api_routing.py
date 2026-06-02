@@ -8,5 +8,36 @@ def test_frontend_routes_all_local_browser_api_calls_to_local_gateway():
     http_client = (ROOT / "kingwangjjang-fe/src/api/http.ts").read_text(encoding="utf-8")
 
     assert "LOCAL_AUTH_PREFIXES" not in http_client
-    assert "if (isLocalBrowserHost())" in http_client
-    assert "return CONFIG.localServerUrl" in http_client
+    assert "resolveApiBaseUrl()" in http_client
+
+
+def test_frontend_routes_local_network_browser_hosts_to_local_gateway():
+    api_base_url = (ROOT / "kingwangjjang-fe/src/api/api-base-url.ts").read_text(encoding="utf-8")
+    oauth_form = (ROOT / "kingwangjjang-fe/src/auth/components/form-oauth.tsx").read_text(
+        encoding="utf-8"
+    )
+
+    assert "'0.0.0.0'" in api_base_url
+    assert "hostname.startsWith('192.168.')" in api_base_url
+    assert "hostname.startsWith('10.')" in api_base_url
+    assert "parsed.hostname = browserHostname" in api_base_url
+    assert "resolveApiBaseUrl()" in oauth_form
+    assert "카카오 로그인" in oauth_form
+
+
+def test_frontend_get_requests_do_not_force_json_content_type():
+    http_client = (ROOT / "kingwangjjang-fe/src/api/http.ts").read_text(encoding="utf-8")
+
+    assert "const headers = new Headers(options.headers);" in http_client
+    assert "if (options.body && !headers.has('Content-Type'))" in http_client
+    assert "headers.set('Content-Type', 'application/json')" in http_client
+
+
+def test_frontend_keeps_backend_site_code_separate_from_display_label():
+    board_api = (ROOT / "kingwangjjang-fe/src/api/board-api.ts").read_text(encoding="utf-8")
+    use_board = (ROOT / "kingwangjjang-fe/src/hooks/use-board.ts").read_text(encoding="utf-8")
+
+    assert "siteLabel" in board_api
+    assert "site: post.site" in board_api
+    assert "siteLabel: getSiteLabel(post.site)" in board_api
+    assert "switch (value?.site)" not in use_board
