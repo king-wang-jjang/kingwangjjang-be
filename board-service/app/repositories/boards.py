@@ -6,6 +6,7 @@ from sqlalchemy import desc, inspect, nullslast, select, text
 from app.db.models import Board, BoardLike
 from app.db.postgres import Base, get_engine, get_session_factory
 from app.utils.constants import DEFAULT_GPT_ANSWER
+from app.utils.crawled_content import extract_llm_text, normalize_contents
 from app.utils.llm import LLM, LLMError
 
 
@@ -276,7 +277,7 @@ class BoardRepository:
             "site": board.site,
             "title": board.title,
             "url": board.url,
-            "contents": board.contents,
+            "contents": normalize_contents(board.contents),
             "gpt_answer": board.gpt_answer,
             "tags": board.tags or [],
             "analysis_status": board.analysis_status or self.ANALYSIS_PENDING,
@@ -294,16 +295,7 @@ class BoardRepository:
 
     @staticmethod
     def _analysis_text(board: Board) -> str:
-        parts = [board.title]
-        contents = board.contents
-        if isinstance(contents, str):
-            parts.append(contents)
-        elif isinstance(contents, list):
-            parts.extend(str(item) for item in contents if item is not None)
-        elif isinstance(contents, dict):
-            parts.extend(str(value) for value in contents.values() if value is not None)
-
-        return "\n".join(part for part in parts if part)
+        return extract_llm_text(board.title, board.contents)
 
     @staticmethod
     def _has_stored_analysis(board: Board) -> bool:

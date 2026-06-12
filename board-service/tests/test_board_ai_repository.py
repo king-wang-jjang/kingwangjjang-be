@@ -66,6 +66,83 @@ def test_analyze_board_persists_summary_and_tags(monkeypatch, tmp_path):
         assert board.analysis_status == BoardRepository.ANALYSIS_DONE
 
 
+def test_analyze_board_uses_crawled_text_content_without_media_artifacts(monkeypatch, tmp_path):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'boards.db'}")
+    postgres.get_engine.cache_clear()
+    postgres.get_session_factory.cache_clear()
+
+    class CapturingAnalyzer:
+        captured = ""
+
+        def analyze(self, content: str):
+            self.captured = content
+            assert "real crawled body" in content
+            assert "diagnostic-media" not in content
+            assert "{'type'" not in content
+            return {"summary": "요약", "tags": ["본문"]}
+
+    analyzer = CapturingAnalyzer()
+    repository = BoardRepository()
+    with postgres.get_session_factory()() as session:
+        session.add(
+            Board(
+                id="board-1",
+                category="humor",
+                no=1,
+                site="dcinside",
+                title="seed title",
+                url="https://example.com/post/1",
+                contents=[
+                    {"type": "image", "path": "diagnostic-media", "content": None},
+                    {"type": "text", "content": "real crawled body"},
+                ],
+            )
+        )
+        session.commit()
+
+    repository.analyze_board("board-1", analyzer=analyzer)
+
+    assert analyzer.captured == "seed title\nreal crawled body"
+
+
+def test_analyze_board_includes_media_text_with_block_context(monkeypatch, tmp_path):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'boards.db'}")
+    postgres.get_engine.cache_clear()
+    postgres.get_session_factory.cache_clear()
+
+    class CapturingAnalyzer:
+        captured = ""
+
+        def analyze(self, content: str):
+            self.captured = content
+            assert "media/image.webp" not in content
+            return {"summary": "summary", "tags": ["image"]}
+
+    analyzer = CapturingAnalyzer()
+    repository = BoardRepository()
+    with postgres.get_session_factory()() as session:
+        session.add(
+            Board(
+                id="board-1",
+                category="humor",
+                no=1,
+                site="dcinside",
+                title="seed title",
+                url="https://example.com/post/1",
+                contents=[
+                    {"type": "text", "text": "first paragraph"},
+                    {"type": "image", "media_path": "media/image.webp", "text": "text inside image"},
+                    {"type": "video", "media_path": "media/video.mp4"},
+                ],
+            )
+        )
+        session.commit()
+
+    repository.analyze_board("board-1", analyzer=analyzer)
+
+    assert analyzer.captured == "seed title\nfirst paragraph\n[image] text inside image"
+
+
 def test_analyze_board_returns_existing_summary_without_llm_call(monkeypatch, tmp_path):
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'boards.db'}")
     postgres.get_engine.cache_clear()

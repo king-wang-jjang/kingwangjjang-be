@@ -27,3 +27,14 @@ def test_board_card_click_requests_ai_analysis_only_for_authenticated_users():
     assert "analysisRequestsRef.current.add(boardId)" in board_view
     assert "progressPercent" in board_view
     assert "estimatedSecondsRemaining" in board_view
+
+
+def test_board_expanded_panel_exposes_crawled_data_preview():
+    board_view = (ROOT / "kingwangjjang-fe/src/sections/board/view/board-view.tsx").read_text(
+        encoding="utf-8"
+    )
+
+    assert "getCrawledContentPreview" in board_view
+    assert "수집 데이터" in board_view
+    assert "textLength" in board_view
+    assert "수집된 본문 데이터가 없습니다." in board_view
