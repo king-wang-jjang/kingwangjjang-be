@@ -29,8 +29,6 @@ class UserRepository:
         return self.get_or_create_user(
             user_id=principal.user_id,
             auth_provider=auth_provider,
-            nickname="dev-user",
-            profile_image=None,
         )
 
     def get_or_create_user(

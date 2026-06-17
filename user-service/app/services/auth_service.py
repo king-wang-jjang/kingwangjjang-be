@@ -59,7 +59,21 @@ class KakaoAuthService:
             f"{KAKAO_API_BASE}/v2/user/me",
             {"Authorization": f"Bearer {access_token}"},
         )
-        return UserType(user_id=str(user_data["id"]), auth_provider=auth_provider)
+        profile = (user_data.get("kakao_account") or {}).get("profile") or {}
+        properties = user_data.get("properties") or {}
+        nickname = profile.get("nickname") or properties.get("nickname")
+        profile_image = (
+            profile.get("profile_image_url")
+            or properties.get("profile_image")
+            or profile.get("thumbnail_image_url")
+            or properties.get("thumbnail_image")
+        )
+        return UserType(
+            user_id=str(user_data["id"]),
+            auth_provider=auth_provider,
+            nickname=nickname,
+            profile_image=profile_image,
+        )
 
 
 class UserService:
