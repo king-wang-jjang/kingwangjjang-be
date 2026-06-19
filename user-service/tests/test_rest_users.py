@@ -48,6 +48,7 @@ def test_me_returns_authenticated_principal_user(monkeypatch):
                 "user_id": principal.user_id,
                 "auth_provider": principal.auth_provider,
                 "nickname": "dev-user",
+                "display_name": "reader-one",
                 "profile_image": None,
                 "created_at": "2026-04-28T00:00:00Z",
             }
@@ -64,6 +65,7 @@ def test_me_returns_authenticated_principal_user(monkeypatch):
         "Id": user_id,
         "userId": "12345",
         "nickname": "dev-user",
+        "displayName": "reader-one",
         "authProvider": "kakao",
         "profileImage": None,
         "createTime": "2026-04-28T00:00:00Z",
@@ -80,6 +82,7 @@ def test_me_preserves_stored_kakao_profile(monkeypatch):
                 "user_id": principal.user_id,
                 "auth_provider": principal.auth_provider,
                 "nickname": "왕짱",
+                "display_name": None,
                 "profile_image": "https://k.kakaocdn.net/profile.jpg",
                 "created_at": "2026-04-28T00:00:00Z",
             }
@@ -96,6 +99,7 @@ def test_me_preserves_stored_kakao_profile(monkeypatch):
         "Id": user_id,
         "userId": "12345",
         "nickname": "왕짱",
+        "displayName": None,
         "authProvider": "kakao",
         "profileImage": "https://k.kakaocdn.net/profile.jpg",
         "createTime": "2026-04-28T00:00:00Z",
@@ -136,3 +140,81 @@ def test_principal_lookup_does_not_overwrite_stored_profile_fields():
         "profile_image": None,
         "refresh_token": None,
     }
+
+
+def test_patch_me_updates_local_display_name(monkeypatch):
+    user_id = str(uuid4())
+
+    class FakeRepository:
+        def update_display_name_from_principal(self, principal, display_name):
+            assert principal.user_id == "12345"
+            assert principal.auth_provider == "kakao"
+            assert display_name == "왕짱 리더"
+            return {
+                "id": user_id,
+                "user_id": principal.user_id,
+                "auth_provider": principal.auth_provider,
+                "nickname": "왕짱",
+                "display_name": display_name,
+                "profile_image": "https://k.kakaocdn.net/profile.jpg",
+                "created_at": "2026-04-28T00:00:00Z",
+            }
+
+    from app.routes import users
+
+    monkeypatch.setattr(users, "UserRepository", lambda: FakeRepository())
+    client = build_client(Principal(user_id="12345", auth_provider="kakao", is_authenticated=True))
+
+    response = client.patch("/api/users/me", json={"displayName": "왕짱 리더"})
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "Id": user_id,
+        "userId": "12345",
+        "nickname": "왕짱",
+        "displayName": "왕짱 리더",
+        "authProvider": "kakao",
+        "profileImage": "https://k.kakaocdn.net/profile.jpg",
+        "createTime": "2026-04-28T00:00:00Z",
+    }
+
+
+def test_patch_me_clears_blank_display_name(monkeypatch):
+    class FakeRepository:
+        def update_display_name_from_principal(self, principal, display_name):
+            assert display_name is None
+            return {
+                "id": str(uuid4()),
+                "user_id": principal.user_id,
+                "auth_provider": principal.auth_provider,
+                "nickname": "왕짱",
+                "display_name": None,
+                "profile_image": None,
+                "created_at": "2026-04-28T00:00:00Z",
+            }
+
+    from app.routes import users
+
+    monkeypatch.setattr(users, "UserRepository", lambda: FakeRepository())
+    client = build_client(Principal(user_id="12345", auth_provider="kakao", is_authenticated=True))
+
+    response = client.patch("/api/users/me", json={"displayName": "   "})
+
+    assert response.status_code == 200
+    assert response.json()["displayName"] is None
+
+
+def test_patch_me_rejects_anonymous_user():
+    client = build_client(Principal(user_id=None, auth_provider=None, is_authenticated=False))
+
+    response = client.patch("/api/users/me", json={"displayName": "guest"})
+
+    assert response.status_code == 401
+
+
+def test_patch_me_rejects_overlong_display_name():
+    client = build_client(Principal(user_id="12345", auth_provider="kakao", is_authenticated=True))
+
+    response = client.patch("/api/users/me", json={"displayName": "x" * 41})
+
+    assert response.status_code == 422

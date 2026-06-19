@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import inspect, select, text
 
 from app.auth.principal import Principal
 from app.db.models import User
@@ -7,7 +7,9 @@ from app.db.postgres import Base, get_engine, get_session_factory
 
 class UserRepository:
     def __init__(self):
-        Base.metadata.create_all(bind=get_engine())
+        engine = get_engine()
+        Base.metadata.create_all(bind=engine)
+        self._ensure_user_columns(engine)
 
     @staticmethod
     def _to_dict(user: User) -> dict:
@@ -16,6 +18,7 @@ class UserRepository:
             "user_id": user.user_id,
             "auth_provider": user.auth_provider,
             "nickname": user.nickname,
+            "display_name": user.display_name,
             "profile_image": user.profile_image,
             "refresh_token": user.refresh_token,
             "created_at": user.created_at.isoformat().replace("+00:00", "Z"),
@@ -99,3 +102,44 @@ class UserRepository:
             session.commit()
             session.refresh(user)
             return self._to_dict(user)
+
+    def update_display_name_from_principal(self, principal: Principal, display_name: str | None) -> dict:
+        if not principal.user_id:
+            raise ValueError("principal.user_id is required")
+
+        user_id = str(principal.user_id)
+        auth_provider = principal.auth_provider or "unknown"
+
+        with get_session_factory()() as session:
+            user = session.scalar(
+                select(User).where(
+                    User.user_id == user_id,
+                    User.auth_provider == auth_provider,
+                )
+            )
+            if user is None:
+                user = User(
+                    user_id=user_id,
+                    auth_provider=auth_provider,
+                    display_name=display_name,
+                )
+                session.add(user)
+            else:
+                user.display_name = display_name
+
+            session.commit()
+            session.refresh(user)
+            return self._to_dict(user)
+
+    @staticmethod
+    def _ensure_user_columns(engine) -> None:
+        inspector = inspect(engine)
+        if not inspector.has_table("users"):
+            return
+
+        existing_columns = {column["name"] for column in inspector.get_columns("users")}
+        if "display_name" in existing_columns:
+            return
+
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN display_name VARCHAR(40)"))

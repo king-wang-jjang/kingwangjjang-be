@@ -15,6 +15,7 @@ class User(Base):
     user_id: Mapped[str] = mapped_column(String(255), nullable=False)
     auth_provider: Mapped[str] = mapped_column(String(64), nullable=False)
     nickname: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    display_name: Mapped[str | None] = mapped_column(String(40), nullable=True)
     profile_image: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     refresh_token: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
