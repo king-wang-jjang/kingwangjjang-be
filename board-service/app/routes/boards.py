@@ -1,9 +1,9 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from app.auth.dependencies import require_principal
 from app.auth.principal import Principal
-from app.repositories.boards import BoardRepository
+from app.repositories.boards import BoardListFilters, BoardRepository
 from app.services.analysis_jobs import BoardAnalysisJobStore
 from app.utils.llm import LLMError
 
@@ -49,13 +49,49 @@ def _to_analysis_response(analysis: dict) -> dict:
 
 
 @router.get("/realtime")
-def realtime(index: int = 0, limit: int = 30):
-    return [_to_board_response(board) for board in BoardRepository().list_realtime(index, limit)]
+def realtime(
+    index: int = 0,
+    limit: int = 30,
+    sites: list[str] | None = Query(default=None),
+    category: str | None = None,
+    tag: str | None = None,
+    q: str | None = None,
+    has_thumbnail: bool | None = None,
+):
+    filters = BoardListFilters.from_values(
+        sites=sites,
+        category=category,
+        tag=tag,
+        query=q,
+        has_thumbnail=has_thumbnail,
+    )
+    return [
+        _to_board_response(board)
+        for board in BoardRepository().list_realtime(index, limit, filters=filters)
+    ]
 
 
 @router.get("/daily")
-def daily(index: int = 0, limit: int = 30):
-    return [_to_board_response(board) for board in BoardRepository().list_daily(index, limit)]
+def daily(
+    index: int = 0,
+    limit: int = 30,
+    sites: list[str] | None = Query(default=None),
+    category: str | None = None,
+    tag: str | None = None,
+    q: str | None = None,
+    has_thumbnail: bool | None = None,
+):
+    filters = BoardListFilters.from_values(
+        sites=sites,
+        category=category,
+        tag=tag,
+        query=q,
+        has_thumbnail=has_thumbnail,
+    )
+    return [
+        _to_board_response(board)
+        for board in BoardRepository().list_daily(index, limit, filters=filters)
+    ]
 
 
 @router.get("/{board_id}/ai")

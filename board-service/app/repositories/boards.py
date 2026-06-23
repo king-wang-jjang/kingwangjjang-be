@@ -1,7 +1,8 @@
 import logging
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import desc, inspect, nullslast, select, text
+from sqlalchemy import String, cast, desc, inspect, nullslast, or_, select, text
 
 from app.db.models import Board, BoardLike
 from app.db.postgres import Base, get_engine, get_session_factory
@@ -11,6 +12,33 @@ from app.utils.llm import LLM, LLMError
 
 
 logger = logging.getLogger("board-service")
+
+
+@dataclass(frozen=True)
+class BoardListFilters:
+    sites: tuple[str, ...] = ()
+    category: str | None = None
+    tag: str | None = None
+    query: str | None = None
+    has_thumbnail: bool | None = None
+
+    @classmethod
+    def from_values(
+        cls,
+        *,
+        sites: list[str] | None = None,
+        category: str | None = None,
+        tag: str | None = None,
+        query: str | None = None,
+        has_thumbnail: bool | None = None,
+    ) -> "BoardListFilters":
+        return cls(
+            sites=tuple(_split_filter_values(sites or [])),
+            category=_clean_filter_value(category),
+            tag=_clean_filter_value(tag),
+            query=_clean_filter_value(query),
+            has_thumbnail=has_thumbnail,
+        )
 
 
 class BoardRepository:
@@ -27,11 +55,21 @@ class BoardRepository:
         Base.metadata.create_all(bind=engine)
         self._ensure_board_columns(engine)
 
-    def list_realtime(self, index: int, limit: int) -> list[dict]:
-        return self._list_boards(index=index, limit=limit, daily=False)
+    def list_realtime(
+        self,
+        index: int,
+        limit: int,
+        filters: BoardListFilters | None = None,
+    ) -> list[dict]:
+        return self._list_boards(index=index, limit=limit, daily=False, filters=filters)
 
-    def list_daily(self, index: int, limit: int) -> list[dict]:
-        return self._list_boards(index=index, limit=limit, daily=True)
+    def list_daily(
+        self,
+        index: int,
+        limit: int,
+        filters: BoardListFilters | None = None,
+    ) -> list[dict]:
+        return self._list_boards(index=index, limit=limit, daily=True, filters=filters)
 
     def add_like(self, board_id: str, user_id: str) -> dict | None:
         with get_session_factory()() as session:
@@ -255,19 +293,50 @@ class BoardRepository:
             session.refresh(board)
             return self._analysis_to_dict(board)
 
-    def _list_boards(self, index: int, limit: int, daily: bool) -> list[dict]:
-        offset = max(index, 0) * max(limit, 1)
+    def _list_boards(
+        self,
+        index: int,
+        limit: int,
+        daily: bool,
+        filters: BoardListFilters | None = None,
+    ) -> list[dict]:
+        page_size = max(limit, 1)
+        offset = max(index, 0) * page_size
         ordering = desc(Board.like_count) if daily else desc(Board.created_at)
+        stmt = self._apply_list_filters(select(Board), filters or BoardListFilters())
 
         with get_session_factory()() as session:
             boards = session.scalars(
-                select(Board)
-                .order_by(ordering, desc(Board.created_at))
+                stmt.order_by(ordering, desc(Board.created_at))
                 .offset(offset)
-                .limit(limit)
+                .limit(page_size)
             ).all()
 
             return [self._to_dict(board) for board in boards]
+
+    @staticmethod
+    def _apply_list_filters(stmt, filters: BoardListFilters):
+        if filters.sites:
+            stmt = stmt.where(Board.site.in_(filters.sites))
+
+        if filters.category:
+            stmt = stmt.where(Board.category == filters.category)
+
+        if filters.tag:
+            stmt = stmt.where(cast(Board.tags, String).ilike(f'%"{filters.tag}"%'))
+
+        if filters.query:
+            search_pattern = f"%{filters.query}%"
+            stmt = stmt.where(
+                or_(Board.title.ilike(search_pattern), Board.url.ilike(search_pattern))
+            )
+
+        if filters.has_thumbnail is True:
+            stmt = stmt.where(Board.thumbnail.is_not(None), Board.thumbnail != "")
+        elif filters.has_thumbnail is False:
+            stmt = stmt.where(or_(Board.thumbnail.is_(None), Board.thumbnail == ""))
+
+        return stmt
 
     def _to_dict(self, board: Board) -> dict:
         return {
@@ -357,3 +426,20 @@ class BoardRepository:
     @staticmethod
     def _now() -> datetime:
         return datetime.now(timezone.utc)
+
+
+def _clean_filter_value(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = value.strip()
+    return cleaned or None
+
+
+def _split_filter_values(values: list[str]) -> list[str]:
+    cleaned_values = []
+    for value in values:
+        for candidate in str(value).split(","):
+            cleaned = candidate.strip()
+            if cleaned and cleaned not in cleaned_values:
+                cleaned_values.append(cleaned)
+    return cleaned_values

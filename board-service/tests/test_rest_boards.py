@@ -19,9 +19,12 @@ AUTH_HEADERS = {
 
 
 class FakeRepository:
-    def list_realtime(self, index: int, limit: int):
+    last_filters = None
+
+    def list_realtime(self, index: int, limit: int, filters=None):
         assert index == 0
         assert limit == 30
+        type(self).last_filters = filters
         return [
             {
                 "id": "11111111-1111-1111-1111-111111111111",
@@ -43,8 +46,8 @@ class FakeRepository:
             }
         ]
 
-    def list_daily(self, index: int, limit: int):
-        return self.list_realtime(index, limit)
+    def list_daily(self, index: int, limit: int, filters=None):
+        return self.list_realtime(index, limit, filters=filters)
 
     def add_like(self, board_id: str, user_id: str):
         return {"board_id": board_id, "site": "dcinside", "like_count": 1}
@@ -97,6 +100,7 @@ def build_client(monkeypatch):
     from app.routes import boards
 
     boards.analysis_jobs.clear()
+    FakeRepository.last_filters = None
     monkeypatch.setattr(boards, "BoardRepository", lambda: FakeRepository())
     app = FastAPI()
     app.include_router(boards_router)
@@ -124,6 +128,23 @@ def test_daily_returns_rest_shape(monkeypatch):
     assert response.status_code == 200
     assert response.json()[0]["site"] == "dcinside"
     assert response.json()[0]["comment_count"] == 2
+
+
+def test_realtime_accepts_board_filters(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.get(
+        "/api/boards/realtime"
+        "?sites=dcinside&sites=ygosu&category=humor&tag=funny&q=seed&has_thumbnail=true"
+    )
+
+    assert response.status_code == 200
+    assert FakeRepository.last_filters is not None
+    assert FakeRepository.last_filters.sites == ("dcinside", "ygosu")
+    assert FakeRepository.last_filters.category == "humor"
+    assert FakeRepository.last_filters.tag == "funny"
+    assert FakeRepository.last_filters.query == "seed"
+    assert FakeRepository.last_filters.has_thumbnail is True
 
 
 def test_add_like_requires_authentication(monkeypatch):
