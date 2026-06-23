@@ -43,6 +43,14 @@ class FakeRepository:
                 "thumbnail": None,
                 "comment_count": 2,
                 "like_count": 0,
+                "native_comment_count": 12,
+                "native_like_count": 7,
+                "native_view_count": 100,
+                "source_rank": 3,
+                "hot_score": 9.5,
+                "daily_score": 12.25,
+                "metrics_crawled_at": "2026-04-28T00:02:00Z",
+                "score_updated_at": "2026-04-28T00:02:00Z",
             }
         ]
 
@@ -118,6 +126,11 @@ def test_realtime_returns_rest_shape(monkeypatch):
     assert response.json()[0]["create_time"] == "2026-04-28T00:00:00Z"
     assert response.json()[0]["tags"] == ["funny", "issue"]
     assert response.json()[0]["analysis_status"] == "pending"
+    assert response.json()[0]["native_comment_count"] == 12
+    assert response.json()[0]["native_like_count"] == 7
+    assert response.json()[0]["source_rank"] == 3
+    assert response.json()[0]["hot_score"] == 9.5
+    assert response.json()[0]["daily_score"] == 12.25
 
 
 def test_daily_returns_rest_shape(monkeypatch):

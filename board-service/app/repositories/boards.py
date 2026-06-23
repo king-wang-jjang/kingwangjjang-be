@@ -4,8 +4,9 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import String, cast, desc, inspect, nullslast, or_, select, text
 
-from app.db.models import Board, BoardLike
+from app.db.models import Board, BoardLike, BoardMetricSnapshot
 from app.db.postgres import Base, get_engine, get_session_factory
+from app.services.popularity import PopularityMetrics, calculate_popularity_scores
 from app.utils.constants import DEFAULT_GPT_ANSWER
 from app.utils.crawled_content import extract_llm_text, normalize_contents
 from app.utils.llm import LLM, LLMError
@@ -70,6 +71,92 @@ class BoardRepository:
         filters: BoardListFilters | None = None,
     ) -> list[dict]:
         return self._list_boards(index=index, limit=limit, daily=True, filters=filters)
+
+    def record_metric_snapshot(
+        self,
+        board_id: str,
+        *,
+        comment_count: int,
+        like_count: int,
+        view_count: int | None = None,
+        source_rank: int | None = None,
+        captured_at: datetime | None = None,
+        crawl_status: str = "success",
+        crawl_error: str | None = None,
+    ) -> dict | None:
+        captured_at = captured_at or self._now()
+        if captured_at.tzinfo is None:
+            captured_at = captured_at.replace(tzinfo=timezone.utc)
+
+        with get_session_factory()() as session:
+            board = session.get(Board, board_id)
+            if board is None:
+                return None
+
+            previous_snapshots = session.scalars(
+                select(BoardMetricSnapshot)
+                .where(BoardMetricSnapshot.board_id == board_id)
+                .order_by(desc(BoardMetricSnapshot.captured_at))
+                .limit(2)
+            ).all()
+            previous_snapshot = previous_snapshots[0] if previous_snapshots else None
+            previous_previous_snapshot = previous_snapshots[1] if len(previous_snapshots) > 1 else None
+
+            scores = calculate_popularity_scores(
+                PopularityMetrics(
+                    site=board.site,
+                    created_at=board.created_at,
+                    captured_at=captured_at,
+                    comment_count=comment_count,
+                    like_count=like_count,
+                    view_count=view_count,
+                    source_rank=source_rank,
+                    previous_comment_count=getattr(previous_snapshot, "comment_count", None),
+                    previous_like_count=getattr(previous_snapshot, "like_count", None),
+                    previous_view_count=getattr(previous_snapshot, "view_count", None),
+                    previous_delta_comments=self._snapshot_delta(
+                        previous_snapshot,
+                        previous_previous_snapshot,
+                        "comment_count",
+                    ),
+                    previous_delta_likes=self._snapshot_delta(
+                        previous_snapshot,
+                        previous_previous_snapshot,
+                        "like_count",
+                    ),
+                    previous_delta_views=self._snapshot_delta(
+                        previous_snapshot,
+                        previous_previous_snapshot,
+                        "view_count",
+                    ),
+                )
+            )
+
+            session.add(
+                BoardMetricSnapshot(
+                    board_id=board_id,
+                    captured_at=captured_at,
+                    comment_count=max(int(comment_count or 0), 0),
+                    like_count=max(int(like_count or 0), 0),
+                    view_count=view_count,
+                    source_rank=source_rank,
+                    crawl_status=crawl_status,
+                    crawl_error=crawl_error,
+                )
+            )
+            board.native_comment_count = max(int(comment_count or 0), 0)
+            board.native_like_count = max(int(like_count or 0), 0)
+            board.native_view_count = view_count
+            board.source_rank = source_rank
+            board.metrics_crawled_at = captured_at
+            board.hot_score = scores.hot_score
+            board.daily_score = scores.daily_score
+            board.score_breakdown = scores.breakdown
+            board.score_updated_at = captured_at
+
+            session.commit()
+            session.refresh(board)
+            return self._to_dict(board)
 
     def add_like(self, board_id: str, user_id: str) -> dict | None:
         with get_session_factory()() as session:
@@ -302,12 +389,13 @@ class BoardRepository:
     ) -> list[dict]:
         page_size = max(limit, 1)
         offset = max(index, 0) * page_size
-        ordering = desc(Board.like_count) if daily else desc(Board.created_at)
+        ordering = nullslast(desc(Board.daily_score)) if daily else nullslast(desc(Board.hot_score))
         stmt = self._apply_list_filters(select(Board), filters or BoardListFilters())
+        secondary_ordering = desc(Board.like_count) if daily else desc(Board.created_at)
 
         with get_session_factory()() as session:
             boards = session.scalars(
-                stmt.order_by(ordering, desc(Board.created_at))
+                stmt.order_by(ordering, secondary_ordering, desc(Board.created_at))
                 .offset(offset)
                 .limit(page_size)
             ).all()
@@ -360,6 +448,15 @@ class BoardRepository:
             "thumbnail": board.thumbnail,
             "comment_count": int(board.comment_count or 0),
             "like_count": int(board.like_count or 0),
+            "native_comment_count": board.native_comment_count,
+            "native_like_count": board.native_like_count,
+            "native_view_count": board.native_view_count,
+            "source_rank": board.source_rank,
+            "hot_score": board.hot_score,
+            "daily_score": board.daily_score,
+            "score_breakdown": board.score_breakdown or {},
+            "metrics_crawled_at": self._datetime_to_api(board.metrics_crawled_at),
+            "score_updated_at": self._datetime_to_api(board.score_updated_at),
         }
 
     @staticmethod
@@ -387,6 +484,16 @@ class BoardRepository:
             "analysis_updated_at": "TIMESTAMP",
             "analysis_retry_count": "INTEGER NOT NULL DEFAULT 0",
             "analysis_error": "TEXT",
+            "native_comment_count": "INTEGER",
+            "native_like_count": "INTEGER",
+            "native_view_count": "INTEGER",
+            "source_rank": "INTEGER",
+            "metrics_crawled_at": "TIMESTAMP",
+            "next_metrics_crawl_at": "TIMESTAMP",
+            "hot_score": "FLOAT",
+            "daily_score": "FLOAT",
+            "score_updated_at": "TIMESTAMP",
+            "score_breakdown": "JSON",
         }
         missing_columns = {
             column_name: definition
@@ -426,6 +533,18 @@ class BoardRepository:
     @staticmethod
     def _now() -> datetime:
         return datetime.now(timezone.utc)
+
+    @staticmethod
+    def _snapshot_delta(
+        current: BoardMetricSnapshot | None,
+        previous: BoardMetricSnapshot | None,
+        attr: str,
+    ) -> int:
+        if current is None or previous is None:
+            return 0
+        current_value = getattr(current, attr) or 0
+        previous_value = getattr(previous, attr) or 0
+        return max(int(current_value) - int(previous_value), 0)
 
 
 def _clean_filter_value(value: str | None) -> str | None:

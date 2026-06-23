@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Integer, JSON, String, UniqueConstraint
+from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, Integer, JSON, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.postgres import Base
@@ -30,11 +30,35 @@ class Board(Base):
     thumbnail: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     comment_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     like_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    native_comment_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    native_like_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    native_view_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    metrics_crawled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    next_metrics_crawl_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    hot_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    daily_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    score_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    score_breakdown: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
+
+
+class BoardMetricSnapshot(Base):
+    __tablename__ = "board_metric_snapshots"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    board_id: Mapped[str] = mapped_column(ForeignKey("boards.id"), nullable=False)
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    comment_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    like_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    view_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    source_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    crawl_status: Mapped[str] = mapped_column(String(32), nullable=False, default="success")
+    crawl_error: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
 class BoardLike(Base):

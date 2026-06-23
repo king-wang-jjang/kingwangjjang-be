@@ -31,6 +31,14 @@ def _to_board_response(board: dict) -> dict:
         "thumbnail": board.get("thumbnail"),
         "comment_count": board.get("comment_count", 0),
         "likeCount": board.get("like_count", 0),
+        "native_comment_count": board.get("native_comment_count"),
+        "native_like_count": board.get("native_like_count"),
+        "native_view_count": board.get("native_view_count"),
+        "source_rank": board.get("source_rank"),
+        "hot_score": board.get("hot_score"),
+        "daily_score": board.get("daily_score"),
+        "metrics_crawled_at": board.get("metrics_crawled_at"),
+        "score_updated_at": board.get("score_updated_at"),
     }
 
 
