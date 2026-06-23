@@ -17,6 +17,7 @@ guides live under `docs/agents` and should be checked before editing a service.
 
 - [Runbook](./RUNBOOK.md)
 - [Architecture](./ARCHITECTURE.md)
+- [Popularity Ranking Prework](./POPULARITY_RANKING_PREWORK.md)
 
 ## Service READMEs
 
