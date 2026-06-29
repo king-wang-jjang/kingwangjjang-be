@@ -41,3 +41,16 @@ def test_frontend_keeps_backend_site_code_separate_from_display_label():
     assert "site: post.site" in board_api
     assert "siteLabel: getSiteLabel(post.site)" in board_api
     assert "switch (value?.site)" not in use_board
+
+
+def test_frontend_board_site_filter_is_sent_to_board_api():
+    board_view = (ROOT / "kingwangjjang-fe/src/sections/board/view/board-view.tsx").read_text(
+        encoding="utf-8"
+    )
+    use_board = (ROOT / "kingwangjjang-fe/src/hooks/use-board.ts").read_text(encoding="utf-8")
+
+    assert "const boardFilters = useMemo" in board_view
+    assert "sites: selectedSites" in board_view
+    assert "} = useBoard(boardFilters);" in board_view
+    assert ".filter((post) => selectedSites.includes(post.site))" not in board_view
+    assert "setFilterCollection((current)" in use_board
