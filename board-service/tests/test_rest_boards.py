@@ -103,6 +103,19 @@ class FakeRepository:
             "updated_at": "2026-04-28T00:01:10Z",
         }
 
+    def extract_image_text(self, board_id: str, *, image_index: int = 0, prompt=None):
+        if board_id == "missing":
+            return None
+        if board_id == "no-image":
+            raise ValueError("Image not found")
+
+        return {
+            "board_id": board_id,
+            "image_index": image_index,
+            "media_path": f"media/image-{image_index}.webp",
+            "text": prompt or "vision text",
+        }
+
 
 def build_client(monkeypatch):
     from app.routes import boards
@@ -269,5 +282,42 @@ def test_analyze_board_returns_404_for_unknown_board(monkeypatch):
     client = build_client(monkeypatch)
 
     response = client.post("/api/boards/missing/ai", headers=AUTH_HEADERS)
+
+    assert response.status_code == 404
+
+
+def test_extract_image_text_requires_authentication(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.post("/api/boards/board-1/images/0/vision-text")
+
+    assert response.status_code == 401
+
+
+def test_extract_image_text_returns_vllm_text(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.post(
+        "/api/boards/board-1/images/2/vision-text",
+        json={"prompt": "read exactly"},
+        headers=AUTH_HEADERS,
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "boardId": "board-1",
+        "imageIndex": 2,
+        "mediaPath": "media/image-2.webp",
+        "text": "read exactly",
+    }
+
+
+def test_extract_image_text_returns_404_for_missing_image(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.post(
+        "/api/boards/no-image/images/0/vision-text",
+        headers=AUTH_HEADERS,
+    )
 
     assert response.status_code == 404

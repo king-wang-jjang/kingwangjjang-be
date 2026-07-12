@@ -1,16 +1,23 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from app.auth.dependencies import require_principal
 from app.auth.principal import Principal
 from app.repositories.boards import BoardListFilters, BoardRepository
 from app.services.analysis_jobs import BoardAnalysisJobStore
+from app.services.vision_text import VisionTextError
 from app.utils.llm import LLMError
 
 
 router = APIRouter(prefix="/api/boards", tags=["boards"])
 analysis_jobs = BoardAnalysisJobStore()
 ANALYSIS_ESTIMATED_SECONDS = 60
+VISION_TEXT_UPSTREAM_ERROR = "Vision text extraction failed"
+
+
+class VisionTextRequest(BaseModel):
+    prompt: str | None = None
 
 
 def _to_board_response(board: dict) -> dict:
@@ -53,6 +60,15 @@ def _to_analysis_response(analysis: dict) -> dict:
         "requestedAt": analysis.get("requested_at"),
         "startedAt": analysis.get("started_at"),
         "updatedAt": analysis.get("updated_at"),
+    }
+
+
+def _to_vision_text_response(result: dict) -> dict:
+    return {
+        "boardId": result["board_id"],
+        "imageIndex": result["image_index"],
+        "mediaPath": result["media_path"],
+        "text": result["text"],
     }
 
 
@@ -165,6 +181,30 @@ def _run_analysis_job(job_id: str, board_id: str) -> None:
         return
 
     analysis_jobs.mark_completed(job_id, summary=result["summary"], tags=result["tags"])
+
+
+@router.post("/{board_id}/images/{image_index}/vision-text")
+def extract_image_text(
+    board_id: str,
+    image_index: int,
+    request: VisionTextRequest | None = None,
+    _principal: Principal = Depends(require_principal),
+):
+    try:
+        result = BoardRepository().extract_image_text(
+            board_id,
+            image_index=image_index,
+            prompt=request.prompt if request else None,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except VisionTextError as exc:
+        raise HTTPException(status_code=502, detail=VISION_TEXT_UPSTREAM_ERROR) from exc
+
+    if result is None:
+        raise HTTPException(status_code=404, detail="Board not found")
+
+    return _to_vision_text_response(result)
 
 
 @router.post("/{board_id}/likes")

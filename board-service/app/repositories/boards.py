@@ -7,6 +7,7 @@ from sqlalchemy import String, cast, desc, inspect, nullslast, or_, select, text
 from app.db.models import Board, BoardLike, BoardMetricSnapshot
 from app.db.postgres import Base, get_engine, get_session_factory
 from app.services.popularity import PopularityMetrics, calculate_popularity_scores
+from app.services.vision_text import VisionTextClient, resolve_media_path
 from app.utils.constants import DEFAULT_GPT_ANSWER
 from app.utils.crawled_content import extract_llm_text, normalize_contents
 from app.utils.llm import LLM, LLMError
@@ -285,6 +286,40 @@ class BoardRepository:
 
             return self._analysis_to_dict(board)
 
+    def extract_image_text(
+        self,
+        board_id: str,
+        *,
+        image_index: int = 0,
+        extractor: VisionTextClient | None = None,
+        media_root=None,
+        prompt: str | None = None,
+    ) -> dict | None:
+        extractor = extractor or VisionTextClient()
+
+        with get_session_factory()() as session:
+            board = session.get(Board, board_id)
+            if board is None:
+                return None
+
+            image_block = self._image_block_at(board.contents, image_index)
+            if image_block is None:
+                raise ValueError("Image not found")
+
+            media_path = image_block.get("media_path")
+            if not media_path:
+                raise ValueError("Image media path is missing")
+
+            image_path = resolve_media_path(media_path, media_root=media_root)
+            text = extractor.extract_text(image_path, prompt=prompt)
+
+            return {
+                "board_id": board.id,
+                "image_index": image_index,
+                "media_path": media_path,
+                "text": text,
+            }
+
     def process_next_analysis_job(
         self,
         analyzer: LLM | None = None,
@@ -462,6 +497,20 @@ class BoardRepository:
     @staticmethod
     def _analysis_text(board: Board) -> str:
         return extract_llm_text(board.title, board.contents)
+
+    @staticmethod
+    def _image_block_at(contents: object, image_index: int) -> dict | None:
+        if image_index < 0:
+            return None
+
+        images = [
+            block
+            for block in normalize_contents(contents)
+            if block.get("type") == "image"
+        ]
+        if image_index >= len(images):
+            return None
+        return images[image_index]
 
     @staticmethod
     def _has_stored_analysis(board: Board) -> bool:
