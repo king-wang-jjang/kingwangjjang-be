@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, Integer, JSON, String, UniqueConstraint
+from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, Index, Integer, JSON, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.postgres import Base
@@ -20,6 +20,8 @@ class Board(Base):
     contents: Mapped[list | dict | str | None] = mapped_column(JSON, nullable=True)
     gpt_answer: Mapped[str | None] = mapped_column(String, nullable=True)
     tags: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    llm_engagement_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    llm_engagement_reason: Mapped[str | None] = mapped_column(String, nullable=True)
     analysis_status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
     analysis_priority: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     analysis_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -49,6 +51,10 @@ class Board(Base):
 
 class BoardMetricSnapshot(Base):
     __tablename__ = "board_metric_snapshots"
+    __table_args__ = (
+        Index("ix_board_metric_snapshots_board_captured_at", "board_id", "captured_at"),
+        Index("ix_board_metric_snapshots_captured_at", "captured_at"),
+    )
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
     board_id: Mapped[str] = mapped_column(ForeignKey("boards.id"), nullable=False)

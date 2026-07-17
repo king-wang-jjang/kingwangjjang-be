@@ -36,6 +36,8 @@ class FakeRepository:
                 "contents": [],
                 "gpt_answer": None,
                 "tags": ["funny", "issue"],
+                "llm_engagement_score": 76,
+                "llm_engagement_reason": "호기심과 토론 가능성이 높음",
                 "analysis_status": "pending",
                 "analysis_retry_count": 0,
                 "analysis_error": None,
@@ -68,12 +70,16 @@ class FakeRepository:
                 "board_id": board_id,
                 "summary": "stored summary",
                 "tags": ["stored"],
+                "llm_engagement_score": 64,
+                "llm_engagement_reason": "관심을 끌 요소가 있음",
                 "is_complete": True,
             }
         return {
             "board_id": board_id,
             "summary": None,
             "tags": [],
+            "llm_engagement_score": None,
+            "llm_engagement_reason": None,
             "is_complete": False,
         }
 
@@ -85,6 +91,8 @@ class FakeRepository:
             "board_id": board_id,
             "summary": "generated summary",
             "tags": ["funny", "issue"],
+            "llm_engagement_score": 76,
+            "llm_engagement_reason": "호기심과 토론 가능성이 높음",
         }
 
     def get_analysis(self, board_id: str):
@@ -96,6 +104,8 @@ class FakeRepository:
             "status": "done",
             "summary": "generated summary",
             "tags": ["funny", "issue"],
+            "llm_engagement_score": 76,
+            "llm_engagement_reason": "호기심과 토론 가능성이 높음",
             "retry_count": 0,
             "error": None,
             "requested_at": "2026-04-28T00:01:00Z",
@@ -139,6 +149,8 @@ def test_realtime_returns_rest_shape(monkeypatch):
     assert response.json()[0]["create_time"] == "2026-04-28T00:00:00Z"
     assert response.json()[0]["tags"] == ["funny", "issue"]
     assert response.json()[0]["analysis_status"] == "pending"
+    assert response.json()[0]["llm_engagement_score"] == 76
+    assert response.json()[0]["llm_engagement_reason"] == "호기심과 토론 가능성이 높음"
     assert response.json()[0]["native_comment_count"] == 12
     assert response.json()[0]["native_like_count"] == 7
     assert response.json()[0]["source_rank"] == 3
@@ -208,6 +220,8 @@ def test_get_analysis_returns_summary_and_tags(monkeypatch):
         "status": "done",
         "summary": "generated summary",
         "tags": ["funny", "issue"],
+        "llmEngagementScore": 76,
+        "llmEngagementReason": "호기심과 토론 가능성이 높음",
         "retryCount": 0,
         "error": None,
         "requestedAt": "2026-04-28T00:01:00Z",
@@ -250,6 +264,8 @@ def test_analyze_board_starts_authenticated_job_and_exposes_status(monkeypatch):
     assert status_response.json()["estimatedSecondsRemaining"] == 0
     assert status_response.json()["summary"] == "generated summary"
     assert status_response.json()["tags"] == ["funny", "issue"]
+    assert status_response.json()["llmEngagementScore"] == 76
+    assert status_response.json()["llmEngagementReason"] == "호기심과 토론 가능성이 높음"
 
 
 def test_analyze_board_returns_stored_summary_without_starting_job(monkeypatch):
@@ -263,6 +279,8 @@ def test_analyze_board_returns_stored_summary_without_starting_job(monkeypatch):
     assert response.json()["estimatedSecondsRemaining"] == 0
     assert response.json()["summary"] == "stored summary"
     assert response.json()["tags"] == ["stored"]
+    assert response.json()["llmEngagementScore"] == 64
+    assert response.json()["llmEngagementReason"] == "관심을 끌 요소가 있음"
 
 
 def test_analysis_job_status_requires_authentication(monkeypatch):

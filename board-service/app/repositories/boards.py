@@ -1,12 +1,18 @@
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from math import exp, isfinite
 
-from sqlalchemy import String, cast, desc, inspect, nullslast, or_, select, text
+from sqlalchemy import String, cast, delete, desc, func, inspect, nullslast, or_, select, text
 
 from app.db.models import Board, BoardLike, BoardMetricSnapshot
 from app.db.postgres import Base, get_engine, get_session_factory
-from app.services.popularity import PopularityMetrics, calculate_popularity_scores
+from app.services.popularity import (
+    DAILY_DECAY_HOURS,
+    HOT_DECAY_HOURS,
+    PopularityMetrics,
+    calculate_popularity_scores,
+)
 from app.services.vision_text import VisionTextClient, resolve_media_path
 from app.utils.constants import DEFAULT_GPT_ANSWER
 from app.utils.crawled_content import extract_llm_text, normalize_contents
@@ -14,6 +20,8 @@ from app.utils.llm import LLM, LLMError
 
 
 logger = logging.getLogger("board-service")
+SNAPSHOT_RETENTION_DAYS = 7
+SNAPSHOT_CLEANUP_INTERVAL = timedelta(hours=1)
 
 
 @dataclass(frozen=True)
@@ -53,6 +61,7 @@ class BoardRepository:
     PROCESSING_STALE_AFTER = timedelta(minutes=10)
 
     def __init__(self):
+        self._last_snapshot_cleanup_at: datetime | None = None
         engine = get_engine()
         Base.metadata.create_all(bind=engine)
         self._ensure_board_columns(engine)
@@ -94,6 +103,18 @@ class BoardRepository:
             if board is None:
                 return None
 
+            if (
+                self._last_snapshot_cleanup_at is None
+                or captured_at - self._last_snapshot_cleanup_at
+                >= SNAPSHOT_CLEANUP_INTERVAL
+            ):
+                session.execute(
+                    delete(BoardMetricSnapshot).where(
+                        BoardMetricSnapshot.captured_at
+                        < captured_at - timedelta(days=SNAPSHOT_RETENTION_DAYS),
+                    )
+                )
+                self._last_snapshot_cleanup_at = captured_at
             previous_snapshots = session.scalars(
                 select(BoardMetricSnapshot)
                 .where(BoardMetricSnapshot.board_id == board_id)
@@ -112,9 +133,11 @@ class BoardRepository:
                     like_count=like_count,
                     view_count=view_count,
                     source_rank=source_rank,
+                    llm_engagement_score=board.llm_engagement_score,
                     previous_comment_count=getattr(previous_snapshot, "comment_count", None),
                     previous_like_count=getattr(previous_snapshot, "like_count", None),
                     previous_view_count=getattr(previous_snapshot, "view_count", None),
+                    previous_captured_at=getattr(previous_snapshot, "captured_at", None),
                     previous_delta_comments=self._snapshot_delta(
                         previous_snapshot,
                         previous_previous_snapshot,
@@ -129,6 +152,10 @@ class BoardRepository:
                         previous_snapshot,
                         previous_previous_snapshot,
                         "view_count",
+                    ),
+                    previous_interval_minutes=self._snapshot_interval_minutes(
+                        previous_snapshot,
+                        previous_previous_snapshot,
                     ),
                 )
             )
@@ -189,11 +216,13 @@ class BoardRepository:
             if board is None:
                 return None
 
-            if self._has_stored_analysis(board):
+            if self._has_complete_analysis(board):
                 return {
                     "board_id": board.id,
                     "summary": board.gpt_answer,
                     "tags": board.tags or [],
+                    "llm_engagement_score": board.llm_engagement_score,
+                    "llm_engagement_reason": board.llm_engagement_reason,
                     "is_complete": True,
                 }
 
@@ -201,6 +230,8 @@ class BoardRepository:
                 "board_id": board.id,
                 "summary": None,
                 "tags": board.tags or [],
+                "llm_engagement_score": board.llm_engagement_score,
+                "llm_engagement_reason": board.llm_engagement_reason,
                 "is_complete": False,
             }
 
@@ -211,7 +242,7 @@ class BoardRepository:
             board = session.get(Board, board_id)
             if board is None:
                 return None
-            if self._has_stored_analysis(board):
+            if self._has_complete_analysis(board):
                 if board.analysis_status != self.ANALYSIS_DONE:
                     board.analysis_status = self.ANALYSIS_DONE
                     board.analysis_error = None
@@ -222,6 +253,8 @@ class BoardRepository:
                     "board_id": board.id,
                     "summary": board.gpt_answer,
                     "tags": board.tags or [],
+                    "llm_engagement_score": board.llm_engagement_score,
+                    "llm_engagement_reason": board.llm_engagement_reason,
                 }
 
             analysis_text = self._analysis_text(board)
@@ -234,9 +267,18 @@ class BoardRepository:
 
             board.gpt_answer = analysis["summary"]
             board.tags = analysis["tags"]
+            if "llm_engagement_score" in analysis:
+                board.llm_engagement_score = self._optional_llm_score(
+                    analysis.get("llm_engagement_score")
+                )
+            if "llm_engagement_reason" in analysis:
+                board.llm_engagement_reason = self._optional_llm_reason(
+                    analysis.get("llm_engagement_reason")
+                )
             board.analysis_status = self.ANALYSIS_DONE
             board.analysis_error = None
             board.analysis_updated_at = self._now()
+            self._recalculate_popularity_scores(session, board)
             session.commit()
             session.refresh(board)
 
@@ -244,6 +286,8 @@ class BoardRepository:
                 "board_id": board.id,
                 "summary": board.gpt_answer,
                 "tags": board.tags or [],
+                "llm_engagement_score": board.llm_engagement_score,
+                "llm_engagement_reason": board.llm_engagement_reason,
             }
 
     def request_analysis(self, board_id: str, priority: int = USER_REQUEST_PRIORITY) -> dict | None:
@@ -253,7 +297,7 @@ class BoardRepository:
             if board is None:
                 return None
 
-            if self._has_stored_analysis(board):
+            if self._has_complete_analysis(board):
                 board.analysis_status = self.ANALYSIS_DONE
                 board.analysis_error = None
                 board.analysis_updated_at = now
@@ -277,7 +321,7 @@ class BoardRepository:
             if board is None:
                 return None
 
-            if self._has_stored_analysis(board) and board.analysis_status != self.ANALYSIS_DONE:
+            if self._has_complete_analysis(board) and board.analysis_status != self.ANALYSIS_DONE:
                 board.analysis_status = self.ANALYSIS_DONE
                 board.analysis_error = None
                 board.analysis_updated_at = self._now()
@@ -380,7 +424,7 @@ class BoardRepository:
                 session.commit()
                 return None
 
-            if self._has_stored_analysis(board):
+            if self._has_complete_analysis(board):
                 board.analysis_status = self.ANALYSIS_DONE
                 board.analysis_error = None
                 board.analysis_updated_at = now
@@ -415,6 +459,96 @@ class BoardRepository:
             session.refresh(board)
             return self._analysis_to_dict(board)
 
+    def _recalculate_popularity_scores(self, session, board: Board) -> None:
+        """Re-score a board after LLM analysis without creating a metric snapshot."""
+        snapshots = session.scalars(
+            select(BoardMetricSnapshot)
+            .where(BoardMetricSnapshot.board_id == board.id)
+            .order_by(desc(BoardMetricSnapshot.captured_at))
+            .limit(3)
+        ).all()
+        current_snapshot = snapshots[0] if snapshots else None
+        previous_snapshot = snapshots[1] if len(snapshots) > 1 else None
+        previous_previous_snapshot = snapshots[2] if len(snapshots) > 2 else None
+        captured_at = (
+            current_snapshot.captured_at if current_snapshot is not None else self._now()
+        )
+
+        scores = calculate_popularity_scores(
+            PopularityMetrics(
+                site=board.site,
+                created_at=board.created_at,
+                captured_at=captured_at,
+                comment_count=(
+                    current_snapshot.comment_count
+                    if current_snapshot is not None
+                    else int(board.native_comment_count or 0)
+                ),
+                like_count=(
+                    current_snapshot.like_count
+                    if current_snapshot is not None
+                    else int(board.native_like_count or 0)
+                ),
+                view_count=(
+                    current_snapshot.view_count
+                    if current_snapshot is not None
+                    else board.native_view_count
+                ),
+                source_rank=(
+                    current_snapshot.source_rank
+                    if current_snapshot is not None
+                    else board.source_rank
+                ),
+                llm_engagement_score=board.llm_engagement_score,
+                previous_comment_count=getattr(previous_snapshot, "comment_count", None),
+                previous_like_count=getattr(previous_snapshot, "like_count", None),
+                previous_view_count=getattr(previous_snapshot, "view_count", None),
+                previous_captured_at=getattr(previous_snapshot, "captured_at", None),
+                previous_delta_comments=self._snapshot_delta(
+                    previous_snapshot,
+                    previous_previous_snapshot,
+                    "comment_count",
+                ),
+                previous_delta_likes=self._snapshot_delta(
+                    previous_snapshot,
+                    previous_previous_snapshot,
+                    "like_count",
+                ),
+                previous_delta_views=self._snapshot_delta(
+                    previous_snapshot,
+                    previous_previous_snapshot,
+                    "view_count",
+                ),
+                previous_interval_minutes=self._snapshot_interval_minutes(
+                    previous_snapshot,
+                    previous_previous_snapshot,
+                ),
+            )
+        )
+        board.hot_score = scores.hot_score
+        board.daily_score = scores.daily_score
+        board.score_breakdown = scores.breakdown
+        board.score_updated_at = captured_at
+
+    @staticmethod
+    def _optional_llm_score(value: object) -> int | None:
+        if value is None or value == "":
+            return None
+        try:
+            numeric_value = float(value)
+        except (TypeError, ValueError):
+            return None
+        if not isfinite(numeric_value):
+            return None
+        return max(0, min(int(round(numeric_value)), 100))
+
+    @staticmethod
+    def _optional_llm_reason(value: object) -> str | None:
+        if not isinstance(value, str):
+            return None
+        reason = value.strip()
+        return reason[:240] or None
+
     def _list_boards(
         self,
         index: int,
@@ -424,9 +558,10 @@ class BoardRepository:
     ) -> list[dict]:
         page_size = max(limit, 1)
         offset = max(index, 0) * page_size
-        ordering = nullslast(desc(Board.daily_score)) if daily else nullslast(desc(Board.hot_score))
+        ordering = desc(self._effective_score_expression(daily=daily))
         stmt = self._apply_list_filters(select(Board), filters or BoardListFilters())
         secondary_ordering = desc(Board.like_count) if daily else desc(Board.created_at)
+        score_as_of = self._now()
 
         with get_session_factory()() as session:
             boards = session.scalars(
@@ -435,7 +570,25 @@ class BoardRepository:
                 .limit(page_size)
             ).all()
 
-            return [self._to_dict(board) for board in boards]
+            return [self._to_dict(board, score_as_of=score_as_of) for board in boards]
+
+    @staticmethod
+    def _effective_score_expression(*, daily: bool):
+        score_column = Board.daily_score if daily else Board.hot_score
+        decay_hours = DAILY_DECAY_HOURS if daily else HOT_DECAY_HOURS
+        updated_at = func.coalesce(Board.score_updated_at, Board.created_at)
+        engine = get_engine()
+        if engine.dialect.name == "postgresql":
+            elapsed_hours = func.greatest(
+                func.extract("epoch", func.current_timestamp() - updated_at) / 3600.0,
+                0.0,
+            )
+        else:
+            elapsed_hours = func.max(
+                (func.julianday(func.current_timestamp()) - func.julianday(updated_at)) * 24.0,
+                0.0,
+            )
+        return func.coalesce(score_column, 0.0) * func.exp(-elapsed_hours / decay_hours)
 
     @staticmethod
     def _apply_list_filters(stmt, filters: BoardListFilters):
@@ -461,7 +614,23 @@ class BoardRepository:
 
         return stmt
 
-    def _to_dict(self, board: Board) -> dict:
+    def _to_dict(self, board: Board, score_as_of: datetime | None = None) -> dict:
+        hot_score = board.hot_score
+        daily_score = board.daily_score
+        if score_as_of is not None:
+            updated_at = board.score_updated_at or board.created_at
+            hot_score = self._effective_score_value(
+                hot_score,
+                updated_at,
+                score_as_of,
+                HOT_DECAY_HOURS,
+            )
+            daily_score = self._effective_score_value(
+                daily_score,
+                updated_at,
+                score_as_of,
+                DAILY_DECAY_HOURS,
+            )
         return {
             "id": board.id,
             "category": board.category,
@@ -472,6 +641,8 @@ class BoardRepository:
             "contents": normalize_contents(board.contents),
             "gpt_answer": board.gpt_answer,
             "tags": board.tags or [],
+            "llm_engagement_score": board.llm_engagement_score,
+            "llm_engagement_reason": board.llm_engagement_reason,
             "analysis_status": board.analysis_status or self.ANALYSIS_PENDING,
             "analysis_priority": int(board.analysis_priority or 0),
             "analysis_retry_count": int(board.analysis_retry_count or 0),
@@ -487,12 +658,26 @@ class BoardRepository:
             "native_like_count": board.native_like_count,
             "native_view_count": board.native_view_count,
             "source_rank": board.source_rank,
-            "hot_score": board.hot_score,
-            "daily_score": board.daily_score,
+            "hot_score": hot_score,
+            "daily_score": daily_score,
             "score_breakdown": board.score_breakdown or {},
             "metrics_crawled_at": self._datetime_to_api(board.metrics_crawled_at),
             "score_updated_at": self._datetime_to_api(board.score_updated_at),
         }
+
+    @staticmethod
+    def _effective_score_value(
+        score: float | None,
+        updated_at: datetime,
+        as_of: datetime,
+        decay_hours: float,
+    ) -> float:
+        if updated_at.tzinfo is None:
+            updated_at = updated_at.replace(tzinfo=timezone.utc)
+        if as_of.tzinfo is None:
+            as_of = as_of.replace(tzinfo=timezone.utc)
+        elapsed_hours = max((as_of - updated_at).total_seconds() / 3600, 0.0)
+        return float(score or 0.0) * exp(-elapsed_hours / decay_hours)
 
     @staticmethod
     def _analysis_text(board: Board) -> str:
@@ -517,6 +702,10 @@ class BoardRepository:
         summary = board.gpt_answer.strip() if isinstance(board.gpt_answer, str) else ""
         return bool(summary and summary != DEFAULT_GPT_ANSWER)
 
+    @classmethod
+    def _has_complete_analysis(cls, board: Board) -> bool:
+        return cls._has_stored_analysis(board) and board.llm_engagement_score is not None
+
     @staticmethod
     def _ensure_board_columns(engine) -> None:
         inspector = inspect(engine)
@@ -526,6 +715,8 @@ class BoardRepository:
         existing_columns = {column["name"] for column in inspector.get_columns("boards")}
         column_definitions = {
             "tags": "JSON",
+            "llm_engagement_score": "INTEGER",
+            "llm_engagement_reason": "TEXT",
             "analysis_status": "VARCHAR(32) NOT NULL DEFAULT 'pending'",
             "analysis_priority": "INTEGER NOT NULL DEFAULT 0",
             "analysis_requested_at": "TIMESTAMP",
@@ -549,13 +740,49 @@ class BoardRepository:
             for column_name, definition in column_definitions.items()
             if column_name not in existing_columns
         }
-        if not missing_columns:
+        existing_index_names = {
+            index["name"]
+            for index in inspector.get_indexes("board_metric_snapshots")
+        }
+        index_definitions = {
+            "ix_board_metric_snapshots_board_captured_at": (
+                "ON board_metric_snapshots (board_id, captured_at)"
+            ),
+            "ix_board_metric_snapshots_captured_at": (
+                "ON board_metric_snapshots (captured_at)"
+            ),
+        }
+        missing_indexes = {
+            name: definition
+            for name, definition in index_definitions.items()
+            if name not in existing_index_names
+        }
+        if not missing_columns and not missing_indexes:
             return
 
         with engine.begin() as connection:
             for column_name, definition in missing_columns.items():
-                connection.execute(text(f"ALTER TABLE boards ADD COLUMN {column_name} {definition}"))
+                if_not_exists = "IF NOT EXISTS " if engine.dialect.name == "postgresql" else ""
+                connection.execute(
+                    text(
+                        f"ALTER TABLE boards ADD COLUMN {if_not_exists}{column_name} {definition}"
+                    )
+                )
                 logger.info("Added missing boards.%s column", column_name)
+            for index_name, definition in missing_indexes.items():
+                connection.execute(
+                    text(f"CREATE INDEX IF NOT EXISTS {index_name} {definition}")
+                )
+            if "llm_engagement_score" in missing_columns:
+                connection.execute(
+                    text(
+                        "UPDATE boards SET analysis_status = 'pending', "
+                        "analysis_retry_count = 0 "
+                        "WHERE llm_engagement_score IS NULL "
+                        "AND gpt_answer IS NOT NULL AND gpt_answer <> :default_answer"
+                    ),
+                    {"default_answer": DEFAULT_GPT_ANSWER},
+                )
 
     def _analysis_to_dict(self, board: Board) -> dict:
         summary = board.gpt_answer if self._has_stored_analysis(board) else None
@@ -564,6 +791,8 @@ class BoardRepository:
             "status": board.analysis_status or self.ANALYSIS_PENDING,
             "summary": summary,
             "tags": board.tags or [],
+            "llm_engagement_score": board.llm_engagement_score,
+            "llm_engagement_reason": board.llm_engagement_reason,
             "retry_count": int(board.analysis_retry_count or 0),
             "error": board.analysis_error,
             "requested_at": self._datetime_to_api(board.analysis_requested_at),
@@ -594,6 +823,18 @@ class BoardRepository:
         current_value = getattr(current, attr) or 0
         previous_value = getattr(previous, attr) or 0
         return max(int(current_value) - int(previous_value), 0)
+
+    @staticmethod
+    def _snapshot_interval_minutes(
+        current: BoardMetricSnapshot | None,
+        previous: BoardMetricSnapshot | None,
+    ) -> float | None:
+        if current is None or previous is None:
+            return None
+        elapsed_seconds = (current.captured_at - previous.captured_at).total_seconds()
+        if elapsed_seconds <= 0:
+            return None
+        return elapsed_seconds / 60
 
 
 def _clean_filter_value(value: str | None) -> str | None:

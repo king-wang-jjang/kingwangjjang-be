@@ -16,7 +16,13 @@ class ContractAdapter:
             raise RuntimeError("private failure at http://internal-node.local")
         content = messages[-1]["content"]
         if response_format is not None and isinstance(content, str) and content != "plain chat":
-            return ChatResult(content='{"summary":"요약","tags":["태그","태그"]}')
+            return ChatResult(
+                content=(
+                    '{"summary":"요약","tags":["태그","태그"],'
+                    '"llm_engagement_score":73,'
+                    '"llm_engagement_reason":"호기심과 토론을 유발함"}'
+                )
+            )
         if isinstance(content, list):
             return ChatResult(content="이미지 글자")
         return ChatResult(content="chat answer")
@@ -179,6 +185,8 @@ def test_inference_contracts_and_service_token(repository, monkeypatch):
         assert analyze.json() == {
             "summary": "요약",
             "tags": ["태그"],
+            "llm_engagement_score": 73,
+            "llm_engagement_reason": "호기심과 토론을 유발함",
             "node_id": node.id,
             "node_name": "node-a",
             "model": "multi-model",

@@ -15,6 +15,8 @@ class AnalysisJob:
     message: str
     summary: str | None = None
     tags: list[str] = field(default_factory=list)
+    llm_engagement_score: int | None = None
+    llm_engagement_reason: str | None = None
     error: str | None = None
 
     def to_response(self) -> dict:
@@ -27,6 +29,8 @@ class AnalysisJob:
             "message": self.message,
             "summary": self.summary,
             "tags": self.tags,
+            "llmEngagementScore": self.llm_engagement_score,
+            "llmEngagementReason": self.llm_engagement_reason,
             "error": self.error,
         }
 
@@ -46,7 +50,14 @@ class BoardAnalysisJobStore:
         with self._lock:
             return self._jobs.get(job_id)
 
-    def completed(self, board_id: str, summary: str, tags: list[str]) -> AnalysisJob:
+    def completed(
+        self,
+        board_id: str,
+        summary: str,
+        tags: list[str],
+        llm_engagement_score: int | None = None,
+        llm_engagement_reason: str | None = None,
+    ) -> AnalysisJob:
         with self._lock:
             job = AnalysisJob(
                 job_id=str(uuid4()),
@@ -57,6 +68,8 @@ class BoardAnalysisJobStore:
                 message="Analysis already exists.",
                 summary=summary,
                 tags=tags,
+                llm_engagement_score=llm_engagement_score,
+                llm_engagement_reason=llm_engagement_reason,
             )
             self._jobs[job.job_id] = job
             return job
@@ -91,7 +104,14 @@ class BoardAnalysisJobStore:
             job.estimated_seconds_remaining = estimated_seconds
             job.message = "Analysis is running."
 
-    def mark_completed(self, job_id: str, summary: str, tags: list[str]) -> None:
+    def mark_completed(
+        self,
+        job_id: str,
+        summary: str,
+        tags: list[str],
+        llm_engagement_score: int | None = None,
+        llm_engagement_reason: str | None = None,
+    ) -> None:
         with self._lock:
             job = self._jobs.get(job_id)
             if not job:
@@ -102,6 +122,8 @@ class BoardAnalysisJobStore:
             job.message = "Analysis completed."
             job.summary = summary
             job.tags = tags
+            job.llm_engagement_score = llm_engagement_score
+            job.llm_engagement_reason = llm_engagement_reason
             job.error = None
             self._active_by_board.pop(job.board_id, None)
 

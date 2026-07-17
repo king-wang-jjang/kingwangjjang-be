@@ -42,6 +42,11 @@ class AnalyzeRequest(BaseModel):
 class AnalyzeResponse(BaseModel):
     summary: str
     tags: list[str]
+    llm_engagement_score: int = Field(ge=0, le=100)
+    llm_engagement_reason: str | None = Field(
+        default=None,
+        max_length=240,
+    )
     node_id: str
     node_name: str
     model: str

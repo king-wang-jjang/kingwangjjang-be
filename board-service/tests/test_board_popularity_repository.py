@@ -111,3 +111,52 @@ def test_realtime_and_daily_lists_order_by_popularity_scores(monkeypatch, tmp_pa
 
     assert [row["id"] for row in repository.list_realtime(0, 10)] == ["hot-older", "cold-new"]
     assert [row["id"] for row in repository.list_daily(0, 10)] == ["hot-older", "cold-new"]
+
+
+def test_lists_apply_decay_after_the_last_score_update(monkeypatch, tmp_path):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'boards.db'}")
+    postgres.get_engine.cache_clear()
+    postgres.get_session_factory.cache_clear()
+
+    now = datetime.now(timezone.utc)
+    repository = BoardRepository()
+    with postgres.get_session_factory()() as session:
+        session.add_all(
+            [
+                Board(
+                    id="stale-high-score",
+                    category="humor",
+                    no=10,
+                    site="dcinside",
+                    title="stale",
+                    url="https://example.com/stale",
+                    contents=[],
+                    created_at=now - timedelta(days=10),
+                    hot_score=10,
+                    daily_score=10,
+                    score_updated_at=now - timedelta(hours=120),
+                ),
+                Board(
+                    id="fresh-lower-score",
+                    category="humor",
+                    no=11,
+                    site="dcinside",
+                    title="fresh",
+                    url="https://example.com/fresh",
+                    contents=[],
+                    created_at=now,
+                    hot_score=1,
+                    daily_score=1,
+                    score_updated_at=now,
+                ),
+            ]
+        )
+        session.commit()
+
+    realtime = repository.list_realtime(0, 2)
+    daily = repository.list_daily(0, 2)
+
+    assert realtime[0]["id"] == "fresh-lower-score"
+    assert realtime[0]["hot_score"] > realtime[1]["hot_score"]
+    assert daily[0]["id"] == "fresh-lower-score"
+    assert daily[0]["daily_score"] > daily[1]["daily_score"]

@@ -48,6 +48,8 @@ async def analyze(
     return AnalyzeResponse(
         summary=analysis["summary"],
         tags=analysis["tags"],
+        llm_engagement_score=analysis["llm_engagement_score"],
+        llm_engagement_reason=analysis["llm_engagement_reason"],
         node_id=result.node_id,
         node_name=result.node_name,
         model=result.model,

@@ -26,6 +26,9 @@
   갑자기 터지는 글을 잡아낼 수 있다.
 - **원본 사이트 내 순위**: 원본 목록이 이미 인기/베스트 순서를 제공한다면
   약한 보조 신호로 저장한다.
+- **LLM 예상 호응도**: 본문의 호기심, 새로움, 감정적 강도, 논쟁성을 0~100으로
+  평가한다. 50을 중립으로 두고 실제 반응 지표를 뒤집지 못하도록 가중치를 제한한다.
+  혐오·오해 유발·유해성 자체는 높은 점수의 근거로 삼지 않는다.
 - **썸네일/미디어 유무**: 클릭 가능성을 높일 수 있지만 실제 인기도는 아니므로
   동점 처리나 약한 보정 정도로만 쓴다.
 
@@ -78,6 +81,8 @@
 - `hot_score`: 실시간 인기 점수.
 - `daily_score`: 일간 인기 점수.
 - `score_updated_at`: 점수 계산 시각.
+- `llm_engagement_score`: 본문 기반 예상 호응도(0~100, 미분석 시 nullable).
+- `llm_engagement_reason`: LLM 판단 근거(최대 240자).
 
 기존 `comment_count`, `like_count`는 API 호환을 위해 유지하되, 내부적으로는
 `native_*` 이름이 출처를 더 분명하게 만든다.
@@ -94,7 +99,9 @@
 - `crawl_status`
 - `crawl_error`
 
-`(board_id, captured_at)`에 unique index를 두거나, 10분 단위 bucket으로 저장한다.
+`(board_id, captured_at)` 복합 인덱스로 최신 스냅샷 조회를 보장한다. 현재 구현은
+최근 7일을 보존해 테이블이 무한히 커지지 않게 하고, 필요하면 이후 장기 통계용
+downsampling을 별도로 추가한다.
 
 ### 선택 사항: `board_popularity_scores`
 
@@ -133,18 +140,25 @@ velocity_component =
   3.2 * log1p(delta_likes_20m) +
   0.3 * log1p(delta_views_20m)
 
+delta_*_20m =
+  실제 증가량 * clamp(20 / 실제 수집 간격(분), 0.25, 4.0)
+
 acceleration_component =
   1.0 * max(current_velocity - previous_velocity, 0)
 
 source_rank_component =
   source_rank가 있으면 1 / sqrt(source_rank), 없으면 0
 
+llm_engagement_signal =
+  (clamp(llm_engagement_score, 0, 100) - 50) / 50
+
 hot_score =
   site_normalize(
     0.35 * total_component +
     0.55 * velocity_component +
-    0.10 * source_rank_component +
-    acceleration_component
+    min(acceleration_component, 2.0) +
+    2.0 * source_rank_component +
+    1.5 * llm_engagement_signal
   ) * age_decay
 ```
 
@@ -166,9 +180,15 @@ daily_score =
   site_normalize(
     0.65 * total_component +
     0.25 * velocity_component +
-    0.10 * source_rank_component
+    1.5 * source_rank_component +
+    1.0 * llm_engagement_signal
   ) * exp(-age_hours / 36)
 ```
+
+DB에 저장된 점수는 마지막 스냅샷 시각 이후에도 조회 시점까지 같은 반감 규칙으로
+추가 감쇠해, 갱신이 끊긴 오래된 글이 상단에 고정되지 않게 한다. 모든 구성요소는
+`score_breakdown`에 `algorithm_version=2`와 함께 저장한다. 목록 API의 점수도 이
+조회 시점 유효 점수를 반환해 실제 정렬 순서와 표시 값이 일치한다.
 
 ## 사이트별 보정
 
@@ -205,7 +225,10 @@ normalized_score = raw_score * site_weight
 ## 구현 메모
 
 - 메트릭 refresh에서는 OCR이나 AI 요약을 다시 돌리지 않는다.
+- LLM 점수 컬럼을 처음 추가할 때 기존 요약 글을 분석 대기로 되돌려 화제성 점수를
+  한 번 백필한다.
 - 사이트별 adapter에서 댓글 수, 추천 수, 조회수, 원본 순위를 파싱한다.
+- 목록에서 시각만 제공하면 현재보다 미래로 조립된 값은 전날 시각으로 보정한다.
 - 크롤러 실패는 게시글 탈락 사유가 아니라 stale metric으로 처리한다.
 - count가 감소하면 기본적으로 delta를 0으로 clamp한다.
 - 직전 스냅샷은 delta 계산에 쓰고, 전체 스냅샷은 분석용으로 보존한다.
@@ -224,4 +247,3 @@ normalized_score = raw_score * site_weight
   한다.
 - metric refresh는 `CrawlScheduler`가 전담하고, 점수 계산은 `board-service`가
   담당할지 경계를 정해야 한다.
-

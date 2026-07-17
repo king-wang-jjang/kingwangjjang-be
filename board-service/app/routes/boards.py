@@ -31,6 +31,8 @@ def _to_board_response(board: dict) -> dict:
         "contents": board.get("contents"),
         "gpt_answer": board.get("gpt_answer"),
         "tags": board.get("tags", []),
+        "llm_engagement_score": board.get("llm_engagement_score"),
+        "llm_engagement_reason": board.get("llm_engagement_reason"),
         "analysis_status": board.get("analysis_status"),
         "analysis_retry_count": board.get("analysis_retry_count", 0),
         "analysis_error": board.get("analysis_error"),
@@ -55,6 +57,8 @@ def _to_analysis_response(analysis: dict) -> dict:
         "status": analysis["status"],
         "summary": analysis.get("summary"),
         "tags": analysis.get("tags", []),
+        "llmEngagementScore": analysis.get("llm_engagement_score"),
+        "llmEngagementReason": analysis.get("llm_engagement_reason"),
         "retryCount": analysis.get("retry_count", 0),
         "error": analysis.get("error"),
         "requestedAt": analysis.get("requested_at"),
@@ -152,6 +156,8 @@ def analyze_board(
             board_id=current_analysis["board_id"],
             summary=current_analysis["summary"],
             tags=current_analysis["tags"],
+            llm_engagement_score=current_analysis.get("llm_engagement_score"),
+            llm_engagement_reason=current_analysis.get("llm_engagement_reason"),
         )
         return job.to_response()
 
@@ -180,7 +186,13 @@ def _run_analysis_job(job_id: str, board_id: str) -> None:
         analysis_jobs.mark_failed(job_id, "Board not found")
         return
 
-    analysis_jobs.mark_completed(job_id, summary=result["summary"], tags=result["tags"])
+    analysis_jobs.mark_completed(
+        job_id,
+        summary=result["summary"],
+        tags=result["tags"],
+        llm_engagement_score=result.get("llm_engagement_score"),
+        llm_engagement_reason=result.get("llm_engagement_reason"),
+    )
 
 
 @router.post("/{board_id}/images/{image_index}/vision-text")
