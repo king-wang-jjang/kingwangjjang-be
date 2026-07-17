@@ -40,6 +40,7 @@ def test_ci_builds_and_deploys_gpt_service_image():
     assert "sudo docker compose down" in workflow
     assert "sudo docker compose pull" in workflow
     assert "sudo docker compose up -d --force-recreate" in workflow
+    assert "sudo docker restart nginx_kingwangjjang" in workflow
     assert "sudo docker-compose" not in workflow
 
 

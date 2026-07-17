@@ -219,4 +219,7 @@ jobs:
             sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/comment-service:0.0.1 -f || true
             sudo docker compose pull
             sudo docker compose up -d --force-recreate
+            if sudo docker ps -a --format '{{.Names}}' | grep -qx nginx_kingwangjjang; then
+              sudo docker restart nginx_kingwangjjang
+            fi
     # sudo docker network connect kingwangjjang-network kingwangjjang_kingwangjjang-api-gateway_1
