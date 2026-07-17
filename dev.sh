@@ -10,6 +10,7 @@ PID_FILE="$LOG_DIR/.dev-pids"
 DEV_ENV="SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL=<from .env>"
 
 SERVICES=(
+  "gpt-service:33336"
   "api-gateway:33330"
   "board-service:33333"
   "user-service:33334"
@@ -37,6 +38,15 @@ resolve_python_executable() {
   if [[ -x "$venv_python" ]]; then
     echo "$venv_python"
     return 0
+  fi
+
+  if has_cmd poetry && [[ -f "$project_dir/pyproject.toml" ]]; then
+    local poetry_python
+    poetry_python="$(cd "$project_dir" && poetry env info --executable 2>/dev/null || true)"
+    if [[ -x "$poetry_python" ]]; then
+      echo "$poetry_python"
+      return 0
+    fi
   fi
 
   if has_cmd python3; then
@@ -239,6 +249,7 @@ cmd_up() {
   ensure_dirs
   ensure_env
   load_dev_env_file
+  export AI_SERVICE_URL="${AI_SERVICE_URL:-http://localhost:33336}"
   configure_database_env
   cmd_down >/dev/null 2>&1 || true
   : > "$PID_FILE"

@@ -31,13 +31,24 @@ class VisionTextClient:
         api_key: str | None = None,
         model: str | None = None,
         timeout_seconds: float | None = None,
+        service_url: str | None = None,
+        service_token: str | None = None,
     ) -> None:
+        resolved_service_url = service_url
+        if resolved_service_url is None and base_url is None:
+            resolved_service_url = os.getenv("AI_SERVICE_URL")
+        self.service_url = resolved_service_url.rstrip("/") if resolved_service_url else None
+        self.service_token = service_token if service_token is not None else os.getenv("AI_SERVICE_TOKEN")
         self.base_url = (base_url or os.getenv("VLLM_BASE_URL") or DEFAULT_BASE_URL).rstrip("/")
         self.api_key = api_key if api_key is not None else os.getenv("VLLM_API_KEY")
         self.model = model or os.getenv("VLLM_MODEL") or DEFAULT_MODEL
         self.timeout_seconds = self._resolve_timeout(timeout_seconds)
 
     def extract_text(self, image_path: Path | str, *, prompt: str | None = None) -> str:
+        image_data_url = image_to_data_url(image_path)
+        if self.service_url:
+            return self._extract_text_with_service(image_data_url, prompt=prompt)
+
         payload = {
             "model": self.model,
             "messages": [
@@ -45,7 +56,7 @@ class VisionTextClient:
                     "role": "user",
                     "content": [
                         {"type": "text", "text": prompt or os.getenv("VLLM_IMAGE_PROMPT") or DEFAULT_PROMPT},
-                        {"type": "image_url", "image_url": {"url": image_to_data_url(image_path)}},
+                        {"type": "image_url", "image_url": {"url": image_data_url}},
                     ],
                 }
             ],
@@ -72,6 +83,32 @@ class VisionTextClient:
         if not answer:
             raise VisionTextError("vLLM response did not include message content")
         return answer
+
+    def _extract_text_with_service(self, image_data_url: str, *, prompt: str | None) -> str:
+        payload = {"image_data_url": image_data_url}
+        if prompt:
+            payload["prompt"] = prompt
+
+        headers = {}
+        if self.service_token:
+            headers["X-AI-Service-Token"] = self.service_token
+
+        try:
+            response = httpx.post(
+                f"{self.service_url}/api/ai/vision-text",
+                json=payload,
+                headers=headers,
+                timeout=self.timeout_seconds,
+            )
+            response.raise_for_status()
+            data = response.json()
+        except (httpx.HTTPError, ValueError) as exc:
+            raise VisionTextError(str(exc)) from exc
+
+        text = data.get("text") if isinstance(data, dict) else None
+        if not isinstance(text, str) or not text.strip():
+            raise VisionTextError("AI service vision response did not include text")
+        return text.strip()
 
     @staticmethod
     def _resolve_timeout(timeout_seconds: float | None) -> float:

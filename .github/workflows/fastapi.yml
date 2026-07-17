@@ -77,6 +77,16 @@ jobs:
             linux/arm64
             linux/amd64
 
+      - name: Build and push gpt-service
+        uses: docker/build-push-action@v6
+        with:
+          context: ./gpt-service
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gpt-service:0.0.1
+          platforms: |
+            linux/arm64
+            linux/amd64
+
       - name: Build and push user-service
         uses: docker/build-push-action@v6
         with:
@@ -116,8 +126,12 @@ jobs:
           POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}"
           SERVER_RUN_MODE="${{ secrets.SERVER_RUN_MODE }}"
           AUTH_COOKIE_SECURE="${{ secrets.AUTH_COOKIE_SECURE }}"
+          AI_SERVICE_TOKEN="${{ secrets.AI_SERVICE_TOKEN }}"
+          AI_NODE_ADMIN_TOKEN="${{ secrets.AI_NODE_ADMIN_TOKEN }}"
           POSTGRES_DB="${POSTGRES_DB:-kingwangjjang_dev}"
           POSTGRES_USER="${POSTGRES_USER:-kingwangjjang}"
+          AI_SERVICE_TOKEN="${AI_SERVICE_TOKEN:-$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')}"
+          AI_NODE_ADMIN_TOKEN="${AI_NODE_ADMIN_TOKEN:-$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')}"
 
           : "${POSTGRES_PASSWORD:?POSTGRES_PASSWORD secret is required}"
 
@@ -138,6 +152,15 @@ jobs:
           echo "DATABASE_URL=${DATABASE_URL}" >> .env
           echo "DOCKER_DATABASE_URL=${DOCKER_DATABASE_URL}" >> .env
           echo "CHATGPT_API_KEY=${{ secrets.CHATGPT_API_KEY }}" >> .env
+          echo "AI_SERVICE_TOKEN=${AI_SERVICE_TOKEN}" >> .env
+          echo "AI_NODE_ADMIN_TOKEN=${AI_NODE_ADMIN_TOKEN}" >> .env
+          echo "AI_NODE_FAILURE_THRESHOLD=2" >> .env
+          echo "AI_NODE_RETRY_COOLDOWN_SECONDS=30" >> .env
+          echo "OLLAMA_BASE_URLS=${{ secrets.OLLAMA_BASE_URLS }}" >> .env
+          echo "OLLAMA_MODEL=${{ secrets.OLLAMA_MODEL }}" >> .env
+          echo "VLLM_BASE_URL=${{ secrets.VLLM_BASE_URL }}" >> .env
+          echo "VLLM_MODEL=${{ secrets.VLLM_MODEL }}" >> .env
+          echo "VLLM_API_KEY=${{ secrets.VLLM_API_KEY }}" >> .env
           echo "SERVER_RUN_MODE=${SERVER_RUN_MODE:-TRUE}" >> .env
           echo "AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-TRUE}" >> .env
           echo "WEBHOOK_URL=${{ secrets.PRODUCTION_WEBHOOK_URL }}" >> .env
@@ -191,6 +214,7 @@ jobs:
             sudo docker-compose down
             sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/api-gateway:0.0.1 -f || true
             sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/board-service:0.0.1 -f || true
+            sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/gpt-service:0.0.1 -f || true
             sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/user-service:0.0.1 -f || true
             sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/comment-service:0.0.1 -f || true
             sudo docker-compose pull

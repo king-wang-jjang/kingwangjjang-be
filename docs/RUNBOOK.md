@@ -37,7 +37,33 @@
     # JWT 인증을 위한 시크릿 키
     JWT_SECRET_KEY=your-access-secret
     JWT_REFRESH_SECRET_KEY=your-refresh-secret
+
+    # AI 서비스 간/관리 API 인증 토큰 (운영에서는 필수)
+    AI_SERVICE_TOKEN=your-internal-ai-token
+    AI_NODE_ADMIN_TOKEN=your-ai-node-admin-token
     ```
+
+### AI 서버 노드 관리
+
+최초 실행 시 `OLLAMA_BASE_URLS`(또는 `OLLAMA_BASE_URL`)와 `VLLM_BASE_URL`을
+사용해 노드 테이블이 비어 있을 때만 기본 노드를 등록합니다. 이후 노드와
+모델 변경은 PostgreSQL에 유지되며 관리 API가 기준 정보가 됩니다.
+
+```bash
+# 노드 목록 (로컬 소스 실행: 33330, Docker Compose: 8000)
+curl -H "X-AI-Admin-Token: $AI_NODE_ADMIN_TOKEN" \
+  http://localhost:33330/gptservice/api/ai/nodes
+
+# 모든 노드의 즉시 상태 확인
+curl -X POST -H "X-AI-Admin-Token: $AI_NODE_ADMIN_TOKEN" \
+  http://localhost:33330/gptservice/api/ai/nodes/health-check
+```
+
+Docker Compose로 실행했다면 위 URL의 포트를 `8000`으로 바꿉니다.
+
+정확한 등록 요청 형식은 실행 중인 `gpt-service`의 `/docs`에서 확인할 수
+있습니다. API 키 원문은 요청이나 DB에 저장하지 않고 노드의 `api_key_env`에
+환경변수 이름만 지정합니다.
 
 3.  **서비스 실행**:
     루트 디렉터리의 `run` 스크립트를 사용합니다.

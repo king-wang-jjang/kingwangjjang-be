@@ -45,6 +45,7 @@ services:
       - kingwangjjang-user-service
       - kingwangjjang-board-service
       - kingwangjjang-comment-service
+      - kingwangjjang-gpt-service
 
   kingwangjjang-board-service:
     container_name: kingwangjjang-board-service
@@ -54,15 +55,47 @@ services:
     environment:
       DATABASE_URL: ${DOCKER_DATABASE_URL}
       CRAWLER_MEDIA_ROOT: /app/public
+      AI_SERVICE_URL: http://kingwangjjang-gpt-service:33336
     volumes:
       - ./logs:/var/log
       - ${CRAWLER_MEDIA_HOST_ROOT:-/mnt/kingwangjjang}:/app/public:ro
     networks:
       - kingwangjjang-network
     depends_on:
-      - kingwangjjang-postgres
-      - kingwangjjang-user-service
-      - kingwangjjang-comment-service
+      kingwangjjang-postgres:
+        condition: service_healthy
+      kingwangjjang-user-service:
+        condition: service_started
+      kingwangjjang-comment-service:
+        condition: service_started
+      kingwangjjang-gpt-service:
+        condition: service_healthy
+
+  kingwangjjang-gpt-service:
+    container_name: kingwangjjang-gpt-service
+    image: ${DOCKERHUB_USERNAME}/gpt-service:0.0.1
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL}
+    restart: unless-stopped
+    volumes:
+      - ./logs:/var/log
+    networks:
+      - kingwangjjang-network
+    depends_on:
+      kingwangjjang-postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:33336/health', timeout=2)"
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   kingwangjjang-user-service:
     container_name: kingwangjjang-user-service

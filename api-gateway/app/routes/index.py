@@ -17,11 +17,13 @@ SERVER_SERVICE_MAP = {
     "boardservice/": "kingwangjjang-board-service:33333",
     "userservice/": "kingwangjjang-user-service:33334",
     "commentservice/": "kingwangjjang-comment-service:33335",
+    "gptservice/": "kingwangjjang-gpt-service:33336",
 }
 LOCAL_SERVICE_MAP = {
     "boardservice/": "localhost:33333",
     "userservice/": "localhost:33334",
     "commentservice/": "localhost:33335",
+    "gptservice/": "localhost:33336",
 }
 SERVER_AUTH_PATHS = {
     "login": "kingwangjjang-user-service:33334",

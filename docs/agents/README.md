@@ -12,7 +12,7 @@ and prevent cross-service shortcuts.
 | user-service | active | 33334 | [user-service.md](./user-service.md) |
 | board-service | active | 33333 | [board-service.md](./board-service.md) |
 | comment-service | active | 33335 | [comment-service.md](./comment-service.md) |
-| gpt-service | scaffold | 8000 | [gpt-service.md](./gpt-service.md) |
+| gpt-service | active | 33336 | [gpt-service.md](./gpt-service.md) |
 | notification-service | scaffold | 8000 | [notification-service.md](./notification-service.md) |
 
 ## Global Agent Rules

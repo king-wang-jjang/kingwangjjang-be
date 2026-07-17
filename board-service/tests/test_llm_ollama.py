@@ -152,3 +152,43 @@ def test_analyze_returns_summary_and_tags_from_json_response(monkeypatch):
     assert "summary" in calls[0]["json"]["messages"][0]["content"]
     assert calls[0]["json"]["format"] == "json"
     assert calls[0]["json"]["messages"][1] == {"role": "user", "content": "게시글 본문"}
+
+
+def test_analyze_uses_central_ai_service_when_configured(monkeypatch):
+    captured = {}
+
+    def fake_post(url, *, json, headers, timeout):
+        captured.update(url=url, json=json, headers=headers, timeout=timeout)
+        return DummyResponse({"summary": "중앙 요약", "tags": ["AI", "AI", "노드"]})
+
+    monkeypatch.setattr(llm_module.httpx, "post", fake_post)
+
+    result = LLM(
+        service_url="http://ai-router.local/",
+        service_token="service-secret",
+        timeout_seconds=12,
+    ).analyze("게시글 본문")
+
+    assert result == {"summary": "중앙 요약", "tags": ["AI", "노드"]}
+    assert captured == {
+        "url": "http://ai-router.local/api/ai/analyze",
+        "json": {"content": "게시글 본문"},
+        "headers": {"X-AI-Service-Token": "service-secret"},
+        "timeout": 12.0,
+    }
+
+
+def test_explicit_ollama_url_keeps_direct_transport_when_service_env_exists(monkeypatch):
+    calls = []
+
+    def fake_post(url, json, timeout):
+        calls.append(url)
+        return DummyResponse({"message": {"content": "direct"}})
+
+    monkeypatch.setenv("AI_SERVICE_URL", "http://ai-router.local")
+    monkeypatch.setattr(llm_module.httpx, "post", fake_post)
+
+    result = LLM(base_url="http://ollama.local").call("content")
+
+    assert result == "direct"
+    assert calls == ["http://ollama.local/api/chat"]

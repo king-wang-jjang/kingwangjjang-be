@@ -10,7 +10,15 @@ package-mode = false
 python = "^3.12"
 uvicorn = "^0.48.0"
 fastapi = "^0.136.3"
+python-dotenv = "^1.2.2"
+httpx = "^0.28.1"
+sqlalchemy = "^2.0.50"
+psycopg = {extras = ["binary"], version = "^3.3.4"}
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=9.0.3,<10.0.0"
+pytest-asyncio = ">=1.2.0,<2.0.0"

@@ -1,4 +1,5 @@
-# from typing import Union
-from fastapi import FastAPI
+"""Compatibility entry point for `uvicorn main:app`."""
 
-app = FastAPI()
+from app.main import app, create_app
+
+__all__ = ["app", "create_app"]

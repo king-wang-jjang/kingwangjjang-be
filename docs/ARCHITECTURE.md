@@ -18,9 +18,10 @@ graph TD
         APIGateway -->|/api/users| UserService[User Service]
         APIGateway -->|/api/boards| BoardService[Board Service]
         APIGateway -->|/api/comments| CommentService[Comment Service]
-        APIGateway -->|/api/gpt| GptService[GPT Service]
+        APIGateway -->|/gptservice/api/ai| GptService[GPT Service]
 
         BoardService -->|사용자 정보 조회| UserService
+        BoardService -->|분석/비전 요청| GptService
         CommentService -->|사용자 정보 조회| UserService
         
         subgraph "Async Services"
@@ -34,6 +35,10 @@ graph TD
         UserService --> UsersDB[(User DB)]
         BoardService --> BoardsDB[(Board DB)]
         CommentService --> CommentsDB[(Comment DB)]
+        GptService --> AINodesDB[(AI Node Registry)]
+
+        GptService -->|용도/상태/부하 기반 선택| AINodeA[AI Node A]
+        GptService -->|장애 시 대체| AINodeB[AI Node B]
     end
 
     style Client fill:#d4f3ff
@@ -44,6 +49,8 @@ graph TD
 *   **User Service**: 사용자 정보 및 인증을 담당하는 핵심 서비스. 다른 서비스들이 사용자 정보가 필요할 때 조회합니다.
 *   **Board/Comment Service**: 게시판과 댓글 기능을 담당하며, 필요시 User Service에서 사용자 정보를 가져옵니다.
 *   **GPT/Notification Service**: 특정 이벤트(예: 새 게시글)가 발생했을 때 다른 서비스에 의해 호출될 수 있는 보조 서비스입니다.
+    * `gpt-service`는 AI 서버 노드와 노드별 모델을 등록하고 `analysis`, `chat`, `vision` 용도에 맞는 정상 노드를 선택합니다.
+    * `board-service`는 작업 큐와 분석 결과를 계속 소유하며, 실제 모델 호출만 `gpt-service`에 위임합니다.
 
 ## 데이터 흐름
 

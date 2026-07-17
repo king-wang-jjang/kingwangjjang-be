@@ -14,6 +14,7 @@ $PidFile = Join-Path $LogDir '.dev-pids'
 $DevEnv = 'SERVER_RUN_MODE=FALSE AUTH_COOKIE_SECURE=FALSE DATABASE_URL=<from .env>'
 
 $Services = @(
+  @{ Name = 'gpt-service'; Port = 33336 },
   @{ Name = 'api-gateway'; Port = 33330 },
   @{ Name = 'board-service'; Port = 33333 },
   @{ Name = 'user-service'; Port = 33334 },
@@ -72,6 +73,22 @@ function Resolve-PythonExecutable {
   $venvPython = Join-Path $ProjectDir '.venv\Scripts\python.exe'
   if (Test-Path -LiteralPath $venvPython) {
     return $venvPython
+  }
+
+  if (Get-Command poetry -ErrorAction SilentlyContinue) {
+    $poetryPython = $null
+    Push-Location $ProjectDir
+    try {
+      $poetryOutput = @(& poetry env info --executable 2>$null)
+      if ($LASTEXITCODE -eq 0 -and $poetryOutput.Count -gt 0) {
+        $poetryPython = $poetryOutput[0].Trim()
+      }
+    } finally {
+      Pop-Location
+    }
+    if ($poetryPython -and (Test-Path -LiteralPath $poetryPython)) {
+      return $poetryPython
+    }
   }
 
   return 'python'
@@ -144,6 +161,9 @@ function Cmd-Up {
   Ensure-Dirs
   Ensure-Env
   Import-DevEnvFile
+  if (-not [Environment]::GetEnvironmentVariable('AI_SERVICE_URL', 'Process')) {
+    [Environment]::SetEnvironmentVariable('AI_SERVICE_URL', 'http://localhost:33336', 'Process')
+  }
   Cmd-Down | Out-Null
   Set-Content -Encoding UTF8 -Path $PidFile -Value ''
 

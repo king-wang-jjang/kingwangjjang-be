@@ -44,6 +44,7 @@ def test_gateway_proxy_keeps_rest_service_prefixes():
     assert '"boardservice/"' in routes
     assert '"userservice/"' in routes
     assert '"commentservice/"' in routes
+    assert '"gptservice/"' in routes
     assert "path.startswith(prefix)" in routes
     assert "path[len(prefix):]" in routes
 

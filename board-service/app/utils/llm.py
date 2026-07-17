@@ -35,7 +35,15 @@ class LLM:
         base_urls: list[str] | None = None,
         model: str | None = None,
         timeout_seconds: float | None = None,
+        service_url: str | None = None,
+        service_token: str | None = None,
     ):
+        explicit_direct_endpoint = base_url is not None or base_urls is not None
+        resolved_service_url = service_url
+        if resolved_service_url is None and not explicit_direct_endpoint:
+            resolved_service_url = os.getenv("AI_SERVICE_URL")
+        self.service_url = resolved_service_url.rstrip("/") if resolved_service_url else None
+        self.service_token = service_token if service_token is not None else os.getenv("AI_SERVICE_TOKEN")
         self.base_urls = self._resolve_base_urls(base_url=base_url, base_urls=base_urls)
         self.base_url = self.base_urls[0]
         self._next_base_url_index = 0
@@ -46,14 +54,41 @@ class LLM:
         try:
             return self._chat(self.SYSTEM_PROMPT, content).strip()
         except LLMError as exc:
-            logger.warning("Ollama summary request failed: %s", exc)
+            logger.warning("AI summary request failed: %s", exc)
             return self.FALLBACK_MESSAGE
 
     def analyze(self, content: str) -> dict:
+        if self.service_url:
+            return self._analyze_with_service(content)
         answer = self._chat(self.ANALYSIS_SYSTEM_PROMPT, content, response_format="json")
         return self._parse_analysis(answer)
 
+    def _analyze_with_service(self, content: str) -> dict:
+        response_data = self._post_service("/api/ai/analyze", {"content": content})
+        summary = response_data.get("summary")
+        tags = response_data.get("tags")
+        if not isinstance(summary, str) or not summary.strip():
+            raise LLMError("AI service analysis response did not include summary")
+        return {"summary": summary.strip(), "tags": self._normalize_tags(tags)}
+
     def _chat(self, system_prompt: str, content: str, response_format: str | None = None) -> str:
+        if self.service_url:
+            response_data = self._post_service(
+                "/api/ai/chat",
+                {
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": content},
+                    ],
+                    "capability": "chat",
+                    "response_format": response_format,
+                },
+            )
+            answer = response_data.get("content")
+            if not isinstance(answer, str) or not answer.strip():
+                raise LLMError("AI service chat response did not include content")
+            return answer
+
         payload = {
             "model": self.model,
             "messages": [
@@ -73,6 +108,27 @@ class LLM:
             raise LLMError("Ollama chat response did not include message.content")
 
         return answer
+
+    def _post_service(self, path: str, payload: dict) -> dict:
+        headers = {}
+        if self.service_token:
+            headers["X-AI-Service-Token"] = self.service_token
+
+        try:
+            response = httpx.post(
+                f"{self.service_url}{path}",
+                json=payload,
+                headers=headers,
+                timeout=self.timeout_seconds,
+            )
+            response.raise_for_status()
+            response_data = response.json()
+        except (httpx.HTTPError, ValueError) as exc:
+            raise LLMError(str(exc)) from exc
+
+        if not isinstance(response_data, dict):
+            raise LLMError("AI service response was not an object")
+        return response_data
 
     def _post_chat(self, payload: dict) -> dict:
         start_index = self._next_base_url_index
@@ -114,18 +170,23 @@ class LLM:
         if not isinstance(summary, str) or not summary.strip():
             raise LLMError("Ollama analysis response did not include summary")
 
-        normalized_tags = []
-        if isinstance(tags, list):
-            for tag in tags:
-                if not isinstance(tag, str):
-                    continue
-                normalized_tag = tag.strip()
-                if normalized_tag and normalized_tag not in normalized_tags:
-                    normalized_tags.append(normalized_tag)
-                if len(normalized_tags) >= 5:
-                    break
+        return {"summary": summary.strip(), "tags": self._normalize_tags(tags)}
 
-        return {"summary": summary.strip(), "tags": normalized_tags}
+    @staticmethod
+    def _normalize_tags(tags: object) -> list[str]:
+        normalized_tags = []
+        if not isinstance(tags, list):
+            return normalized_tags
+
+        for tag in tags:
+            if not isinstance(tag, str):
+                continue
+            normalized_tag = tag.strip()
+            if normalized_tag and normalized_tag not in normalized_tags:
+                normalized_tags.append(normalized_tag)
+            if len(normalized_tags) >= 5:
+                break
+        return normalized_tags
 
     def _resolve_timeout(self, timeout_seconds: float | None) -> float:
         if timeout_seconds is not None:

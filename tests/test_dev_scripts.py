@@ -19,10 +19,12 @@ def test_dev_shell_scripts_exist_and_start_source_services():
         assert "user-service" in content
         assert "board-service" in content
         assert "comment-service" in content
+        assert "gpt-service" in content
         assert "33330" in content
         assert "33333" in content
         assert "33334" in content
         assert "33335" in content
+        assert "33336" in content
         assert "SERVER_RUN_MODE=FALSE" in content
         assert "AUTH_COOKIE_SECURE=FALSE" in content
 
@@ -50,6 +52,15 @@ def test_dev_scripts_export_database_url_for_local_services():
     assert "Import-DevEnvFile" in ps1_content
 
 
+def test_dev_scripts_route_ai_calls_through_local_gpt_service():
+    sh_content = (ROOT / "dev.sh").read_text(encoding="utf-8")
+    ps1_content = (ROOT / "dev.ps1").read_text(encoding="utf-8")
+
+    for content in (sh_content, ps1_content):
+        assert "AI_SERVICE_URL" in content
+        assert "http://localhost:33336" in content
+
+
 def test_dev_scripts_use_project_virtualenvs_for_python_services():
     sh_content = (ROOT / "dev.sh").read_text(encoding="utf-8")
     ps1_content = (ROOT / "dev.ps1").read_text(encoding="utf-8")
@@ -61,5 +72,8 @@ def test_dev_scripts_use_project_virtualenvs_for_python_services():
 
     assert "resolve_python_executable" in sh_content
     assert ".venv/bin/python" in sh_content
+    assert "poetry env info --executable" in sh_content
     assert "-m uvicorn app.main:app" in sh_content
     assert "poetry run uvicorn" not in sh_content
+
+    assert "poetry env info --executable" in ps1_content
