@@ -37,6 +37,10 @@ def test_ci_builds_and_deploys_gpt_service_image():
     assert "AI_NODE_ADMIN_TOKEN" in workflow
     assert 'AI_SERVICE_TOKEN="${AI_SERVICE_TOKEN:-$(python3 -c' in workflow
     assert 'AI_NODE_ADMIN_TOKEN="${AI_NODE_ADMIN_TOKEN:-$(python3 -c' in workflow
+    assert "sudo docker compose down" in workflow
+    assert "sudo docker compose pull" in workflow
+    assert "sudo docker compose up -d --force-recreate" in workflow
+    assert "sudo docker-compose" not in workflow
 
 
 def test_gpt_docker_context_excludes_local_environment_files():
