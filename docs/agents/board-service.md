@@ -24,6 +24,8 @@
 | --- | --- |
 | `/api/boards/realtime` | Realtime board list. |
 | `/api/boards/daily` | Daily board list. |
+| `/api/boards/daily/history/dates` | Available daily Top 10 snapshot dates. |
+| `/api/boards/daily/history?date=YYYY-MM-DD` | Stored Top 10 ranking for a date. |
 | `/api/boards/{board_id}/likes` | Board like endpoint. |
 
 ## Data Boundary

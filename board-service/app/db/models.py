@@ -1,7 +1,18 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from uuid import uuid4
 
-from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, Index, Integer, JSON, String, UniqueConstraint
+from sqlalchemy import (
+    BigInteger,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    JSON,
+    String,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.postgres import Base
@@ -65,6 +76,30 @@ class BoardMetricSnapshot(Base):
     source_rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
     crawl_status: Mapped[str] = mapped_column(String(32), nullable=False, default="success")
     crawl_error: Mapped[str | None] = mapped_column(String, nullable=True)
+
+
+class DailyTop10Snapshot(Base):
+    __tablename__ = "daily_top10_snapshots"
+    __table_args__ = (
+        UniqueConstraint(
+            "snapshot_date",
+            "rank",
+            name="uq_daily_top10_snapshots_date_rank",
+        ),
+        UniqueConstraint(
+            "snapshot_date",
+            "board_id",
+            name="uq_daily_top10_snapshots_date_board",
+        ),
+        Index("ix_daily_top10_snapshots_snapshot_date", "snapshot_date"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    snapshot_date: Mapped[date] = mapped_column(Date, nullable=False)
+    rank: Mapped[int] = mapped_column(Integer, nullable=False)
+    board_id: Mapped[str] = mapped_column(ForeignKey("boards.id"), nullable=False)
+    daily_score: Mapped[float] = mapped_column(Float, nullable=False)
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 class BoardLike(Base):

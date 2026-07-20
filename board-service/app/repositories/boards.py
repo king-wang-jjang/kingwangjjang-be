@@ -1,11 +1,11 @@
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from math import exp, isfinite
 
 from sqlalchemy import String, cast, delete, desc, func, inspect, nullslast, or_, select, text
 
-from app.db.models import Board, BoardLike, BoardMetricSnapshot
+from app.db.models import Board, BoardLike, BoardMetricSnapshot, DailyTop10Snapshot
 from app.db.postgres import Base, get_engine, get_session_factory
 from app.services.popularity import (
     DAILY_DECAY_HOURS,
@@ -81,6 +81,36 @@ class BoardRepository:
         filters: BoardListFilters | None = None,
     ) -> list[dict]:
         return self._list_boards(index=index, limit=limit, daily=True, filters=filters)
+
+    def list_daily_history_dates(self, limit: int = 30) -> list[date]:
+        page_size = max(1, min(limit, 365))
+        with get_session_factory()() as session:
+            return list(
+                session.scalars(
+                    select(DailyTop10Snapshot.snapshot_date)
+                    .distinct()
+                    .order_by(desc(DailyTop10Snapshot.snapshot_date))
+                    .limit(page_size)
+                ).all()
+            )
+
+    def list_daily_history(self, snapshot_date: date, limit: int = 10) -> list[dict]:
+        page_size = max(1, min(limit, 100))
+        stmt = (
+            select(Board, DailyTop10Snapshot.daily_score)
+            .join(DailyTop10Snapshot, DailyTop10Snapshot.board_id == Board.id)
+            .where(DailyTop10Snapshot.snapshot_date == snapshot_date)
+            .order_by(DailyTop10Snapshot.rank)
+            .limit(page_size)
+        )
+
+        with get_session_factory()() as session:
+            result = []
+            for board, snapshot_daily_score in session.execute(stmt).all():
+                board_data = self._to_dict(board)
+                board_data["daily_score"] = snapshot_daily_score
+                result.append(board_data)
+            return result
 
     def record_metric_snapshot(
         self,

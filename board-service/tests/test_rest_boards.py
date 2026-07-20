@@ -1,4 +1,5 @@
 import sys
+from datetime import date
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -20,6 +21,9 @@ AUTH_HEADERS = {
 
 class FakeRepository:
     last_filters = None
+    last_history_date = None
+    last_history_limit = None
+    last_history_dates_limit = None
 
     def list_realtime(self, index: int, limit: int, filters=None):
         assert index == 0
@@ -58,6 +62,17 @@ class FakeRepository:
 
     def list_daily(self, index: int, limit: int, filters=None):
         return self.list_realtime(index, limit, filters=filters)
+
+    def list_daily_history_dates(self, limit: int = 30):
+        type(self).last_history_dates_limit = limit
+        return [date(2026, 7, 19), date(2026, 7, 18)]
+
+    def list_daily_history(self, snapshot_date: date, limit: int = 10):
+        type(self).last_history_date = snapshot_date
+        type(self).last_history_limit = limit
+        boards = self.list_realtime(0, 30)
+        boards[0]["daily_score"] = 88.75
+        return boards
 
     def add_like(self, board_id: str, user_id: str):
         return {"board_id": board_id, "site": "dcinside", "like_count": 1}
@@ -132,6 +147,9 @@ def build_client(monkeypatch):
 
     boards.analysis_jobs.clear()
     FakeRepository.last_filters = None
+    FakeRepository.last_history_date = None
+    FakeRepository.last_history_limit = None
+    FakeRepository.last_history_dates_limit = None
     monkeypatch.setattr(boards, "BoardRepository", lambda: FakeRepository())
     app = FastAPI()
     app.include_router(boards_router)
@@ -166,6 +184,41 @@ def test_daily_returns_rest_shape(monkeypatch):
     assert response.status_code == 200
     assert response.json()[0]["site"] == "dcinside"
     assert response.json()[0]["comment_count"] == 2
+
+
+def test_daily_history_dates_returns_available_dates(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.get("/api/boards/daily/history/dates?limit=2")
+
+    assert response.status_code == 200
+    assert response.json() == ["2026-07-19", "2026-07-18"]
+    assert FakeRepository.last_history_dates_limit == 2
+
+
+def test_daily_history_returns_existing_rest_shape_with_snapshot_score(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.get("/api/boards/daily/history?date=2026-07-19&limit=5")
+
+    assert response.status_code == 200
+    assert response.json()[0]["_id"] == "11111111-1111-1111-1111-111111111111"
+    assert response.json()[0]["likeCount"] == 0
+    assert response.json()[0]["daily_score"] == 88.75
+    assert FakeRepository.last_history_date == date(2026, 7, 19)
+    assert FakeRepository.last_history_limit == 5
+
+
+def test_daily_history_validates_date_and_limit(monkeypatch):
+    client = build_client(monkeypatch)
+
+    missing_date = client.get("/api/boards/daily/history")
+    invalid_date = client.get("/api/boards/daily/history?date=2026-13-40")
+    oversized_limit = client.get("/api/boards/daily/history?date=2026-07-19&limit=101")
+
+    assert missing_date.status_code == 422
+    assert invalid_date.status_code == 422
+    assert oversized_limit.status_code == 422
 
 
 def test_realtime_accepts_board_filters(monkeypatch):

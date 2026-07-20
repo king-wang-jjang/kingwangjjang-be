@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -119,6 +121,25 @@ def daily(
     return [
         _to_board_response(board)
         for board in BoardRepository().list_daily(index, limit, filters=filters)
+    ]
+
+
+@router.get("/daily/history/dates")
+def daily_history_dates(limit: int = Query(default=30, ge=1, le=365)):
+    return [
+        snapshot_date.isoformat()
+        for snapshot_date in BoardRepository().list_daily_history_dates(limit)
+    ]
+
+
+@router.get("/daily/history")
+def daily_history(
+    snapshot_date: date = Query(alias="date"),
+    limit: int = Query(default=10, ge=1, le=100),
+):
+    return [
+        _to_board_response(board)
+        for board in BoardRepository().list_daily_history(snapshot_date, limit)
     ]
 
 
