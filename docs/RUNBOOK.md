@@ -38,10 +38,25 @@
     JWT_SECRET_KEY=your-access-secret
     JWT_REFRESH_SECRET_KEY=your-refresh-secret
 
+    # 관리자 경로를 사용할 OAuth userId (여러 명이면 쉼표로 구분)
+    ADMIN_USER_IDS=your-kakao-user-id
+
     # AI 서비스 간/관리 API 인증 토큰 (운영에서는 필수)
     AI_SERVICE_TOKEN=your-internal-ai-token
     AI_NODE_ADMIN_TOKEN=your-ai-node-admin-token
     ```
+
+### Shorts Studio 관리자 설정
+
+로그인 후 `/userservice/api/users/me` 응답의 `userId`를 `ADMIN_USER_IDS`에
+등록하고 API Gateway와 board-service를 다시 시작합니다. 값이 비어 있으면 관리자 접근은
+모두 거부됩니다. 관리자 역할은 JWT의 검증된 사용자 ID를 기준으로 Gateway가
+매 요청마다 계산하므로 브라우저에서 역할 값을 바꿔도 Shorts API는 `403`을
+반환합니다.
+
+프런트엔드의 `/admin/shorts`에서 오늘 또는 저장된 과거 Top10을 9:16 장면,
+내레이션, 자막, Nano Banana 프롬프트와 원문 출처가 포함된 JSON으로 내려받을
+수 있습니다.
 
 ### AI 서버 노드 관리
 

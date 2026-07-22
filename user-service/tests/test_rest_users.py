@@ -69,6 +69,7 @@ def test_me_returns_authenticated_principal_user(monkeypatch):
         "authProvider": "kakao",
         "profileImage": None,
         "createTime": "2026-04-28T00:00:00Z",
+        "role": "user",
     }
 
 
@@ -103,6 +104,7 @@ def test_me_preserves_stored_kakao_profile(monkeypatch):
         "authProvider": "kakao",
         "profileImage": "https://k.kakaocdn.net/profile.jpg",
         "createTime": "2026-04-28T00:00:00Z",
+        "role": "user",
     }
 
 
@@ -176,7 +178,39 @@ def test_patch_me_updates_local_display_name(monkeypatch):
         "authProvider": "kakao",
         "profileImage": "https://k.kakaocdn.net/profile.jpg",
         "createTime": "2026-04-28T00:00:00Z",
+        "role": "user",
     }
+
+
+def test_me_returns_admin_role_from_trusted_principal(monkeypatch):
+    class FakeRepository:
+        def get_or_create_from_principal(self, principal):
+            return {
+                "id": str(uuid4()),
+                "user_id": principal.user_id,
+                "auth_provider": principal.auth_provider,
+                "nickname": "admin-user",
+                "display_name": None,
+                "profile_image": None,
+                "created_at": "2026-04-28T00:00:00Z",
+            }
+
+    from app.routes import users
+
+    monkeypatch.setattr(users, "UserRepository", lambda: FakeRepository())
+    client = build_client(
+        Principal(
+            user_id="admin-id",
+            auth_provider="kakao",
+            is_authenticated=True,
+            role="admin",
+        )
+    )
+
+    response = client.get("/api/users/me")
+
+    assert response.status_code == 200
+    assert response.json()["role"] == "admin"
 
 
 def test_patch_me_clears_blank_display_name(monkeypatch):

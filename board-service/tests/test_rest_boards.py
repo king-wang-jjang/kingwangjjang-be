@@ -1,7 +1,8 @@
 import sys
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+import jwt
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -17,6 +18,24 @@ AUTH_HEADERS = {
     "X-User-Id": "dev-user",
     "X-Auth-Provider": "local",
 }
+ADMIN_HEADERS = {**AUTH_HEADERS, "X-User-Role": "admin"}
+ADMIN_JWT_SECRET = "test-admin-access-secret"
+
+
+def admin_access_token() -> str:
+    return jwt.encode(
+        {
+            "user_id": "dev-user",
+            "auth_provider": "local",
+            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+        },
+        ADMIN_JWT_SECRET,
+        algorithm="HS256",
+    )
+
+
+def authorize_admin(client: TestClient) -> None:
+    client.cookies.set("access_token", admin_access_token())
 
 
 class FakeRepository:
@@ -24,6 +43,8 @@ class FakeRepository:
     last_history_date = None
     last_history_limit = None
     last_history_dates_limit = None
+    last_daily_args = None
+    return_empty_shorts = False
 
     def list_realtime(self, index: int, limit: int, filters=None):
         assert index == 0
@@ -61,7 +82,10 @@ class FakeRepository:
         ]
 
     def list_daily(self, index: int, limit: int, filters=None):
-        return self.list_realtime(index, limit, filters=filters)
+        type(self).last_daily_args = (index, limit)
+        if type(self).return_empty_shorts and limit == 10:
+            return []
+        return self.list_realtime(0, 30, filters=filters)[:limit]
 
     def list_daily_history_dates(self, limit: int = 30):
         type(self).last_history_dates_limit = limit
@@ -150,6 +174,10 @@ def build_client(monkeypatch):
     FakeRepository.last_history_date = None
     FakeRepository.last_history_limit = None
     FakeRepository.last_history_dates_limit = None
+    FakeRepository.last_daily_args = None
+    FakeRepository.return_empty_shorts = False
+    monkeypatch.setenv("JWT_SECRET_KEY", ADMIN_JWT_SECRET)
+    monkeypatch.setenv("ADMIN_USER_IDS", "dev-user")
     monkeypatch.setattr(boards, "BoardRepository", lambda: FakeRepository())
     app = FastAPI()
     app.include_router(boards_router)
@@ -219,6 +247,65 @@ def test_daily_history_validates_date_and_limit(monkeypatch):
     assert missing_date.status_code == 422
     assert invalid_date.status_code == 422
     assert oversized_limit.status_code == 422
+
+
+def test_daily_shorts_package_requires_authentication(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.get("/api/boards/daily/shorts-package")
+
+    assert response.status_code == 401
+
+
+def test_daily_shorts_package_rejects_non_admin_user(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.get("/api/boards/daily/shorts-package", headers=AUTH_HEADERS)
+
+    assert response.status_code == 403
+
+
+def test_daily_shorts_package_returns_admin_countdown_payload(monkeypatch):
+    client = build_client(monkeypatch)
+    authorize_admin(client)
+
+    response = client.get("/api/boards/daily/shorts-package", headers=ADMIN_HEADERS)
+
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "private, no-store"
+    assert FakeRepository.last_daily_args == (0, 10)
+    assert response.json()["production"]["platform"] == "youtube_shorts"
+    assert response.json()["production"]["aspectRatio"] == "9:16"
+    assert response.json()["rankingMode"] == "live"
+    assert response.json()["sources"][0]["url"] == "https://example.com/post/1"
+    assert response.json()["scenes"][0]["type"] == "intro"
+
+
+def test_daily_shorts_package_supports_saved_ranking_date(monkeypatch):
+    client = build_client(monkeypatch)
+    authorize_admin(client)
+
+    response = client.get(
+        "/api/boards/daily/shorts-package?date=2026-07-19",
+        headers=ADMIN_HEADERS,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["rankingDate"] == "2026-07-19"
+    assert response.json()["rankingMode"] == "historical_ranking_current_content"
+    assert response.json()["video"]["hook"].startswith("7월 19일")
+    assert FakeRepository.last_history_date == date(2026, 7, 19)
+    assert FakeRepository.last_history_limit == 10
+
+
+def test_daily_shorts_package_returns_404_when_ranking_is_empty(monkeypatch):
+    client = build_client(monkeypatch)
+    authorize_admin(client)
+    FakeRepository.return_empty_shorts = True
+
+    response = client.get("/api/boards/daily/shorts-package", headers=ADMIN_HEADERS)
+
+    assert response.status_code == 404
 
 
 def test_realtime_accepts_board_filters(monkeypatch):

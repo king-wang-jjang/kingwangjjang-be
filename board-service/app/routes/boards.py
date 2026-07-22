@@ -1,13 +1,20 @@
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from app.auth.dependencies import require_principal
+from app.auth.dependencies import require_admin, require_principal
 from app.auth.principal import Principal
 from app.repositories.boards import BoardListFilters, BoardRepository
 from app.services.analysis_jobs import BoardAnalysisJobStore
+from app.services.shorts_package import (
+    HISTORICAL_RANKING_MODE,
+    LIVE_RANKING_MODE,
+    TOP10_LIMIT,
+    build_top10_shorts_package,
+)
 from app.services.vision_text import VisionTextError
 from app.utils.llm import LLMError
 
@@ -16,6 +23,7 @@ router = APIRouter(prefix="/api/boards", tags=["boards"])
 analysis_jobs = BoardAnalysisJobStore()
 ANALYSIS_ESTIMATED_SECONDS = 60
 VISION_TEXT_UPSTREAM_ERROR = "Vision text extraction failed"
+SEOUL_TIME_ZONE = ZoneInfo("Asia/Seoul")
 
 
 class VisionTextRequest(BaseModel):
@@ -141,6 +149,34 @@ def daily_history(
         _to_board_response(board)
         for board in BoardRepository().list_daily_history(snapshot_date, limit)
     ]
+
+
+@router.get("/daily/shorts-package")
+def daily_shorts_package(
+    response: Response,
+    snapshot_date: date | None = Query(default=None, alias="date"),
+    _principal: Principal = Depends(require_admin),
+):
+    repository = BoardRepository()
+    ranking_date = snapshot_date or datetime.now(SEOUL_TIME_ZONE).date()
+    boards = (
+        repository.list_daily(0, TOP10_LIMIT)
+        if snapshot_date is None
+        else repository.list_daily_history(snapshot_date, TOP10_LIMIT)
+    )
+    if not boards:
+        raise HTTPException(status_code=404, detail="Top 10 ranking not found")
+
+    response.headers["Cache-Control"] = "private, no-store"
+    return build_top10_shorts_package(
+        boards,
+        ranking_date=ranking_date,
+        ranking_mode=(
+            LIVE_RANKING_MODE
+            if snapshot_date is None
+            else HISTORICAL_RANKING_MODE
+        ),
+    )
 
 
 @router.get("/{board_id}/ai")

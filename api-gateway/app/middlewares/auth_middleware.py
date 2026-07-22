@@ -1,6 +1,7 @@
 from fastapi import HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.services.admin_access import resolve_user_role
 from app.services.token_service import TokenDecodeError, TokenService
 from app.utils.loghandler import setup_logger
 
@@ -27,6 +28,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             user_id, auth_provider = self._authenticate_token(token)
             request.state.user_id = user_id
             request.state.auth_provider = auth_provider
+            request.state.user_role = resolve_user_role(user_id)
             request.state.auth_status = "authenticated"
             if hasattr(request.state, "auth_error"):
                 delattr(request.state, "auth_error")

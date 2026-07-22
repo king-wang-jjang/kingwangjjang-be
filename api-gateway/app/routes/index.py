@@ -11,6 +11,13 @@ logger = setup_logger()
 router = APIRouter()
 config = Config()
 PROXY_TIMEOUT_SECONDS = 90.0
+TRUSTED_IDENTITY_HEADERS = (
+    "X-User-Id",
+    "X-Auth-Provider",
+    "X-User-Role",
+    "X-Auth-Status",
+    "X-Auth-Error",
+)
 
 
 SERVER_SERVICE_MAP = {
@@ -72,14 +79,14 @@ async def proxy(request: Request, path: str) -> Response:
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(PROXY_TIMEOUT_SECONDS)) as client:
             headers = dict(request.headers)
-            headers.pop("X-User-Id", None)
-            headers.pop("X-Auth-Provider", None)
-            headers.pop("X-Auth-Status", None)
-            headers.pop("X-Auth-Error", None)
+            for header_name in TRUSTED_IDENTITY_HEADERS:
+                headers.pop(header_name, None)
+                headers.pop(header_name.lower(), None)
 
             if hasattr(request.state, "user_id") and hasattr(request.state, "auth_provider"):
                 headers["X-User-Id"] = str(request.state.user_id)
                 headers["X-Auth-Provider"] = str(request.state.auth_provider)
+                headers["X-User-Role"] = str(getattr(request.state, "user_role", "user"))
 
             headers["X-Auth-Status"] = str(getattr(request.state, "auth_status", "unauthenticated"))
             auth_error = getattr(request.state, "auth_error", None)
