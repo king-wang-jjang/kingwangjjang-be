@@ -34,6 +34,31 @@ class UserRepository:
             auth_provider=auth_provider,
         )
 
+    def get_user(self, user_id: str, auth_provider: str) -> dict | None:
+        with get_session_factory()() as session:
+            user = session.scalar(
+                select(User).where(
+                    User.user_id == str(user_id),
+                    User.auth_provider == auth_provider,
+                )
+            )
+            return self._to_dict(user) if user is not None else None
+
+    def update_refresh_token(self, user_id: str, auth_provider: str, refresh_token: str) -> bool:
+        with get_session_factory()() as session:
+            user = session.scalar(
+                select(User).where(
+                    User.user_id == str(user_id),
+                    User.auth_provider == auth_provider,
+                )
+            )
+            if user is None:
+                return False
+
+            user.refresh_token = refresh_token
+            session.commit()
+            return True
+
     def get_or_create_user(
         self,
         user_id: str,

@@ -18,8 +18,9 @@ from app.routes import auth
 
 
 class FakeRequest:
-    def __init__(self, url: str):
+    def __init__(self, url: str, cookies: dict | None = None):
         self.url = URL(url)
+        self.cookies = cookies or {}
 
 
 class AuthRouteTests(unittest.TestCase):
@@ -54,6 +55,31 @@ class AuthRouteTests(unittest.TestCase):
             )
 
         self.assertEqual(redirect_uri, "https://api.example.com/callback")
+
+    def test_refresh_rotates_both_persistent_session_cookies(self):
+        with patch.object(auth.UserService, "rotate_session", return_value=("access", "refresh-next")):
+            response = auth.refresh_session(
+                FakeRequest("https://api.example.com/api/auth/refresh", {"refresh_token": "refresh-old"})
+            )
+
+        self.assertEqual(response.status_code, 204)
+        cookies = response.headers.getlist("set-cookie")
+        self.assertTrue(any("access_token=access" in cookie and "Max-Age=3600" in cookie for cookie in cookies))
+        self.assertTrue(
+            any("refresh_token=refresh-next" in cookie and "Max-Age=34560000" in cookie for cookie in cookies)
+        )
+        self.assertTrue(all("HttpOnly" in cookie and "SameSite=lax" in cookie for cookie in cookies))
+
+    def test_refresh_clears_invalid_session_cookies(self):
+        with patch.object(auth.UserService, "rotate_session", return_value=None):
+            response = auth.refresh_session(
+                FakeRequest("https://api.example.com/api/auth/refresh", {"refresh_token": "invalid"})
+            )
+
+        self.assertEqual(response.status_code, 401)
+        cookies = response.headers.getlist("set-cookie")
+        self.assertTrue(any("access_token=" in cookie and "Max-Age=0" in cookie for cookie in cookies))
+        self.assertTrue(any("refresh_token=" in cookie and "Max-Age=0" in cookie for cookie in cookies))
 
 
 if __name__ == "__main__":

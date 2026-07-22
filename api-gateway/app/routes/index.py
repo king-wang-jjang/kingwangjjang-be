@@ -67,6 +67,7 @@ def _response_headers(response: httpx.Response) -> dict[str, str]:
     headers.pop("transfer-encoding", None)
     headers.pop("content-encoding", None)
     headers.pop("content-length", None)
+    headers.pop("set-cookie", None)
     return headers
 
 
@@ -101,12 +102,15 @@ async def proxy(request: Request, path: str) -> Response:
                 data=await request.body(),
             )
 
-            return Response(
+            proxied_response = Response(
                 content=response.content,
                 status_code=response.status_code,
                 headers=_response_headers(response),
                 media_type=response.headers.get("Content-Type"),
             )
+            for cookie in response.headers.get_list("set-cookie"):
+                proxied_response.headers.append("set-cookie", cookie)
+            return proxied_response
     except Exception as exc:
         logger.error("Error forwarding request to %s: %s", url, exc)
         raise HTTPException(status_code=500, detail="Error forwarding request to proxy server") from exc

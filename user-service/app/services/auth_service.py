@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import json
+import secrets
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
@@ -94,8 +95,29 @@ class UserService:
             refresh_token=refresh_token,
         )
 
+    @staticmethod
+    def rotate_session(refresh_token: str) -> tuple[str, str] | None:
+        payload = JWTService.decode_refresh_token(refresh_token)
+        if payload is None:
+            return None
+
+        user_id = payload["user_id"]
+        auth_provider = payload["auth_provider"]
+        repository = UserRepository()
+        user = repository.get_user(user_id, auth_provider)
+        stored_refresh_token = user.get("refresh_token") if user else None
+        if not stored_refresh_token or not secrets.compare_digest(stored_refresh_token, refresh_token):
+            return None
+
+        next_refresh_token = JWTService.create_refresh_token(user_id, auth_provider)
+        repository.update_refresh_token(user_id, auth_provider, next_refresh_token)
+        return JWTService.create_access_token(user_id, auth_provider), next_refresh_token
+
 
 class JWTService:
+    ACCESS_TOKEN_TTL = datetime.timedelta(hours=1)
+    REFRESH_TOKEN_TTL = datetime.timedelta(days=400)
+
     @staticmethod
     def _config_value(name: str) -> str:
         value = Config().get_env(name)
@@ -109,8 +131,9 @@ class JWTService:
         payload = {
             "user_id": str(user_id),
             "auth_provider": auth_provider,
+            "type": "access",
             "iat": now,
-            "exp": now + datetime.timedelta(hours=1),
+            "exp": now + cls.ACCESS_TOKEN_TTL,
             "iss": "user-service",
         }
         return jwt.encode(payload, cls._config_value("JWT_SECRET_KEY"), algorithm="HS256")
@@ -121,8 +144,10 @@ class JWTService:
         payload = {
             "user_id": str(user_id),
             "auth_provider": auth_provider,
+            "type": "refresh",
+            "jti": secrets.token_urlsafe(32),
             "iat": now,
-            "exp": now + datetime.timedelta(days=30),
+            "exp": now + cls.REFRESH_TOKEN_TTL,
             "iss": "user-service",
         }
         return jwt.encode(payload, cls._config_value("JWT_REFRESH_SECRET_KEY"), algorithm="HS256")
@@ -134,6 +159,24 @@ class JWTService:
             return {
                 "user_id": str(decoded_payload.get("user_id")),
                 "auth_provider": decoded_payload.get("auth_provider"),
+            }
+        except (ExpiredSignatureError, InvalidTokenError):
+            return None
+
+    @classmethod
+    def decode_refresh_token(cls, refresh_token: str) -> dict | None:
+        try:
+            payload = jwt.decode(
+                refresh_token,
+                cls._config_value("JWT_REFRESH_SECRET_KEY"),
+                algorithms=["HS256"],
+                issuer="user-service",
+            )
+            if payload.get("type") != "refresh" or not payload.get("user_id") or not payload.get("auth_provider"):
+                return None
+            return {
+                "user_id": str(payload["user_id"]),
+                "auth_provider": str(payload["auth_provider"]),
             }
         except (ExpiredSignatureError, InvalidTokenError):
             return None

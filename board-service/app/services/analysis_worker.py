@@ -13,6 +13,15 @@ def analysis_worker_enabled() -> bool:
     return os.getenv("DISABLE_ANALYSIS_WORKER", "FALSE").upper() != "TRUE"
 
 
+def analysis_worker_concurrency() -> int:
+    raw_value = os.getenv("ANALYSIS_WORKER_CONCURRENCY", "3")
+    try:
+        return min(max(int(raw_value), 1), 16)
+    except ValueError:
+        logger.warning("Invalid ANALYSIS_WORKER_CONCURRENCY; using default 3")
+        return 3
+
+
 async def run_analysis_worker(stop_event: asyncio.Event) -> None:
     repository = BoardRepository()
     idle_interval_seconds = _float_env("ANALYSIS_WORKER_IDLE_INTERVAL_SECONDS", 3.0)

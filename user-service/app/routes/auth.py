@@ -2,7 +2,7 @@ import os
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, HTTPException, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 
 from app.config import Config
 from app.services.auth_service import JWTService, KakaoAuthService, UserService
@@ -11,6 +11,8 @@ from app.services.auth_service import JWTService, KakaoAuthService, UserService
 router = APIRouter()
 config = Config()
 LOCAL_HOSTNAMES = {"localhost", "127.0.0.1", "::1", "0.0.0.0"}
+ACCESS_TOKEN_MAX_AGE_SECONDS = int(JWTService.ACCESS_TOKEN_TTL.total_seconds())
+REFRESH_TOKEN_MAX_AGE_SECONDS = int(JWTService.REFRESH_TOKEN_TTL.total_seconds())
 
 
 def _cookie_secure() -> bool:
@@ -46,6 +48,27 @@ def _callback_redirect_uri(request: Request) -> str:
     return config.get_env("REDIRECT_URI")
 
 
+def _set_session_cookies(response: Response, access_token: str, refresh_token: str) -> None:
+    cookie_options = {
+        "httponly": True,
+        "secure": _cookie_secure(),
+        "samesite": "lax",
+        "path": "/",
+    }
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        max_age=ACCESS_TOKEN_MAX_AGE_SECONDS,
+        **cookie_options,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        max_age=REFRESH_TOKEN_MAX_AGE_SECONDS,
+        **cookie_options,
+    )
+
+
 @router.get("/login")
 def login(request: Request):
     kakao_oauth_url = "https://kauth.kakao.com/oauth/authorize?" + urlencode(
@@ -76,16 +99,25 @@ async def callback(request: Request, code: str):
         jwt_token = JWTService.create_access_token(user_info.user_id, "kakao")
 
         response = RedirectResponse(url=config.get_env("WEBSITE_URL"), status_code=302)
-        response.set_cookie(
-            key="access_token",
-            value=jwt_token,
-            httponly=True,
-            secure=_cookie_secure(),
-            samesite="lax",
-            max_age=3600,
-        )
+        _set_session_cookies(response, jwt_token, refresh_token)
         return response
     except HTTPException:
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/api/auth/refresh")
+def refresh_session(request: Request) -> Response:
+    refresh_token = request.cookies.get("refresh_token")
+    tokens = UserService.rotate_session(refresh_token) if refresh_token else None
+    if tokens is None:
+        response = JSONResponse(status_code=401, content={"detail": "invalid_refresh_token"})
+        response.delete_cookie("access_token", path="/")
+        response.delete_cookie("refresh_token", path="/")
+        return response
+
+    access_token, next_refresh_token = tokens
+    response = Response(status_code=204)
+    _set_session_cookies(response, access_token, next_refresh_token)
+    return response

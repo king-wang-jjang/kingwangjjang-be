@@ -77,6 +77,16 @@ def test_user_service_owns_login_callback_and_token_persistence():
     assert "auth_router" in main
     assert '@router.get("/login")' in read(auth_route)
     assert '@router.get("/callback")' in read(auth_route)
-    assert "secure=_cookie_secure()" in read(auth_route)
+    assert '"secure": _cookie_secure()' in read(auth_route)
     assert "save_user_to_db" in read(auth_service)
     assert "create_access_token" in read(auth_service)
+    assert '@router.post("/api/auth/refresh")' in read(auth_route)
+    assert "REFRESH_TOKEN_TTL = datetime.timedelta(days=400)" in read(auth_service)
+
+
+def test_gateway_preserves_multiple_session_cookie_headers():
+    routes = read(API_GATEWAY_APP / "routes" / "index.py")
+
+    assert 'headers.pop("set-cookie", None)' in routes
+    assert 'response.headers.get_list("set-cookie")' in routes
+    assert 'proxied_response.headers.append("set-cookie", cookie)' in routes

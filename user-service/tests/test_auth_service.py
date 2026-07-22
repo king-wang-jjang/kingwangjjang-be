@@ -7,6 +7,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import jwt
+
 
 SERVICE_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SERVICE_ROOT))
@@ -37,6 +39,46 @@ class AuthServiceTests(unittest.TestCase):
 
         self.assertEqual(decoded["user_id"], "123")
         self.assertEqual(decoded["auth_provider"], "kakao")
+
+    def test_refresh_token_uses_browser_maximum_400_day_lifetime(self):
+        token = JWTService.create_refresh_token("123", "kakao")
+        payload = jwt.decode(token, os.environ["JWT_REFRESH_SECRET_KEY"], algorithms=["HS256"])
+
+        self.assertEqual(payload["type"], "refresh")
+        self.assertEqual(payload["exp"] - payload["iat"], 400 * 24 * 60 * 60)
+        self.assertEqual(JWTService.decode_refresh_token(token)["user_id"], "123")
+
+    def test_rotate_session_rejects_a_token_that_is_not_current(self):
+        token = JWTService.create_refresh_token("123", "kakao")
+
+        class FakeRepository:
+            def get_user(self, user_id, auth_provider):
+                return {"refresh_token": "another-token"}
+
+        with patch("app.services.auth_service.UserRepository", return_value=FakeRepository()):
+            self.assertIsNone(UserService.rotate_session(token))
+
+    def test_rotate_session_replaces_the_stored_refresh_token(self):
+        token = JWTService.create_refresh_token("123", "kakao")
+
+        class FakeRepository:
+            def __init__(self):
+                self.updated = None
+
+            def get_user(self, user_id, auth_provider):
+                return {"refresh_token": token}
+
+            def update_refresh_token(self, user_id, auth_provider, refresh_token):
+                self.updated = (user_id, auth_provider, refresh_token)
+                return True
+
+        repository = FakeRepository()
+        with patch("app.services.auth_service.UserRepository", return_value=repository):
+            access_token, next_refresh_token = UserService.rotate_session(token)
+
+        self.assertNotEqual(next_refresh_token, token)
+        self.assertEqual(repository.updated, ("123", "kakao", next_refresh_token))
+        self.assertEqual(JWTService.decode_access_token(access_token)["user_id"], "123")
 
     def test_save_user_to_db_uses_user_repository(self):
         class FakeRepository:
