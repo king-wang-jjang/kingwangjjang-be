@@ -70,16 +70,15 @@ class AuthRouteTests(unittest.TestCase):
         )
         self.assertTrue(all("HttpOnly" in cookie and "SameSite=lax" in cookie for cookie in cookies))
 
-    def test_refresh_clears_invalid_session_cookies(self):
+    def test_refresh_rejects_invalid_session_without_mutating_cookies(self):
         with patch.object(auth.UserService, "rotate_session", return_value=None):
             response = auth.refresh_session(
                 FakeRequest("https://api.example.com/api/auth/refresh", {"refresh_token": "invalid"})
             )
 
         self.assertEqual(response.status_code, 401)
-        cookies = response.headers.getlist("set-cookie")
-        self.assertTrue(any("access_token=" in cookie and "Max-Age=0" in cookie for cookie in cookies))
-        self.assertTrue(any("refresh_token=" in cookie and "Max-Age=0" in cookie for cookie in cookies))
+        self.assertEqual(response.body, b'{"detail":"invalid_refresh_token"}')
+        self.assertEqual(response.headers.getlist("set-cookie"), [])
 
 
 if __name__ == "__main__":

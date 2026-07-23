@@ -112,10 +112,7 @@ def refresh_session(request: Request) -> Response:
     refresh_token = request.cookies.get("refresh_token")
     tokens = UserService.rotate_session(refresh_token) if refresh_token else None
     if tokens is None:
-        response = JSONResponse(status_code=401, content={"detail": "invalid_refresh_token"})
-        response.delete_cookie("access_token", path="/")
-        response.delete_cookie("refresh_token", path="/")
-        return response
+        return JSONResponse(status_code=401, content={"detail": "invalid_refresh_token"})
 
     access_token, next_refresh_token = tokens
     response = Response(status_code=204)

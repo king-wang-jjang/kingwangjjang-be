@@ -29,8 +29,10 @@ and forwards trusted auth context to downstream services.
 | `/boardservice/*` | `board-service` |
 | `/userservice/*` | `user-service` |
 | `/commentservice/*` | `comment-service` |
+| `/gptservice/*` | `gpt-service` |
 | `/login` | `user-service /login` |
 | `/callback` | `user-service /callback` |
+| `/static/media/*` | crawler media root (when it exists at startup) |
 
 ## Data Boundary
 
@@ -39,8 +41,9 @@ If gateway logic needs user state, add or consume a user-service API instead.
 
 ## Security Rules
 
-- Always strip incoming `X-User-Id`, `X-Auth-Provider`, `X-Auth-Status`, and `X-Auth-Error`.
+- Always strip incoming `X-User-Id`, `X-Auth-Provider`, `X-User-Role`, `X-Auth-Status`, and `X-Auth-Error`.
 - Only gateway middleware may set trusted identity headers.
+- Resolve the administrator role from `ADMIN_USER_IDS`; never trust a client-supplied role.
 - Do not refresh tokens in gateway. Refresh-token ownership belongs to `user-service`.
 - Preserve downstream `Set-Cookie` headers when proxying auth redirects.
 

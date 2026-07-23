@@ -1,153 +1,172 @@
-# 실행 가이드 (RUNBOOK)
+# 백엔드 실행·운영 가이드
 
-이 문서는 프로젝트의 로컬 실행, 디버깅, 환경 변수 설정에 대한 절차를 설명합니다.
+이 문서는 2026-07-23 현재 로컬 소스 실행, Docker Compose 실행, 주요 환경변수와 점검 절차를 설명합니다.
 
-## 로컬 실행 절차
+## 사전 요구사항
 
-이 프로젝트는 Docker Compose를 사용하여 관리하는 것을 권장합니다.
+- 로컬 소스 실행: Python, Poetry, PostgreSQL
+- 컨테이너 실행: Docker와 Docker Compose v2
+- 루트 `.env`: `.env.example`을 복사해 생성
 
-### 사전 요구사항
+서비스별 Poetry 환경은 서로 독립적입니다. 로컬 소스 실행 전 각 활성 서비스 디렉터리에서 의존성을 설치합니다.
 
-1.  **Docker & Docker Compose**: [Docker Desktop](https://www.docker.com/products/docker-desktop/) 설치가 필요합니다.
-2.  **PostgreSQL**: `docker-compose.yml`에 정의된 `kingwangjjang-postgres`를 사용하거나, 외부 PostgreSQL을 실행하고 `DATABASE_URL`을 설정합니다.
-
-### 실행 단계
-
-1.  **리포지토리 클론**:
-    ```bash
-    git clone <repository-url>
-    cd kingwangjjang-be
-    ```
-
-2.  **환경 변수 설정**:
-    프로젝트 루트 경로에 `.env` 파일을 생성합니다. 아래는 필수적으로 설정해야 할 환경 변수 예시입니다.
-    ```env
-    # Docker 이미지 가져올 때 사용할 DockerHub 사용자 이름
-    DOCKERHUB_USERNAME=your-dockerhub-username
-
-    # PostgreSQL 연결 정보
-    POSTGRES_PORT=15432
-    POSTGRES_DB=kingwangjjang
-    POSTGRES_USER=kingwangjjang
-    POSTGRES_PASSWORD=change-me
-    DATABASE_URL=postgresql+psycopg://kingwangjjang:change-me@localhost:15432/kingwangjjang
-    DOCKER_DATABASE_URL=postgresql+psycopg://kingwangjjang:change-me@kingwangjjang-postgres:5432/kingwangjjang
-    DEV_DATABASE_TARGET=local
-
-    # JWT 인증을 위한 시크릿 키
-    JWT_SECRET_KEY=your-access-secret
-    JWT_REFRESH_SECRET_KEY=your-refresh-secret
-
-    # 관리자 경로를 사용할 OAuth userId (여러 명이면 쉼표로 구분)
-    ADMIN_USER_IDS=your-kakao-user-id
-
-    # AI 서비스 간/관리 API 인증 토큰 (운영에서는 필수)
-    AI_SERVICE_TOKEN=your-internal-ai-token
-    AI_NODE_ADMIN_TOKEN=your-ai-node-admin-token
-    ```
-
-### Shorts Studio 관리자 설정
-
-로그인 후 `/userservice/api/users/me` 응답의 `userId`를 `ADMIN_USER_IDS`에
-등록하고 API Gateway와 board-service를 다시 시작합니다. 값이 비어 있으면 관리자 접근은
-모두 거부됩니다. 관리자 역할은 JWT의 검증된 사용자 ID를 기준으로 Gateway가
-매 요청마다 계산하므로 브라우저에서 역할 값을 바꿔도 Shorts API는 `403`을
-반환합니다.
-
-프런트엔드의 `/admin/shorts`에서 오늘 또는 저장된 과거 Top10을 9:16 장면,
-내레이션, 자막, Nano Banana 프롬프트와 원문 출처가 포함된 JSON으로 내려받을
-수 있습니다.
-
-### 로그인 세션 유지
-
-카카오 로그인 후 서비스는 1시간짜리 access 쿠키와 브라우저 장기 쿠키 상한에 맞춘
-400일짜리 HttpOnly refresh 쿠키를 발급합니다. 사용자가 다시 방문하거나 access
-토큰이 만료된 상태에서 API를 호출하면 refresh 토큰을 검증하고 두 쿠키를 회전해
-로그인 만료 시점을 다시 400일 뒤로 연장합니다. 400일 동안 한 번도 방문하지 않거나
-서버에 저장된 refresh 토큰과 쿠키가 일치하지 않으면 카카오 로그인이 다시 필요합니다.
-
-### 게시글 자동 요약
-
-새 게시글은 저장 즉시 `pending` 분석 큐에 들어가며 board-service가 기본 3개 worker로
-요약을 병렬 생성합니다. 처리량을 조정하려면 `ANALYSIS_WORKER_CONCURRENCY`를 1~16
-사이로 설정합니다. 프런트엔드는 화면에 `pending` 또는 `processing` 게시글이 있는
-동안 3초마다 목록을 갱신하므로 게시글을 누르지 않아도 완성된 요약이 반영됩니다.
-
-### AI 서버 노드 관리
-
-최초 실행 시 `OLLAMA_BASE_URLS`(또는 `OLLAMA_BASE_URL`)와 `VLLM_BASE_URL`을
-사용해 노드 테이블이 비어 있을 때만 기본 노드를 등록합니다. 이후 노드와
-모델 변경은 PostgreSQL에 유지되며 관리 API가 기준 정보가 됩니다.
-
-```bash
-# 노드 목록 (로컬 소스 실행: 33330, Docker Compose: 8000)
-curl -H "X-AI-Admin-Token: $AI_NODE_ADMIN_TOKEN" \
-  http://localhost:33330/gptservice/api/ai/nodes
-
-# 모든 노드의 즉시 상태 확인
-curl -X POST -H "X-AI-Admin-Token: $AI_NODE_ADMIN_TOKEN" \
-  http://localhost:33330/gptservice/api/ai/nodes/health-check
+```powershell
+poetry install
 ```
 
-Docker Compose로 실행했다면 위 URL의 포트를 `8000`으로 바꿉니다.
+## 필수 환경변수
 
-정확한 등록 요청 형식은 실행 중인 `gpt-service`의 `/docs`에서 확인할 수
-있습니다. API 키 원문은 요청이나 DB에 저장하지 않고 노드의 `api_key_env`에
-환경변수 이름만 지정합니다.
+`.env.example`에 전체 목록과 로컬 기본값이 있습니다. 운영 환경에서는 적어도 다음 값을 명시적으로 설정하세요.
 
-3.  **서비스 실행**:
-    루트 디렉터리의 `run` 스크립트를 사용합니다.
-    ```bash
-    # 모든 서비스 시작 (백그라운드)
-    ./run.sh up
+| 영역 | 변수 | 설명 |
+| --- | --- | --- |
+| 이미지 | `DOCKERHUB_USERNAME` | Compose가 가져올 서비스 이미지 소유자 |
+| PostgreSQL | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Compose PostgreSQL 초기화 값 |
+| DB 연결 | `DATABASE_URL`, `DOCKER_DATABASE_URL` | 각각 호스트/컨테이너 내부 연결 문자열 |
+| JWT | `JWT_SECRET_KEY`, `JWT_REFRESH_SECRET_KEY` | access/refresh 서명 키 |
+| OAuth | `KAKAO_CLIENT_ID`, `KAKAO_CLIENT_SECRET`, `REDIRECT_URI`, `WEBSITE_URL` | Kakao 로그인과 완료 redirect |
+| 쿠키 | `AUTH_COOKIE_SECURE` | HTTPS 운영은 `TRUE`, HTTP 로컬은 `FALSE` |
+| 관리자 | `ADMIN_USER_IDS` | 쉼표로 구분한 OAuth user ID, 비어 있으면 전부 거부 |
+| 내부 AI | `AI_SERVICE_TOKEN`, `AI_NODE_ADMIN_TOKEN` | 운영에서 추론/관리 API를 보호하는 별도 토큰 |
+| 미디어 | `CRAWLER_MEDIA_ROOT`, `CRAWLER_MEDIA_HOST_ROOT` | 소스 실행 경로/Compose 호스트 mount 경로 |
 
-    # 서비스 로그 확인
-    ./run.sh logs
+`SERVER_RUN_MODE=FALSE`는 로컬 소스 모드이며 `dev.ps1`/`dev.sh`가 프로세스에 자동 설정합니다. Compose는 `SERVER_RUN_MODE=TRUE`여야 내부 컨테이너 이름으로 라우팅합니다. `.env.example`은 Compose 기준으로 `TRUE`이며, 로컬 HTTP를 위해 `AUTH_COOKIE_SECURE=FALSE`를 사용합니다. HTTPS 운영에서는 이를 반드시 `TRUE`로 바꾸세요. 비밀값은 저장소에 커밋하지 않습니다.
 
-    # 서비스 중지
-    ./run.sh down
-    ```
+## 로컬 소스 실행
 
-4.  **로컬 개발 DB 초기화/seed**:
-    상위 통합 루트의 개발 스크립트를 사용하면 로컬 PostgreSQL을 준비한 뒤 정적 개발 데이터와 크롤링된 게시글 데이터를 같은 DB에 넣습니다.
-    ```bash
-    cd ..
-    ./dev.sh seed
-    ```
+루트 개발 스크립트는 `gpt-service`, Gateway, board/user/comment 서비스를 백그라운드 프로세스로 실행합니다. 포트는 각각 `33336`, `33330`, `33333`, `33334`, `33335`입니다.
 
-## 자주 발생하는 에러 및 해결법
+```powershell
+Copy-Item .env.example .env
+.\dev.ps1 seed
+.\dev.ps1 up
+.\dev.ps1 ps
+.\dev.ps1 logs
+.\dev.ps1 down
+```
 
-1.  **Error: `service ... is unhealthy` 또는 `Connection refused`**
-    *   **원인**: 서비스가 의존하는 다른 서비스(예: 데이터베이스, 다른 마이크로서비스)에 연결하지 못했습니다.
-    *   **해결**:
-        *   `.env` 파일의 `DATABASE_URL` 또는 `DOCKER_DATABASE_URL` 연결 정보가 올바른지 확인하세요.
-        *   `docker-compose.yml`의 `depends_on` 설정을 확인하고, 의존하는 서비스가 먼저 정상적으로 시작되었는지 로그를 통해 확인하세요.
+Linux/macOS에서는 `./dev.sh <command>`를 사용합니다. `seed`는 user/board/comment 테이블을 만들고 결정적인 개발용 데이터를 넣습니다. 기존 데이터를 모두 초기화하는 명령은 아니므로 각 seed 모듈의 동작을 변경하기 전에 확인하세요.
 
-2.  **Error: `Cannot connect to the Docker daemon`**
-    *   **원인**: Docker 데몬이 실행 중이 아니거나 현재 사용자가 Docker를 실행할 권한이 없습니다.
-    *   **해결**: Docker Desktop을 실행하거나, Linux의 경우 Docker 서비스를 시작하고 사용자 권한을 확인하세요.
+DB 선택은 `DEV_DATABASE_TARGET`으로 제어합니다.
 
-3.  **Error: `manifest for ... not found`**
-    *   **원인**: `docker-compose.yml`에 명시된 Docker 이미지를 Docker Hub에서 찾을 수 없습니다.
-    *   **해결**: `.env`의 `DOCKERHUB_USERNAME`이 올바른지, 해당 이미지와 태그가 실제로 존재하는지 확인하세요. 이미지를 직접 빌드해야 할 수도 있습니다.
+- `local`: `DATABASE_URL`의 로컬 DB 사용
+- `server`: `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`로 지정한 서버 DB 필수 사용
+- `auto`: 서버 DB에 접속할 수 있으면 사용하고 아니면 로컬 DB로 fallback
 
-4.  **Error: `Invalid Token` 또는 `401 Unauthorized`**
-    *   **원인**: API 요청 시 사용된 JWT 토큰이 유효하지 않습니다.
-    *   **해결**: `user-service`를 통해 정상적으로 토큰을 발급받았는지, 만료되지 않았는지 확인하세요.
+## Docker Compose 실행
 
-5.  **Error: `ModuleNotFoundError` (로컬 직접 실행 시)**
-    *   **원인**: Python 의존성이 설치되지 않았습니다.
-    *   **해결**: 해당 서비스 디렉터리로 이동하여 `poetry install`을 실행하세요.
+Compose는 PostgreSQL과 Gateway, board/user/comment/GPT 서비스를 실행합니다. 알림 서비스는 포함하지 않습니다. 루트 스크립트는 `kingwangjjang-network` 외부 네트워크를 자동 생성합니다.
 
-## 로그 및 트레이스 확인
+```powershell
+.\run.ps1 pull
+.\run.ps1 up
+.\run.ps1 ps
+.\run.ps1 logs
+.\run.ps1 down
+```
 
-*   **로그 위치**: 모든 서비스의 로그는 컨테이너 내부의 `/var/log`에 마운트된 프로젝트 루트의 `logs` 디렉터리에 저장됩니다.
-*   **실시간 로그 확인**: `run.sh` 스크립트를 사용하여 모든 서비스의 로그를 한 번에 볼 수 있습니다.
-    ```bash
-    ./run.sh logs
-    ```
-*   **개별 서비스 로그 확인**:
-    ```bash
-    docker-compose logs -f <service-name>
-    # 예시: docker-compose logs -f kingwangjjang-user-service
-    ```
+Linux/macOS에서는 `./run.sh <command>`를 사용합니다. Gateway는 `http://localhost:8000`, PostgreSQL은 `${POSTGRES_PORT:-5432}`로 노출됩니다. 나머지 서비스는 Docker 네트워크 안에서만 접근합니다.
+
+`run.ps1 clean`/`run.sh clean`은 `docker compose down -v --remove-orphans`를 실행하여 PostgreSQL named volume도 삭제합니다. 복구할 백업이 있거나 데이터를 버려도 되는 경우에만 사용하세요.
+
+## 기동 점검
+
+```powershell
+# 로컬 소스 실행
+Invoke-RestMethod http://localhost:33336/health
+Invoke-RestMethod http://localhost:33330/boardservice/api/boards/realtime?limit=1
+
+# Docker Compose
+Invoke-RestMethod http://localhost:8000/gptservice/health
+Invoke-RestMethod http://localhost:8000/boardservice/api/boards/realtime?limit=1
+```
+
+GPT health 응답은 `status`와 등록된 `node_count`를 반환합니다. 서비스별 OpenAPI는 로컬 포트의 `/docs`에서 확인할 수 있습니다. Docker Compose는 내부 서비스 포트를 호스트에 공개하지 않으므로 외부에서는 Gateway 경로를 사용합니다.
+
+## 인증과 관리자 설정
+
+Kakao 개발자 콘솔의 redirect URI는 Gateway의 `/callback`과 일치해야 합니다. 로컬 소스 실행은 보통 `http://localhost:33330/callback`, 로컬 Compose는 `http://localhost:8000/callback`, 운영은 공개 HTTPS origin을 사용합니다.
+
+로그인 후 `GET /userservice/api/users/me`의 `userId`를 `ADMIN_USER_IDS`에 등록하고 Gateway와 `board-service`를 재시작합니다. 관리자 전용 `GET /boardservice/api/boards/daily/shorts-package`는 오늘의 live Top 10을, `?date=YYYY-MM-DD`는 저장된 이력을 JSON 제작 패키지로 반환합니다.
+
+세션 쿠키 정책은 다음과 같습니다.
+
+- HttpOnly, `SameSite=Lax`, path `/`
+- access token 1시간, refresh token 400일
+- `AUTH_COOKIE_SECURE=TRUE`면 HTTPS에서만 전송
+- `POST /userservice/api/auth/refresh`가 두 토큰을 회전
+
+refresh token이 DB의 값과 다르거나 만료되면 `401 invalid_refresh_token`을 반환하며 쿠키는 변경하지 않습니다. 동시 요청의 실패 응답이 성공 응답의 새 쿠키를 지우지 않기 위한 정책입니다. 유효한 세션이 없다면 다시 로그인해야 합니다.
+
+## 게시글 자동 분석
+
+`board-service`는 기본 1개 worker로 `pending` 게시글을 처리합니다. 기본 AI 노드의 동시 추론 한도가 1이므로, 처리량을 높일 때는 AI 노드의 `max_concurrency`도 함께 확인하세요.
+
+| 변수 | 기본값 | 의미 |
+| --- | ---: | --- |
+| `ANALYSIS_WORKER_CONCURRENCY` | 1 | worker 수, 1~16으로 제한 |
+| `ANALYSIS_WORKER_IDLE_INTERVAL_SECONDS` | 3 | 처리할 항목이 없을 때 대기 시간 |
+| `ANALYSIS_WORKER_ACTIVE_INTERVAL_SECONDS` | 0.2 | 항목 처리 후 다음 polling까지 대기 |
+| `DISABLE_ANALYSIS_WORKER` | `FALSE` | `TRUE`면 worker 비활성화 |
+
+Board가 GPT를 호출하려면 두 서비스의 `AI_SERVICE_TOKEN` 값이 같아야 합니다. Compose에서는 `AI_SERVICE_URL`이 내부 GPT 서비스 주소로 자동 덮어써집니다.
+
+## AI 노드 관리
+
+관리 API는 Gateway 경로로 호출할 수 있습니다.
+
+```powershell
+$headers = @{ 'X-AI-Admin-Token' = $env:AI_NODE_ADMIN_TOKEN }
+Invoke-RestMethod -Headers $headers http://localhost:33330/gptservice/api/ai/nodes
+Invoke-RestMethod -Method Post -Headers $headers http://localhost:33330/gptservice/api/ai/nodes/health-check
+```
+
+Compose에서는 포트를 `8000`으로 바꿉니다. 추론 호출은 별도의 `X-AI-Service-Token`을 사용합니다. 노드의 `api_key_env`에는 key 자체가 아니라 허용된 환경변수 이름만 저장합니다.
+
+AI 노드 테이블이 비어 있을 때만 `OLLAMA_BASE_URLS`/`OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `VLLM_BASE_URL`, `VLLM_MODEL` 등으로 bootstrap합니다. 이후에는 관리 API로 변경하세요.
+
+## 테스트
+
+```powershell
+# 서비스 경계와 통합 wiring
+python -m pytest tests -q
+
+# 서비스별
+.\board-service\.venv\Scripts\python.exe -m pytest board-service\tests -q
+.\comment-service\.venv\Scripts\python.exe -m pytest comment-service\tests -q
+.\gpt-service\.venv\Scripts\python.exe -m pytest gpt-service\tests -q
+.\user-service\.venv\Scripts\python.exe -m unittest discover -s user-service\tests -q
+```
+
+루트 테스트 중 `test_root_dev_all_script.py`는 백엔드 저장소의 상위 워크스페이스에 통합 실행기 `dev-all.ps1`이 있는 구성을 검사합니다. 백엔드 저장소만 체크아웃했다면 해당 파일은 별도 워크스페이스 구성 없이는 실패합니다.
+
+## 문제 해결
+
+### `service ... is unhealthy` / `Connection refused`
+
+- `DATABASE_URL`과 `DOCKER_DATABASE_URL`의 host가 실행 방식에 맞는지 확인합니다.
+- `.\run.ps1 logs` 또는 `.\dev.ps1 logs`에서 먼저 실패한 서비스를 찾습니다.
+- GPT는 PostgreSQL 준비를 기다려 재시도하지만 최종 실패하면 board 서비스도 healthy 의존성을 만족하지 못합니다.
+
+### Gateway `404 Invalid path prefix`
+
+공개 접두사가 `/boardservice`, `/userservice`, `/commentservice`, `/gptservice` 중 하나인지 확인합니다. `/login`과 `/callback`만 접두사 없이 허용됩니다.
+
+### `401 authentication_required` / `403 administrator_required`
+
+- 브라우저 요청에 쿠키가 포함되는지 확인합니다.
+- 서비스 포트가 아니라 Gateway로 호출했는지 확인합니다.
+- 관리자 API라면 로그인 사용자의 OAuth ID가 `ADMIN_USER_IDS`에 있는지 확인합니다.
+
+### GPT `503` 또는 분석이 계속 `pending`
+
+- `GET /gptservice/health`와 관리자 health check로 노드 상태를 확인합니다.
+- `AI_SERVICE_TOKEN`이 board/GPT 양쪽에서 같은지 확인합니다.
+- 등록 노드의 capability에 `analysis`가 있고 enabled 상태인지 확인합니다.
+- `DISABLE_ANALYSIS_WORKER`와 worker 로그를 확인합니다.
+
+### 미디어가 `404`
+
+- 소스 실행은 `CRAWLER_MEDIA_ROOT`가 실제 디렉터리를 가리키는지 확인합니다.
+- Compose는 `CRAWLER_MEDIA_HOST_ROOT`가 호스트에서 존재하며 컨테이너 `/app/public`에 mount되는지 확인합니다.
+- Gateway는 미디어 루트가 기동 시 존재할 때만 `/static/media`를 mount하므로 설정 수정 후 재시작합니다.

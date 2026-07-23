@@ -1,51 +1,75 @@
-# Kingwangjjang Backend Project
+# Kingwangjjang Backend
 
-킹왕짱 프로젝트는 최신 웹 애플리케이션을 위한 마이크로서비스 기반 백엔드입니다. 사용자 관리, 게시판, 댓글, 알림 및 AI 기능을 제공합니다.
+킹왕짱의 API Gateway와 도메인별 FastAPI 서비스를 모아 둔 백엔드 저장소입니다. 현재 사용자 인증, 게시글·Top 10, 댓글, AI 분석 기능을 제공하며 알림 서비스는 아직 스캐폴드 단계입니다.
 
-## 서비스 목록
+## 서비스 구성
 
-| 서비스명                 | 역할                                     | 경로                        |
-| ------------------------ | ---------------------------------------- | --------------------------- |
-| **api-gateway**          | 모든 클라이언트 요청의 단일 진입점         | `/api-gateway`              |
-| **user-service**         | 사용자 계정, 프로필, 인증 관리           | `/user-service`             |
-| **board-service**        | 게시글 생성 및 관리                      | `/board-service`            |
-| **comment-service**      | 게시글 댓글 관리                         | `/comment-service`          |
-| **gpt-service**          | AI 기반 기능 제공                        | `/gpt-service`              |
-| **notification-service** | 사용자 알림 전송                         | `/notification-service`     |
+| 서비스 | 역할 | 로컬 소스 포트 | 공개 Gateway 경로 |
+| --- | --- | ---: | --- |
+| `api-gateway` | CORS, JWT 검증, 권한 계산, 요청 프록시, 크롤러 미디어 제공 | 33330 | `/` |
+| `user-service` | Kakao OAuth, 세션 갱신, 사용자 프로필 | 33334 | `/login`, `/callback`, `/userservice/*` |
+| `board-service` | 실시간·일간 게시글, Top 10 이력, AI 분석, 좋아요, Shorts 패키지 | 33333 | `/boardservice/*` |
+| `comment-service` | 댓글·답글 CRUD와 좋아요 | 33335 | `/commentservice/*` |
+| `gpt-service` | AI 노드 레지스트리, 분석·채팅·이미지 텍스트 추출 | 33336 | `/gptservice/*` |
+| `notification-service` | 향후 알림 기능을 위한 스캐폴드 | 8000 | 미연결 |
 
-## 실행 방법
+Docker Compose에서는 Gateway만 호스트의 `8000` 포트로 노출됩니다. 서비스 내부 포트는 위 표와 같으며 PostgreSQL 호스트 포트는 기본 `POSTGRES_PORT` 값입니다.
 
-### Docker Compose (권장)
+## 빠른 시작
 
-프로젝트를 실행하는 가장 표준적인 방법입니다. Docker가 설치되어 있어야 합니다.
+### 로컬 소스 실행
 
-1.  **환경 파일 생성**: 프로젝트 루트에 `.env.example` 파일이 있다면 `.env` 파일로 복사합니다. 없다면 필요한 환경 변수를 포함한 `.env` 파일을 직접 생성해야 합니다. (필수 변수는 `docs/RUNBOOK.md` 참고)
+Python과 Poetry, 접근 가능한 PostgreSQL이 필요합니다.
 
-2.  **서비스 실행**: 아래 스크립트를 실행합니다.
-    ```bash
-    # Linux/macOS
-    ./run.sh up
-
-    # Windows (PowerShell)
-    ./run.ps1 up
-    ```
-
-### 로컬 직접 실행
-
-각 서비스는 Poetry를 사용하는 Python 프로젝트입니다. 개별 서비스의 `README.md`를 참고하여 직접 실행할 수 있습니다. (의존성 문제로 권장하지 않음)
-
-## 테스트 실행 방법
-
-`board-service`를 예로 들면, 해당 서비스 디렉터리로 이동하여 아래 명령어를 실행합니다. 다른 서비스도 유사한 방식으로 테스트할 수 있습니다.
-
-```bash
-# board-service 디렉터리에서 실행
-poetry install
-poetry run pytest
+```powershell
+Copy-Item .env.example .env
+.\dev.ps1 seed
+.\dev.ps1 up
+.\dev.ps1 ps
 ```
+
+Linux/macOS에서는 같은 명령을 `./dev.sh`로 실행합니다. 로컬 Gateway 주소는 `http://localhost:33330`입니다.
+
+### Docker Compose 실행
+
+`.env`의 `DOCKERHUB_USERNAME`과 데이터베이스·인증 값을 채운 뒤 실행합니다. Compose에는 `SERVER_RUN_MODE=TRUE`가 필요하며, HTTPS 운영에서는 `AUTH_COOKIE_SECURE=TRUE`로 바꿉니다. 실행 스크립트가 외부 Docker 네트워크 `kingwangjjang-network`를 없으면 생성합니다.
+
+```powershell
+Copy-Item .env.example .env
+.\run.ps1 up
+.\run.ps1 ps
+```
+
+Linux/macOS에서는 `./run.sh`를 사용합니다. 컨테이너 Gateway 주소는 `http://localhost:8000`입니다.
+
+> `run.ps1 clean`과 `run.sh clean`은 PostgreSQL 볼륨까지 제거합니다. 개발 데이터를 지워도 될 때만 사용하세요.
+
+## 주요 공개 API
+
+- 인증: `GET /login`, `GET /callback`, `POST /userservice/api/auth/refresh`
+- 사용자: `GET|PATCH /userservice/api/users/me`
+- 게시글: `GET /boardservice/api/boards/realtime`, `GET /boardservice/api/boards/daily`
+- Top 10: `GET /boardservice/api/boards/daily/history`, `GET /boardservice/api/boards/daily/history/dates`
+- 댓글: `/commentservice/api/comments`
+- AI 노드·추론: `/gptservice/api/ai/*`
+
+전체 계약은 각 서비스의 `/docs`와 [서비스 문서](./docs/INDEX.md)를 함께 참고하세요. 브라우저·프런트엔드 요청은 서비스 포트에 직접 보내지 말고 Gateway를 통과해야 신뢰할 수 있는 사용자 헤더와 관리자 권한이 전달됩니다.
+
+## 테스트
+
+```powershell
+python -m pytest tests -q
+.\board-service\.venv\Scripts\python.exe -m pytest board-service\tests -q
+.\comment-service\.venv\Scripts\python.exe -m pytest comment-service\tests -q
+.\gpt-service\.venv\Scripts\python.exe -m pytest gpt-service\tests -q
+.\user-service\.venv\Scripts\python.exe -m unittest discover -s user-service\tests -q
+```
+
+가상환경이 없다면 각 서비스 디렉터리에서 먼저 `poetry install`을 실행하세요.
 
 ## 문서
 
-더 자세한 정보는 아래 문서를 참고하세요.
-
-*   [문서 인덱스 (docs/INDEX.md)](./docs/INDEX.md)
+- [문서 인덱스](./docs/INDEX.md)
+- [아키텍처](./docs/ARCHITECTURE.md)
+- [실행·운영 가이드](./docs/RUNBOOK.md)
+- [에이전트용 MSA 경계](./docs/agents/README.md)

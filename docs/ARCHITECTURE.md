@@ -1,73 +1,102 @@
-# Kingwangjjang 아키텍처
+# 백엔드 아키텍처
 
-이 문서는 `kingwangjjang-be` 프로젝트의 전반적인 아키텍처, 서비스 간 상호작용, 데이터 흐름을 설명합니다.
+이 문서는 2026-07-23 현재 `kingwangjjang-be`의 런타임 구성과 서비스 경계를 설명합니다.
 
-## 시스템 개요
-
-본 프로젝트는 마이크로서비스 아키텍처(MSA)를 따릅니다. 각 서비스는 독립적으로 개발, 배포 및 확장이 가능하며, 모든 외부 요청은 API 게이트웨이를 통해 라우팅됩니다.
-
-## 서비스 간 호출 관계
-
-서비스 간 통신은 주로 동기 방식의 REST API 호출을 통해 이루어집니다. `docker-compose.yml` 기준으로 주요 서비스 의존성은 다음과 같습니다.
+## 런타임 구성
 
 ```mermaid
-graph TD
-    Client[클라이언트] --> APIGateway[API Gateway]
+flowchart TD
+    Client[Web / API Client] --> Gateway[API Gateway]
+    Gateway -->|/userservice, /login, /callback| User[User Service]
+    Gateway -->|/boardservice| Board[Board Service]
+    Gateway -->|/commentservice| Comment[Comment Service]
+    Gateway -->|/gptservice| GPT[GPT Service]
+    Gateway -->|/static/media| Media[(Crawler media)]
 
-    subgraph "Service Layer"
-        APIGateway -->|/api/users| UserService[User Service]
-        APIGateway -->|/api/boards| BoardService[Board Service]
-        APIGateway -->|/api/comments| CommentService[Comment Service]
-        APIGateway -->|/gptservice/api/ai| GptService[GPT Service]
+    Board -->|X-AI-Service-Token| GPT
 
-        BoardService -->|사용자 정보 조회| UserService
-        BoardService -->|분석/비전 요청| GptService
-        CommentService -->|사용자 정보 조회| UserService
-        
-        subgraph "Async Services"
-            NotificationService[Notification Service]
-        end
+    User --> PG[(PostgreSQL)]
+    Board --> PG
+    Comment --> PG
+    GPT --> PG
 
-        BoardService -->|게시글 생성/수정 시| NotificationService
-    end
+    GPT --> Ollama[Ollama nodes]
+    GPT --> OpenAICompatible[OpenAI-compatible nodes]
 
-    subgraph "Database Layer"
-        UserService --> UsersDB[(User DB)]
-        BoardService --> BoardsDB[(Board DB)]
-        CommentService --> CommentsDB[(Comment DB)]
-        GptService --> AINodesDB[(AI Node Registry)]
-
-        GptService -->|용도/상태/부하 기반 선택| AINodeA[AI Node A]
-        GptService -->|장애 시 대체| AINodeB[AI Node B]
-    end
-
-    style Client fill:#d4f3ff
-    style APIGateway fill:#cde4f9
+    Notification[Notification Service scaffold]
 ```
 
-*   **API Gateway**: 모든 외부 요청의 진입점 역할을 하며, 요청을 적절한 내부 서비스로 라우팅하고 인증을 처리합니다.
-*   **User Service**: 사용자 정보 및 인증을 담당하는 핵심 서비스. 다른 서비스들이 사용자 정보가 필요할 때 조회합니다.
-*   **Board/Comment Service**: 게시판과 댓글 기능을 담당하며, 필요시 User Service에서 사용자 정보를 가져옵니다.
-*   **GPT/Notification Service**: 특정 이벤트(예: 새 게시글)가 발생했을 때 다른 서비스에 의해 호출될 수 있는 보조 서비스입니다.
-    * `gpt-service`는 AI 서버 노드와 노드별 모델을 등록하고 `analysis`, `chat`, `vision` 용도에 맞는 정상 노드를 선택합니다.
-    * `board-service`는 작업 큐와 분석 결과를 계속 소유하며, 실제 모델 호출만 `gpt-service`에 위임합니다.
+API Gateway는 유일한 공개 백엔드 진입점입니다. 로컬 소스 실행에서는 `33330`, Docker Compose에서는 호스트 `8000`을 사용합니다. `notification-service`는 코드 스캐폴드만 있으며 Compose, Gateway, 다른 서비스와 연결되어 있지 않습니다.
 
-## 데이터 흐름
+## 서비스 책임
 
-*   **데이터베이스 소유권**: 각 서비스는 자체 데이터베이스 또는 컬렉션을 소유하고 관리합니다. 다른 서비스는 API를 통해서만 해당 데이터에 접근할 수 있으며, 데이터베이스에 직접 접근하지 않습니다. (Database-per-service 패턴)
-    *   `user-service`는 사용자 정보 DB를 소유합니다.
-    *   `board-service`는 게시글 데이터 DB를 소유합니다.
-*   **요청 흐름**:
-    1.  클라이언트의 모든 요청은 **API Gateway**로 전송됩니다.
-    2.  API Gateway는 요청 헤더의 JWT(JSON Web Token)를 사용하여 사용자를 인증합니다. (필요시 **User Service**에 토큰 유효성 검증 요청)
-    3.  인증이 완료되면 API Gateway는 요청 경로에 따라 적절한 마이크로서비스(예: `board-service`)로 요청을 전달합니다.
-    4.  해당 서비스는 비즈니스 로직을 처리하고 데이터베이스와 상호작용한 뒤, 결과를 다시 API Gateway를 통해 클라이언트에게 반환합니다.
+| 서비스 | 소유하는 책임 | 포트 |
+| --- | --- | ---: |
+| `api-gateway` | 공개 경로, CORS, access token 검증, 관리자 역할 계산, 신뢰 헤더 전달, 응답·쿠키 프록시, 크롤러 미디어 | 로컬 33330 / Compose 8000 |
+| `user-service` | Kakao OAuth, access/refresh token 발급과 회전, 사용자 프로필 | 33334 |
+| `board-service` | 게시글/지표, 실시간·일간 목록, 일간 Top 10 스냅샷, 좋아요, AI 분석 상태, Shorts 패키지 | 33333 |
+| `comment-service` | 댓글·답글, 수정·소프트 삭제, 댓글 좋아요 | 33335 |
+| `gpt-service` | AI 노드·모델 레지스트리, capability 기반 라우팅, health/failover, 분석·채팅·vision 추론 | 33336 |
+| `notification-service` | 향후 알림 전달 | 현재 미배포 |
 
-## 인증 방식
+## Gateway 라우팅
 
-*   **인증 주체**: `user-service`가 사용자 인증 및 JWT 발급을 담당합니다.
-*   **인증 흐름**:
-    1.  사용자가 ID/PW 또는 소셜 로그인을 통해 로그인을 요청합니다.
-    2.  `user-service`는 사용자 정보를 확인하고 유효한 경우 JWT(Access Token/Refresh Token)를 생성하여 반환합니다.
-    3.  클라이언트는 이후 모든 API 요청 시 `Authorization: Bearer <Access-Token>` 헤더에 토큰을 포함하여 전송합니다.
-*   **서비스 간 인증**: 내부 서비스 간의 통신은 Docker 내부 네트워크에서 이루어지므로 현재는 별도의 추가 인증을 사용하지 않을 수 있으나, 보안 강화를 위해 API Key나 내부용 JWT를 사용할 수 있습니다. 현재 구조에서는 `api-gateway`가 인증을 중앙에서 처리합니다.
+Gateway는 접두사를 제거한 뒤 내부 서비스로 전달합니다.
+
+| 공개 경로 | 내부 대상 예시 |
+| --- | --- |
+| `/boardservice/api/boards/daily` | `board-service:33333/api/boards/daily` |
+| `/userservice/api/users/me` | `user-service:33334/api/users/me` |
+| `/commentservice/api/comments` | `comment-service:33335/api/comments` |
+| `/gptservice/api/ai/nodes` | `gpt-service:33336/api/ai/nodes` |
+| `/login`, `/callback` | `user-service:33334`의 같은 경로 |
+
+프록시 timeout은 현재 90초입니다. Gateway는 redirect 상태와 `Location`, 여러 `Set-Cookie` 헤더를 보존합니다. `CRAWLER_MEDIA_ROOT`가 존재하면 `/static/media`로 읽기 전용 미디어를 제공합니다.
+
+## 인증과 권한
+
+1. 클라이언트가 Gateway의 `/login`으로 Kakao 로그인을 시작합니다.
+2. `user-service`가 `/callback`에서 Kakao code를 교환하고 사용자와 refresh token을 저장합니다.
+3. 응답에는 HttpOnly `access_token`과 `refresh_token` 쿠키가 설정됩니다. 현재 access token은 1시간, refresh token은 400일입니다.
+4. Gateway는 요청의 access token을 상태 없이 검증하고 사용자 ID·provider를 추출합니다.
+5. 사용자 ID가 `ADMIN_USER_IDS`에 있으면 Gateway가 요청별 역할을 `admin`으로 계산합니다.
+6. downstream 서비스는 Gateway가 설정한 헤더를 바탕으로 인증/인가합니다.
+7. access token이 만료되면 `POST /userservice/api/auth/refresh`가 저장된 refresh token을 검증하고 두 토큰을 회전합니다.
+
+신뢰 헤더는 `X-User-Id`, `X-Auth-Provider`, `X-User-Role`, `X-Auth-Status`, `X-Auth-Error`입니다. Gateway는 클라이언트가 보낸 같은 이름의 헤더를 먼저 제거하므로, 외부 클라이언트는 서비스 포트에 직접 접근해서는 안 됩니다.
+
+## 데이터 소유권
+
+현재 모든 영속 서비스는 같은 `DATABASE_URL`을 받아 하나의 PostgreSQL 인스턴스/데이터베이스에 연결합니다. 물리적으로 DB를 분리한 구성은 아니지만, 테이블 소유권은 서비스 단위로 유지합니다.
+
+| 소유 서비스 | 테이블 |
+| --- | --- |
+| `user-service` | `users` |
+| `board-service` | `boards`, `board_metric_snapshots`, `daily_top10_snapshots`, `board_likes` |
+| `comment-service` | `comments`, `comment_likes` |
+| `gpt-service` | `ai_nodes`, `ai_node_models` |
+
+서비스는 다른 서비스의 repository나 DB 모듈을 import하지 않습니다. 교차 도메인 정보가 필요하면 Gateway 신뢰 헤더, 서비스 API, 이벤트 또는 명시적으로 소유권을 정한 읽기 모델을 사용합니다. Gateway는 DB에 접근하지 않습니다.
+
+## 게시글 분석 흐름
+
+크롤러가 저장한 새 게시글은 `pending` 분석 상태로 들어옵니다. `board-service`의 lifespan에서 시작되는 worker가 대기열을 가져가며, 기본 동시성은 1이고 `ANALYSIS_WORKER_CONCURRENCY`로 1~16 범위에서 조정합니다. 기본값 1은 단일 동시 추론만 받는 기본 AI 노드에서 일시적인 503이 게시글 재시도 횟수를 소모하지 않도록 맞춘 값입니다.
+
+`board-service`는 `gpt-service`의 `POST /api/ai/analyze`를 호출하고 결과 요약·태그·참여도 점수와 이유를 자신의 게시글 데이터에 저장합니다. 인증 사용자는 게시글별 재분석을 비동기 job으로 요청하고 상태를 조회할 수도 있습니다. AI 모델 호출은 `gpt-service`만 담당합니다.
+
+## AI 노드 라우팅
+
+`gpt-service`는 노드별 provider, base URL, priority, weight, 동시성, timeout, 상태와 모델 capability를 PostgreSQL에 저장합니다. 추론 요청은 `analysis`, `chat`, `vision` capability에 맞는 노드를 고르고 실패 시 다른 후보로 failover합니다.
+
+- 관리 API: `X-AI-Admin-Token`
+- 내부 추론 API: `X-AI-Service-Token`
+- 실제 upstream API key: DB가 아니라 노드의 `api_key_env`가 가리키는 프로세스 환경변수
+
+노드 테이블이 비어 있을 때만 `OLLAMA_*`, `VLLM_*` 환경변수로 초기 노드를 bootstrap합니다. 이후 변경은 관리 API로 DB에 영속화합니다.
+
+## 현재 제약
+
+- 서비스별 테이블 소유권은 논리적 경계이며 PostgreSQL 데이터베이스 자체는 공유합니다.
+- AI 노드의 동시성 semaphore와 weight cursor는 단일 `gpt-service` 프로세스 기준입니다. 여러 worker/replica로 늘리려면 공유 상태가 필요합니다.
+- 수동 게시글 재분석 job 상태는 `board-service` 프로세스 메모리에 있으므로 재시작 시 사라집니다. 저장된 게시글 분석 결과는 PostgreSQL에 남습니다.
+- 알림 서비스는 실제 호출·이벤트·영속화가 구현되지 않았습니다.

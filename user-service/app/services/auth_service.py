@@ -110,8 +110,15 @@ class UserService:
             return None
 
         next_refresh_token = JWTService.create_refresh_token(user_id, auth_provider)
-        repository.update_refresh_token(user_id, auth_provider, next_refresh_token)
-        return JWTService.create_access_token(user_id, auth_provider), next_refresh_token
+        next_access_token = JWTService.create_access_token(user_id, auth_provider)
+        if not repository.rotate_refresh_token(
+            user_id,
+            auth_provider,
+            refresh_token,
+            next_refresh_token,
+        ):
+            return None
+        return next_access_token, next_refresh_token
 
 
 class JWTService:
