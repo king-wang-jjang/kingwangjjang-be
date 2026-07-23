@@ -3,6 +3,9 @@
 여러 Ollama 및 OpenAI-compatible(vLLM 포함) 서버를 AI 노드로 등록하고,
 capability·상태·priority·weight·동시성 한도를 기준으로 요청을 라우팅하는 서비스입니다.
 
+내부 포트는 `33336`입니다. 외부에서는 API Gateway의 `/gptservice` 접두사를
+사용하므로 내부 `/api/ai/nodes`는 `/gptservice/api/ai/nodes`로 호출합니다.
+
 ## 실행
 
 ```bash
@@ -39,6 +42,9 @@ poetry run uvicorn app.main:app --reload --port 33336
 - `POST /api/ai/analyze` — `{ "content": "..." }`
 - `POST /api/ai/chat` — `{ "messages": [...], "capability": "chat", "response_format": null }`
 - `POST /api/ai/vision-text` — `{ "image_data_url": "data:image/...;base64,...", "prompt": "..." }`
+
+`/health`는 `{ "status": "ok", "node_count": N }`을 반환하며 Gateway에서는
+`/gptservice/health`로 접근합니다.
 
 노드 등록 예시:
 
@@ -90,6 +96,9 @@ PostgreSQL 시작 지연은 `AI_DATABASE_STARTUP_ATTEMPTS`(기본 10)와
 요청 자원 한도는 분석/채팅 텍스트 20만 자, 채팅 메시지 64개, inline 이미지 data
 URL 합계 약 20MB, vision prompt 4천 자입니다. degraded 또는 cooldown이 끝난
 unhealthy 노드의 half-open 복구 probe는 프로세스 안에서 동시에 하나만 허용합니다.
+
+환경변수·운영 예시는 [실행·운영 가이드](../docs/RUNBOOK.md), 서비스 소유권과
+금지 경계는 [GPT Service 에이전트 가이드](../docs/agents/gpt-service.md)를 참고하세요.
 
 ## 테스트
 

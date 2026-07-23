@@ -24,7 +24,9 @@
 | --- | --- |
 | `/login` | Redirects to Kakao OAuth authorization. |
 | `/callback` | Exchanges Kakao code, persists refresh token, sets access-token cookie. |
+| `/api/auth/refresh` | Rotates the persisted refresh token and both session cookies. |
 | `/api/users/me` | Returns the current authenticated user. |
+| `PATCH /api/users/me` | Updates the current user's display name. |
 
 ## Data Boundary
 
@@ -33,9 +35,10 @@ services must use gateway-provided identity headers or user-service APIs.
 
 ## Cookie Policy
 
-- Production default: `AUTH_COOKIE_SECURE` unset or true, cookie is secure.
+- Production default: `AUTH_COOKIE_SECURE` unset or true, cookies are secure.
 - Local source dev: `dev.ps1` and `dev.sh` set `AUTH_COOKIE_SECURE=FALSE`.
 - Do not disable secure cookies in container or production scripts.
+- Access and refresh cookies are HttpOnly, SameSite=Lax, path `/`; current TTLs are 1 hour and 400 days.
 
 ## Change Checklist
 

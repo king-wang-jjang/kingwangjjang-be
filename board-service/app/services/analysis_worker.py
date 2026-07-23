@@ -14,12 +14,14 @@ def analysis_worker_enabled() -> bool:
 
 
 def analysis_worker_concurrency() -> int:
-    raw_value = os.getenv("ANALYSIS_WORKER_CONCURRENCY", "3")
+    # The default AI node accepts one inference at a time. More workers cause
+    # transient 503 responses to consume a board's retry budget during bursts.
+    raw_value = os.getenv("ANALYSIS_WORKER_CONCURRENCY", "1")
     try:
         return min(max(int(raw_value), 1), 16)
     except ValueError:
-        logger.warning("Invalid ANALYSIS_WORKER_CONCURRENCY; using default 3")
-        return 3
+        logger.warning("Invalid ANALYSIS_WORKER_CONCURRENCY; using default 1")
+        return 1
 
 
 async def run_analysis_worker(stop_event: asyncio.Event) -> None:

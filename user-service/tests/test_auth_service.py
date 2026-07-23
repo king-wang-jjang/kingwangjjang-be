@@ -63,13 +63,24 @@ class AuthServiceTests(unittest.TestCase):
 
         class FakeRepository:
             def __init__(self):
-                self.updated = None
+                self.rotated = None
 
             def get_user(self, user_id, auth_provider):
                 return {"refresh_token": token}
 
-            def update_refresh_token(self, user_id, auth_provider, refresh_token):
-                self.updated = (user_id, auth_provider, refresh_token)
+            def rotate_refresh_token(
+                self,
+                user_id,
+                auth_provider,
+                current_refresh_token,
+                next_refresh_token,
+            ):
+                self.rotated = (
+                    user_id,
+                    auth_provider,
+                    current_refresh_token,
+                    next_refresh_token,
+                )
                 return True
 
         repository = FakeRepository()
@@ -77,8 +88,30 @@ class AuthServiceTests(unittest.TestCase):
             access_token, next_refresh_token = UserService.rotate_session(token)
 
         self.assertNotEqual(next_refresh_token, token)
-        self.assertEqual(repository.updated, ("123", "kakao", next_refresh_token))
+        self.assertEqual(
+            repository.rotated,
+            ("123", "kakao", token, next_refresh_token),
+        )
         self.assertEqual(JWTService.decode_access_token(access_token)["user_id"], "123")
+
+    def test_rotate_session_rejects_a_token_that_loses_the_atomic_rotation(self):
+        token = JWTService.create_refresh_token("123", "kakao")
+
+        class FakeRepository:
+            def get_user(self, user_id, auth_provider):
+                return {"refresh_token": token}
+
+            def rotate_refresh_token(
+                self,
+                user_id,
+                auth_provider,
+                current_refresh_token,
+                next_refresh_token,
+            ):
+                return False
+
+        with patch("app.services.auth_service.UserRepository", return_value=FakeRepository()):
+            self.assertIsNone(UserService.rotate_session(token))
 
     def test_save_user_to_db_uses_user_repository(self):
         class FakeRepository:

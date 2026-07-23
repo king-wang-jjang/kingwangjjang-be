@@ -1,4 +1,4 @@
-from sqlalchemy import inspect, select, text
+from sqlalchemy import inspect, select, text, update
 
 from app.auth.principal import Principal
 from app.db.models import User
@@ -44,20 +44,25 @@ class UserRepository:
             )
             return self._to_dict(user) if user is not None else None
 
-    def update_refresh_token(self, user_id: str, auth_provider: str, refresh_token: str) -> bool:
+    def rotate_refresh_token(
+        self,
+        user_id: str,
+        auth_provider: str,
+        current_refresh_token: str,
+        next_refresh_token: str,
+    ) -> bool:
         with get_session_factory()() as session:
-            user = session.scalar(
-                select(User).where(
+            result = session.execute(
+                update(User)
+                .where(
                     User.user_id == str(user_id),
                     User.auth_provider == auth_provider,
+                    User.refresh_token == current_refresh_token,
                 )
+                .values(refresh_token=next_refresh_token)
             )
-            if user is None:
-                return False
-
-            user.refresh_token = refresh_token
             session.commit()
-            return True
+            return result.rowcount == 1
 
     def get_or_create_user(
         self,
