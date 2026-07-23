@@ -33,14 +33,15 @@ def test_frontend_get_requests_do_not_force_json_content_type():
     assert "headers.set('Content-Type', 'application/json')" in http_client
 
 
-def test_frontend_keeps_backend_site_code_separate_from_display_label():
+def test_frontend_uses_backend_site_label_without_managing_label_mapping():
     board_api = (ROOT / "kingwangjjang-fe/src/api/board-api.ts").read_text(encoding="utf-8")
-    use_board = (ROOT / "kingwangjjang-fe/src/hooks/use-board.ts").read_text(encoding="utf-8")
 
     assert "siteLabel" in board_api
     assert "site: post.site" in board_api
-    assert "siteLabel: getSiteLabel(post.site)" in board_api
-    assert "switch (value?.site)" not in use_board
+    assert "siteLabel: post.site_label || post.site" in board_api
+    assert "function getSiteLabel" not in board_api
+    assert "와이고수" not in board_api
+    assert "디시인사이드" not in board_api
 
 
 def test_frontend_board_site_filter_is_sent_to_board_api():
@@ -53,4 +54,5 @@ def test_frontend_board_site_filter_is_sent_to_board_api():
     assert "sites: selectedSites" in board_view
     assert "} = useBoard(boardFilters);" in board_view
     assert ".filter((post) => selectedSites.includes(post.site))" not in board_view
-    assert "setFilterCollection((current)" in use_board
+    assert "queryFn: getBoardFilterOptions" in use_board
+    assert "setFilterCollection" not in use_board

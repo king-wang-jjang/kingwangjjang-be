@@ -9,6 +9,7 @@ from app.auth.dependencies import require_admin, require_principal
 from app.auth.principal import Principal
 from app.repositories.boards import BoardListFilters, BoardRepository
 from app.services.analysis_jobs import BoardAnalysisJobStore
+from app.services.board_filters import get_board_filter_options, get_site_label
 from app.services.shorts_package import (
     HISTORICAL_RANKING_MODE,
     LIVE_RANKING_MODE,
@@ -30,12 +31,22 @@ class VisionTextRequest(BaseModel):
     prompt: str | None = None
 
 
+class BoardFilterOption(BaseModel):
+    value: str
+    label: str
+
+
+class BoardFilterOptions(BaseModel):
+    sites: list[BoardFilterOption]
+
+
 def _to_board_response(board: dict) -> dict:
     return {
         "_id": board["id"],
         "category": board["category"],
         "no": board["no"],
         "site": board["site"],
+        "site_label": get_site_label(board["site"]),
         "title": board["title"],
         "url": board["url"],
         "contents": board.get("contents"),
@@ -84,6 +95,11 @@ def _to_vision_text_response(result: dict) -> dict:
         "mediaPath": result["media_path"],
         "text": result["text"],
     }
+
+
+@router.get("/filters", response_model=BoardFilterOptions)
+def board_filters():
+    return get_board_filter_options()
 
 
 @router.get("/realtime")

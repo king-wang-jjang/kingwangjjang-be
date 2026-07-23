@@ -191,6 +191,7 @@ def test_realtime_returns_rest_shape(monkeypatch):
 
     assert response.status_code == 200
     assert response.json()[0]["_id"] == "11111111-1111-1111-1111-111111111111"
+    assert response.json()[0]["site_label"] == "디시인사이드"
     assert response.json()[0]["likeCount"] == 0
     assert response.json()[0]["create_time"] == "2026-04-28T00:00:00Z"
     assert response.json()[0]["tags"] == ["funny", "issue"]
@@ -202,6 +203,22 @@ def test_realtime_returns_rest_shape(monkeypatch):
     assert response.json()[0]["source_rank"] == 3
     assert response.json()[0]["hot_score"] == 9.5
     assert response.json()[0]["daily_score"] == 12.25
+
+
+def test_filters_returns_backend_managed_site_options(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.get("/api/boards/filters")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "sites": [
+            {"value": "dcinside", "label": "디시인사이드"},
+            {"value": "ygosu", "label": "와이고수"},
+            {"value": "ppomppu", "label": "뽐뿌"},
+            {"value": "theqoo", "label": "더쿠"},
+        ]
+    }
 
 
 def test_daily_returns_rest_shape(monkeypatch):
