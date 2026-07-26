@@ -55,4 +55,6 @@ def test_frontend_board_site_filter_is_sent_to_board_api():
     assert "} = useBoard(boardFilters);" in board_view
     assert ".filter((post) => selectedSites.includes(post.site))" not in board_view
     assert "queryFn: getBoardFilterOptions" in use_board
+    assert "refetchInterval: FILTER_REFRESH_INTERVAL_MS" in use_board
+    assert "current.filter((site) => activeSiteValues.has(site))" in board_view
     assert "setFilterCollection" not in use_board

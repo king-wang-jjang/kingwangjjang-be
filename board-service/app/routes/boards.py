@@ -98,8 +98,10 @@ def _to_vision_text_response(result: dict) -> dict:
 
 
 @router.get("/filters", response_model=BoardFilterOptions)
-def board_filters():
-    return get_board_filter_options()
+def board_filters(response: Response):
+    response.headers["Cache-Control"] = "no-store"
+    active_sites = BoardRepository().list_recently_crawled_sites()
+    return get_board_filter_options(active_sites)
 
 
 @router.get("/realtime")

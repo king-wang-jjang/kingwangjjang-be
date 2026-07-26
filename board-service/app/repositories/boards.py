@@ -22,6 +22,7 @@ from app.utils.llm import LLM, LLMError
 logger = logging.getLogger("board-service")
 SNAPSHOT_RETENTION_DAYS = 7
 SNAPSHOT_CLEANUP_INTERVAL = timedelta(hours=1)
+RECENT_CRAWL_WINDOW = timedelta(hours=24)
 
 
 @dataclass(frozen=True)
@@ -81,6 +82,32 @@ class BoardRepository:
         filters: BoardListFilters | None = None,
     ) -> list[dict]:
         return self._list_boards(index=index, limit=limit, daily=True, filters=filters)
+
+    def list_recently_crawled_sites(self, *, as_of: datetime | None = None) -> list[str]:
+        reference_time = as_of or self._now()
+        if reference_time.tzinfo is None:
+            reference_time = reference_time.replace(tzinfo=timezone.utc)
+        else:
+            reference_time = reference_time.astimezone(timezone.utc)
+        cutoff = reference_time - RECENT_CRAWL_WINDOW
+
+        stmt = (
+            select(Board.site)
+            .join(BoardMetricSnapshot, BoardMetricSnapshot.board_id == Board.id)
+            .where(
+                BoardMetricSnapshot.captured_at >= cutoff,
+                BoardMetricSnapshot.captured_at <= reference_time,
+                BoardMetricSnapshot.crawl_status == "success",
+            )
+            .distinct()
+            .order_by(Board.site)
+        )
+        with get_session_factory()() as session:
+            return [
+                site
+                for site in session.scalars(stmt).all()
+                if site
+            ]
 
     def list_daily_history_dates(self, limit: int = 30) -> list[date]:
         page_size = max(1, min(limit, 365))

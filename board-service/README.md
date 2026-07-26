@@ -10,11 +10,14 @@
 | --- | --- |
 | `GET /api/boards/realtime` | 실시간 목록 |
 | `GET /api/boards/daily` | 현재 일간 랭킹 |
+| `GET /api/boards/filters` | 최근 24시간 크롤링 성공 사이트 필터 |
 | `GET /api/boards/daily/history/dates` | 저장된 Top 10 날짜 목록 |
 | `GET /api/boards/daily/history?date=YYYY-MM-DD` | 특정 날짜 Top 10 |
 | `GET /api/boards/{board_id}/ai` | 저장된 분석 상태·결과 |
 
 실시간·일간 목록은 `index`, `limit`, 반복 가능한 `sites`, `category`, `tag`, `q`, `has_thumbnail` 필터를 지원합니다. history 날짜 목록의 `limit`은 1~365, history 결과의 `limit`은 1~100입니다.
+
+사이트 필터에는 최근 24시간 안에 게시글 저장 또는 원문 지표 갱신이 한 건 이상 성공한 사이트만 표시됩니다. 성공 여부는 `board_metric_snapshots`의 `crawl_status=success`와 `captured_at`을 기준으로 판단합니다.
 
 ## 인증 API
 

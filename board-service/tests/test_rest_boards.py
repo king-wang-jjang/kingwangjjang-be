@@ -44,7 +44,20 @@ class FakeRepository:
     last_history_limit = None
     last_history_dates_limit = None
     last_daily_args = None
+    recently_crawled_sites = (
+        "inven",
+        "theqoo",
+        "dcinside",
+        "arca",
+        "ppomppu",
+        "fmkorea",
+        "ygosu",
+        "new-community",
+    )
     return_empty_shorts = False
+
+    def list_recently_crawled_sites(self):
+        return list(type(self).recently_crawled_sites)
 
     def list_realtime(self, index: int, limit: int, filters=None):
         assert index == 0
@@ -175,6 +188,16 @@ def build_client(monkeypatch):
     FakeRepository.last_history_limit = None
     FakeRepository.last_history_dates_limit = None
     FakeRepository.last_daily_args = None
+    FakeRepository.recently_crawled_sites = (
+        "inven",
+        "theqoo",
+        "dcinside",
+        "arca",
+        "ppomppu",
+        "fmkorea",
+        "ygosu",
+        "new-community",
+    )
     FakeRepository.return_empty_shorts = False
     monkeypatch.setenv("JWT_SECRET_KEY", ADMIN_JWT_SECRET)
     monkeypatch.setenv("ADMIN_USER_IDS", "dev-user")
@@ -205,20 +228,35 @@ def test_realtime_returns_rest_shape(monkeypatch):
     assert response.json()[0]["daily_score"] == 12.25
 
 
-def test_filters_returns_backend_managed_site_options(monkeypatch):
+def test_filters_returns_sites_with_recent_successful_crawls(monkeypatch):
     client = build_client(monkeypatch)
 
     response = client.get("/api/boards/filters")
 
     assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
     assert response.json() == {
         "sites": [
             {"value": "dcinside", "label": "디시인사이드"},
             {"value": "ygosu", "label": "와이고수"},
             {"value": "ppomppu", "label": "뽐뿌"},
             {"value": "theqoo", "label": "더쿠"},
+            {"value": "fmkorea", "label": "에펨코리아"},
+            {"value": "arca", "label": "아카라이브"},
+            {"value": "inven", "label": "인벤"},
+            {"value": "new-community", "label": "new-community"},
         ]
     }
+
+
+def test_filters_returns_no_static_fallback_when_no_site_crawled_recently(monkeypatch):
+    client = build_client(monkeypatch)
+    FakeRepository.recently_crawled_sites = ()
+
+    response = client.get("/api/boards/filters")
+
+    assert response.status_code == 200
+    assert response.json() == {"sites": []}
 
 
 def test_daily_returns_rest_shape(monkeypatch):
