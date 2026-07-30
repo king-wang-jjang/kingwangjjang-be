@@ -12,9 +12,9 @@ Kakao OAuth, JWT 세션, refresh token 영속화와 사용자 프로필을 소�
 | `GET /api/users/me` | `/userservice/api/users/me` | 선택 | 로그인 사용자를 반환하며 비로그인은 `null` |
 | `PATCH /api/users/me` | `/userservice/api/users/me` | 필수 | `displayName` 수정, 최대 40자 |
 
-세션 쿠키는 HttpOnly, `SameSite=Lax`, path `/`입니다. access token TTL은 1시간, refresh token TTL은 400일이며 `AUTH_COOKIE_SECURE`로 Secure 속성을 제어합니다. 운영에서는 반드시 Secure 쿠키와 충분히 긴 별도의 `JWT_SECRET_KEY`, `JWT_REFRESH_SECRET_KEY`를 사용하세요.
+세션 쿠키는 HttpOnly, `SameSite=Lax`, path `/`입니다. access token TTL은 1시간, refresh token TTL은 400일이며 성공적으로 갱신할 때마다 다시 400일로 연장됩니다. 브라우저별 refresh token은 `user_sessions`에 SHA-256 해시로 따로 저장하므로 다른 기기에서 새로 로그인해도 기존 세션을 무효화하지 않습니다. 기존 `users.refresh_token`의 평문 토큰은 첫 갱신 트랜잭션에서 새 세션으로 이관되고 제거됩니다. `AUTH_COOKIE_SECURE`로 Secure 속성을 제어하며, 운영에서는 반드시 Secure 쿠키와 충분히 긴 별도의 `JWT_SECRET_KEY`, `JWT_REFRESH_SECRET_KEY`를 사용하세요.
 
-refresh token 교체는 현재 DB 값과 요청 token이 일치할 때만 성공하는 원자적 조건부 갱신입니다. 실패한 refresh 응답은 동시 성공 응답의 새 세션을 지우지 않도록 쿠키를 변경하지 않습니다.
+refresh token 교체는 현재 세션 해시와 요청 token의 해시가 일치할 때만 성공하는 원자적 조건부 갱신입니다. 실패한 refresh 응답은 동시 성공 응답의 새 세션을 지우지 않도록 쿠키를 변경하지 않습니다.
 
 ## 실행
 

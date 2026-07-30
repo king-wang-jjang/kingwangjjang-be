@@ -94,9 +94,12 @@ Kakao 개발자 콘솔의 redirect URI는 Gateway의 `/callback`과 일치해야
 - HttpOnly, `SameSite=Lax`, path `/`
 - access token 1시간, refresh token 400일
 - `AUTH_COOKIE_SECURE=TRUE`면 HTTPS에서만 전송
-- `POST /userservice/api/auth/refresh`가 두 토큰을 회전
+- `POST /userservice/api/auth/refresh`가 두 토큰을 회전하고 세션 만료를 다시 400일로 연장
+- 브라우저별 세션을 `user_sessions`에 SHA-256 해시로 저장하므로 다른 기기의 새 로그인이 기존 세션을 덮어쓰지 않음
 
-refresh token이 DB의 값과 다르거나 만료되면 `401 invalid_refresh_token`을 반환하며 쿠키는 변경하지 않습니다. 동시 요청의 실패 응답이 성공 응답의 새 쿠키를 지우지 않기 위한 정책입니다. 유효한 세션이 없다면 다시 로그인해야 합니다.
+refresh token 해시가 DB의 활성 세션과 다르거나 만료되면 `401 invalid_refresh_token`을 반환하며 쿠키는 변경하지 않습니다. 동시 요청에서는 조건부 갱신에 성공한 첫 요청만 토큰을 회전합니다. 이전 버전의 `users.refresh_token` 값은 첫 refresh 성공 시 원자적으로 `user_sessions`로 이관되고 제거됩니다. 유효한 세션이 없다면 다시 로그인해야 합니다.
+
+이 버전을 처음 배포하기 전에는 DB를 백업하고 user-service 계정에 `CREATE TABLE`과 `CREATE INDEX` 권한이 있는지 확인하세요. 기동 후 `user_sessions`의 FK·unique 제약·인덱스가 생성됐는지 확인해야 합니다. legacy token이 한 번 이관되면 구버전 user-service는 새 해시 세션을 읽을 수 없으므로, 구버전으로 롤백한 사용자는 다시 로그인해야 할 수 있습니다.
 
 ## 게시글 자동 분석
 

@@ -118,7 +118,6 @@ def test_principal_lookup_does_not_overwrite_stored_profile_fields():
             auth_provider,
             nickname=None,
             profile_image=None,
-            refresh_token=None,
         ):
             captured.update(
                 {
@@ -126,7 +125,6 @@ def test_principal_lookup_does_not_overwrite_stored_profile_fields():
                     "auth_provider": auth_provider,
                     "nickname": nickname,
                     "profile_image": profile_image,
-                    "refresh_token": refresh_token,
                 }
             )
             return {"user_id": user_id}
@@ -140,7 +138,6 @@ def test_principal_lookup_does_not_overwrite_stored_profile_fields():
         "auth_provider": "kakao",
         "nickname": None,
         "profile_image": None,
-        "refresh_token": None,
     }
 
 

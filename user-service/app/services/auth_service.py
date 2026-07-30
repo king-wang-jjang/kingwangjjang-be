@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import hashlib
 import json
 import secrets
 from urllib.parse import urlencode
@@ -87,12 +88,21 @@ class UserService:
 
     @staticmethod
     def _save_user_to_postgres(user_info: UserType, refresh_token: str) -> dict:
-        return UserRepository().get_or_create_user(
+        payload = JWTService.decode_refresh_token(refresh_token)
+        if (
+            payload is None
+            or payload["user_id"] != str(user_info.user_id)
+            or payload["auth_provider"] != user_info.auth_provider
+        ):
+            raise ValueError("refresh token identity does not match user")
+
+        return UserRepository().create_refresh_session(
             user_id=str(user_info.user_id),
             auth_provider=user_info.auth_provider,
             nickname=getattr(user_info, "nickname", None),
             profile_image=getattr(user_info, "profile_image", None),
-            refresh_token=refresh_token,
+            refresh_token_hash=JWTService.hash_refresh_token(refresh_token),
+            expires_at=payload["expires_at"],
         )
 
     @staticmethod
@@ -104,18 +114,20 @@ class UserService:
         user_id = payload["user_id"]
         auth_provider = payload["auth_provider"]
         repository = UserRepository()
-        user = repository.get_user(user_id, auth_provider)
-        stored_refresh_token = user.get("refresh_token") if user else None
-        if not stored_refresh_token or not secrets.compare_digest(stored_refresh_token, refresh_token):
-            return None
 
         next_refresh_token = JWTService.create_refresh_token(user_id, auth_provider)
         next_access_token = JWTService.create_access_token(user_id, auth_provider)
-        if not repository.rotate_refresh_token(
+        next_payload = JWTService.decode_refresh_token(next_refresh_token)
+        if next_payload is None:
+            return None
+
+        if not repository.rotate_refresh_session(
             user_id,
             auth_provider,
-            refresh_token,
-            next_refresh_token,
+            JWTService.hash_refresh_token(refresh_token),
+            JWTService.hash_refresh_token(next_refresh_token),
+            next_payload["expires_at"],
+            legacy_refresh_token=refresh_token,
         ):
             return None
         return next_access_token, next_refresh_token
@@ -159,6 +171,10 @@ class JWTService:
         }
         return jwt.encode(payload, cls._config_value("JWT_REFRESH_SECRET_KEY"), algorithm="HS256")
 
+    @staticmethod
+    def hash_refresh_token(refresh_token: str) -> str:
+        return hashlib.sha256(refresh_token.encode("utf-8")).hexdigest()
+
     @classmethod
     def decode_access_token(cls, access_token: str) -> dict | None:
         try:
@@ -178,12 +194,14 @@ class JWTService:
                 cls._config_value("JWT_REFRESH_SECRET_KEY"),
                 algorithms=["HS256"],
                 issuer="user-service",
+                options={"require": ["exp", "iat"]},
             )
             if payload.get("type") != "refresh" or not payload.get("user_id") or not payload.get("auth_provider"):
                 return None
             return {
                 "user_id": str(payload["user_id"]),
                 "auth_provider": str(payload["auth_provider"]),
+                "expires_at": datetime.datetime.fromtimestamp(payload["exp"], datetime.UTC),
             }
-        except (ExpiredSignatureError, InvalidTokenError):
+        except (ExpiredSignatureError, InvalidTokenError, KeyError, TypeError, ValueError):
             return None

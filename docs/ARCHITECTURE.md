@@ -56,12 +56,14 @@ Gateway는 접두사를 제거한 뒤 내부 서비스로 전달합니다.
 ## 인증과 권한
 
 1. 클라이언트가 Gateway의 `/login`으로 Kakao 로그인을 시작합니다.
-2. `user-service`가 `/callback`에서 Kakao code를 교환하고 사용자와 refresh token을 저장합니다.
+2. `user-service`가 `/callback`에서 Kakao code를 교환하고 사용자와 브라우저별 refresh token 해시를 저장합니다.
 3. 응답에는 HttpOnly `access_token`과 `refresh_token` 쿠키가 설정됩니다. 현재 access token은 1시간, refresh token은 400일입니다.
 4. Gateway는 요청의 access token을 상태 없이 검증하고 사용자 ID·provider를 추출합니다.
 5. 사용자 ID가 `ADMIN_USER_IDS`에 있으면 Gateway가 요청별 역할을 `admin`으로 계산합니다.
 6. downstream 서비스는 Gateway가 설정한 헤더를 바탕으로 인증/인가합니다.
-7. access token이 만료되면 `POST /userservice/api/auth/refresh`가 저장된 refresh token을 검증하고 두 토큰을 회전합니다.
+7. access token이 만료되면 `POST /userservice/api/auth/refresh`가 해당 브라우저의 refresh token 해시를 원자적으로 교체하고 두 토큰을 회전합니다. 성공할 때마다 만료 시점은 400일 뒤로 연장됩니다.
+
+새 로그인은 `user_sessions`에 독립된 행을 추가하므로 같은 Kakao 계정의 다른 기기 세션을 종료하지 않습니다. 이전 버전이 `users.refresh_token`에 저장한 평문 토큰은 첫 refresh 요청에서 같은 트랜잭션으로 해시 세션에 이관되고 평문 값은 제거됩니다.
 
 신뢰 헤더는 `X-User-Id`, `X-Auth-Provider`, `X-User-Role`, `X-Auth-Status`, `X-Auth-Error`입니다. Gateway는 클라이언트가 보낸 같은 이름의 헤더를 먼저 제거하므로, 외부 클라이언트는 서비스 포트에 직접 접근해서는 안 됩니다.
 
@@ -71,7 +73,7 @@ Gateway는 접두사를 제거한 뒤 내부 서비스로 전달합니다.
 
 | 소유 서비스 | 테이블 |
 | --- | --- |
-| `user-service` | `users` |
+| `user-service` | `users`, `user_sessions` |
 | `board-service` | `boards`, `board_metric_snapshots`, `daily_top10_snapshots`, `board_likes` |
 | `comment-service` | `comments`, `comment_likes` |
 | `gpt-service` | `ai_nodes`, `ai_node_models` |

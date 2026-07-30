@@ -71,6 +71,8 @@ def test_user_service_owns_login_callback_and_token_persistence():
     main = read(USER_SERVICE_APP / "main.py")
     auth_route = USER_SERVICE_APP / "routes" / "auth.py"
     auth_service = USER_SERVICE_APP / "services" / "auth_service.py"
+    models = USER_SERVICE_APP / "db" / "models.py"
+    users_repository = USER_SERVICE_APP / "repositories" / "users.py"
 
     assert auth_route.exists()
     assert auth_service.exists()
@@ -82,6 +84,12 @@ def test_user_service_owns_login_callback_and_token_persistence():
     assert "create_access_token" in read(auth_service)
     assert '@router.post("/api/auth/refresh")' in read(auth_route)
     assert "REFRESH_TOKEN_TTL = datetime.timedelta(days=400)" in read(auth_service)
+    assert 'hashlib.sha256(refresh_token.encode("utf-8")).hexdigest()' in read(auth_service)
+    assert '__tablename__ = "user_sessions"' in read(models)
+    assert "refresh_token_hash" in read(models)
+    assert "create_refresh_session" in read(users_repository)
+    assert "rotate_refresh_session" in read(users_repository)
+    assert ".values(refresh_token=None)" in read(users_repository)
 
 
 def test_gateway_preserves_multiple_session_cookie_headers():

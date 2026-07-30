@@ -8,7 +8,8 @@
 
 - Kakao login redirect and callback.
 - Access token and refresh token creation.
-- Refresh-token persistence in `users`.
+- Browser-specific refresh-token hash persistence in `user_sessions`.
+- Atomic migration of legacy plaintext tokens from `users.refresh_token` on first refresh.
 - User profile records.
 - User REST endpoints.
 
@@ -23,14 +24,14 @@
 | Path | Description |
 | --- | --- |
 | `/login` | Redirects to Kakao OAuth authorization. |
-| `/callback` | Exchanges Kakao code, persists refresh token, sets access-token cookie. |
-| `/api/auth/refresh` | Rotates the persisted refresh token and both session cookies. |
+| `/callback` | Exchanges Kakao code, adds a hashed browser session, and sets session cookies. |
+| `/api/auth/refresh` | Atomically rotates the browser session hash and both session cookies. |
 | `/api/users/me` | Returns the current authenticated user. |
 | `PATCH /api/users/me` | Updates the current user's display name. |
 
 ## Data Boundary
 
-Only `user-service` may write user auth records and refresh tokens. Other
+Only `user-service` may write user auth records and refresh-token hashes. Other
 services must use gateway-provided identity headers or user-service APIs.
 
 ## Cookie Policy
@@ -39,6 +40,8 @@ services must use gateway-provided identity headers or user-service APIs.
 - Local source dev: `dev.ps1` and `dev.sh` set `AUTH_COOKIE_SECURE=FALSE`.
 - Do not disable secure cookies in container or production scripts.
 - Access and refresh cookies are HttpOnly, SameSite=Lax, path `/`; current TTLs are 1 hour and 400 days.
+- A successful refresh resets both the cookie and persisted session expiry to 400 days.
+- A new login adds a session and must not overwrite another browser's session.
 
 ## Change Checklist
 
