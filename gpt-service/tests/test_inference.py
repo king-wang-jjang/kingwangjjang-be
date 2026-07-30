@@ -1,6 +1,11 @@
 import json
 
-from app.services.inference import ANALYSIS_SYSTEM_PROMPT, parse_analysis
+from app.services.inference import (
+    ANALYSIS_SYSTEM_PROMPT,
+    analysis_messages,
+    parse_analysis,
+    truncate_analysis_content,
+)
 
 
 def _analysis_payload(**overrides) -> str:
@@ -76,3 +81,34 @@ def test_parse_analysis_returns_none_for_blank_reason():
     result = parse_analysis(_analysis_payload(llm_engagement_reason="   "))
 
     assert result["llm_engagement_reason"] is None
+
+
+def test_analysis_messages_enforces_configured_structured_input_limit(monkeypatch):
+    monkeypatch.setenv("AI_ANALYSIS_MAX_INPUT_CHARS", "1000")
+    content = "\n".join(
+        [
+            "중요 제목",
+            "앞" * 1_000,
+            "[image] " + ("그림" * 1_000),
+            "뒤" * 1_000,
+        ]
+    )
+
+    bounded = analysis_messages(content)[1]["content"]
+
+    assert len(bounded) <= 1_000
+    assert bounded.startswith("중요 제목\n")
+    assert "[image]" in bounded
+    assert "앞" in bounded
+    assert "뒤" in bounded
+    assert bounded.endswith("[... content truncated ...]")
+
+
+def test_analysis_messages_preserves_content_that_already_fits():
+    content = "  제목\n본문  "
+
+    assert analysis_messages(content)[1]["content"] == content
+
+
+def test_truncate_analysis_content_handles_oversized_blank_text():
+    assert truncate_analysis_content(" " * 2_000, max_chars=1_000) == ""

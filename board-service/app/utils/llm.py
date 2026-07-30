@@ -5,6 +5,13 @@ import os
 
 import httpx
 
+from app.utils.crawled_content import (
+    MAX_ANALYSIS_REQUEST_CHARS,
+    MIN_ANALYSIS_MAX_INPUT_CHARS,
+    analysis_max_input_chars as configured_analysis_max_input_chars,
+    truncate_analysis_text,
+)
+
 
 logger = logging.getLogger("board-service")
 
@@ -46,6 +53,7 @@ class LLM:
         timeout_seconds: float | None = None,
         service_url: str | None = None,
         service_token: str | None = None,
+        analysis_max_input_chars: int | None = None,
     ):
         explicit_direct_endpoint = base_url is not None or base_urls is not None
         resolved_service_url = service_url
@@ -58,6 +66,15 @@ class LLM:
         self._next_base_url_index = 0
         self.model = model or os.getenv("OLLAMA_MODEL") or self.DEFAULT_MODEL
         self.timeout_seconds = self._resolve_timeout(timeout_seconds)
+        resolved_analysis_max_chars = (
+            configured_analysis_max_input_chars()
+            if analysis_max_input_chars is None
+            else int(analysis_max_input_chars)
+        )
+        self.analysis_max_input_chars = min(
+            max(resolved_analysis_max_chars, MIN_ANALYSIS_MAX_INPUT_CHARS),
+            MAX_ANALYSIS_REQUEST_CHARS,
+        )
 
     def call(self, content: str):
         try:
@@ -67,6 +84,10 @@ class LLM:
             return self.FALLBACK_MESSAGE
 
     def analyze(self, content: str) -> dict:
+        content = truncate_analysis_text(
+            content,
+            max_chars=self.analysis_max_input_chars,
+        )
         if self.service_url:
             return self._analyze_with_service(content)
         answer = self._chat(self.ANALYSIS_SYSTEM_PROMPT, content, response_format="json")

@@ -39,6 +39,32 @@
 - `DISABLE_ANALYSIS_WORKER=TRUE`: worker 비활성화
 - `AI_SERVICE_URL`: GPT 서비스 주소
 - `AI_SERVICE_TOKEN`: GPT 추론용 내부 토큰
+- `AI_ANALYSIS_MAX_INPUT_CHARS`: 모델과 무관한 분석 입력 상한, 기본 16,000자
+- `AI_ANALYSIS_MIN_BODY_CHARS`: 제목을 제외한 최소 본문 길이, 기본 20자
+- `AI_ANALYSIS_MIN_LANGUAGE_CHARS`: 숫자만 있는 행을 거르는 최소 문자 신호, 기본 4자
+- `AI_ANALYSIS_VISION_FALLBACK_ENABLED`: 짧은 이미지 게시글의 vision 보강, 기본 `TRUE`
+- `AI_ANALYSIS_VISION_MAX_IMAGES`: 한 게시글에서 보강할 로컬 이미지 수, 기본 2장(최대 4장)
+- `AI_ANALYSIS_VISION_MAX_IMAGE_BYTES`: 자동 보강 이미지 크기 상한, 기본 10MB
+- `AI_ANALYSIS_VISION_MAX_PIXELS`: 애니메이션 frame을 포함한 총 픽셀 상한, 기본 4천만
+- `AI_ANALYSIS_VISION_PROMPT`: 장면·맥락·이미지 내 텍스트를 요청하는 자동 보강 prompt
+- `AI_ANALYSIS_RETRYABLE_BACKOFF_SECONDS`: vision 인프라 오류 재시도 간격, 기본 300초
+
+분석 입력은 제목과 각 텍스트·이미지 텍스트 블록의 순서를 유지한 채 상한 안에서
+공평하게 축약됩니다. 제목만 있거나 본문이 기준보다 짧은 게시글은 그대로 요약하지
+않습니다. 로컬 `CRAWLER_MEDIA_ROOT` 아래 이미지가 있으면 경로 이탈을 차단하고 이미지
+수·파일 크기를 제한한 뒤 GPT 서비스의 `vision` capability로 먼저 보강합니다. 원격
+`source_url`은 자동으로 가져오지 않습니다. 이미지 형식·디코딩 가능 여부·총
+픽셀 수도 확인해 손상 파일과 압축 폭탄을 vision 노드로 보내지 않습니다. 사용할 수
+있는 vision 노드가 없거나
+보강 후에도 최소 본문 길이에 못 미치면 분석은 실패 처리되어 제목만으로 결과를
+만들지 않습니다. vision 노드의 timeout·503처럼 일시적인 인프라 오류는 본문
+부족과 구분해 다음 재시도 시각을 예약하며, 손상 파일이나 실제 내용 부족만 콘텐츠
+오류로 남깁니다. 인증·payload 설정 문제를 뜻하는 비재시도 4xx는 무한 예약하지
+않고 일반 retry budget을 소진한 뒤 `failed`로 표시합니다.
+
+소스 실행에서 상대 `CRAWLER_MEDIA_ROOT`는 현재 서비스 작업 디렉터리가 아니라
+`kingwangjjang-be/`와 `CrawlScheduler/`를 포함하는 워크스페이스를 기준으로
+해석합니다. Compose에서는 절대 경로 `/app/public`과 read-only volume을 사용합니다.
 
 수동 분석 job 상태는 프로세스 메모리에 있으므로 재시작 시 사라지지만, 완료된 게시글 분석 결과는 PostgreSQL에 남습니다.
 

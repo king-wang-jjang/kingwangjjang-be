@@ -2,9 +2,13 @@ import json
 import math
 from typing import Any
 
+from app.config import Config
+
 
 DEFAULT_LLM_ENGAGEMENT_SCORE = 50
 MAX_LLM_ENGAGEMENT_REASON_LENGTH = 240
+TRUNCATION_MARKER = "[... content truncated ...]"
+MIN_TRUNCATED_PART_CHARS = 16
 
 ANALYSIS_SYSTEM_PROMPT = (
     "너는 게시글 분석, 태그 분류, 예상 반응 평가 전문가다. "
@@ -24,7 +28,13 @@ DEFAULT_VISION_PROMPT = "이미지 안의 한국어 텍스트를 원문에 가�
 def analysis_messages(content: str) -> list[dict]:
     return [
         {"role": "system", "content": ANALYSIS_SYSTEM_PROMPT},
-        {"role": "user", "content": content},
+        {
+            "role": "user",
+            "content": truncate_analysis_content(
+                content,
+                max_chars=Config.analysis_max_input_chars(),
+            ),
+        },
     ]
 
 
@@ -102,3 +112,95 @@ def _normalize_llm_engagement_reason(value: object) -> str | None:
     if not normalized:
         return None
     return normalized[:MAX_LLM_ENGAGEMENT_REASON_LENGTH]
+
+
+def truncate_analysis_content(content: str, *, max_chars: int) -> str:
+    """Apply a deterministic character cap while retaining structured lines."""
+    if len(content) <= max_chars:
+        return content
+    value = content.strip()
+    if max_chars <= 0:
+        return ""
+
+    parts = [part.strip() for part in value.splitlines() if part.strip()]
+    if not parts:
+        return ""
+    first_part = parts[0]
+    if len(first_part) + len(TRUNCATION_MARKER) + 2 >= max_chars:
+        return _clip_middle(first_part, max_chars)
+
+    body_parts = parts[1:]
+    if not body_parts:
+        return _clip_middle(first_part, max_chars)
+
+    fixed_length = len(first_part) + len(TRUNCATION_MARKER) + 2
+    body_budget = max_chars - fixed_length
+    selected_parts = _select_body_parts(body_parts, body_budget)
+    body_content_budget = body_budget - max(len(selected_parts) - 1, 0)
+    limits = _fair_part_limits(
+        [len(part) for part in selected_parts],
+        max(body_content_budget, 0),
+    )
+    clipped_parts = [
+        _clip_middle(part, limit)
+        for part, limit in zip(selected_parts, limits, strict=True)
+        if limit > 0
+    ]
+    result = "\n".join([first_part, *clipped_parts, TRUNCATION_MARKER])
+    return result if len(result) <= max_chars else result[:max_chars]
+
+
+def _select_body_parts(parts: list[str], budget: int) -> list[str]:
+    if not parts or budget <= 0:
+        return []
+
+    max_parts = max(1, (budget + 1) // (MIN_TRUNCATED_PART_CHARS + 1))
+    if len(parts) <= max_parts:
+        return parts
+
+    head_count = (max_parts + 1) // 2
+    tail_count = max_parts - head_count
+    return parts[:head_count] + (parts[-tail_count:] if tail_count else [])
+
+
+def _fair_part_limits(lengths: list[int], budget: int) -> list[int]:
+    limits = [0] * len(lengths)
+    active = set(range(len(lengths)))
+    remaining = budget
+
+    while active and remaining > 0:
+        share, remainder = divmod(remaining, len(active))
+        completed = {
+            index
+            for index in active
+            if lengths[index] <= share
+        }
+        if completed:
+            for index in completed:
+                limits[index] = lengths[index]
+                remaining -= lengths[index]
+            active -= completed
+            continue
+
+        for position, index in enumerate(sorted(active)):
+            limits[index] = share + (1 if position < remainder else 0)
+        break
+
+    return limits
+
+
+def _clip_middle(value: str, max_chars: int) -> str:
+    if len(value) <= max_chars:
+        return value
+    if max_chars <= 0:
+        return ""
+    if max_chars <= 3:
+        return value[:max_chars]
+
+    marker = "…"
+    available = max_chars - len(marker)
+    head_length = (available * 2 + 2) // 3
+    tail_length = available - head_length
+    if tail_length <= 0:
+        return f"{value[:head_length]}{marker}"
+    return f"{value[:head_length]}{marker}{value[-tail_length:]}"

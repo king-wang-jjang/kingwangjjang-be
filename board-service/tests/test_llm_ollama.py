@@ -261,3 +261,34 @@ def test_explicit_ollama_url_keeps_direct_transport_when_service_env_exists(monk
 
     assert result == "direct"
     assert calls == ["http://ollama.local/api/chat"]
+
+
+def test_analysis_input_override_is_clamped_before_service_request(monkeypatch):
+    captured = {}
+
+    def fake_post(url, *, json, headers, timeout):
+        captured.update(json=json)
+        return DummyResponse(
+            {
+                "summary": "요약",
+                "tags": [],
+                "llm_engagement_score": 50,
+            }
+        )
+
+    monkeypatch.setattr(llm_module.httpx, "post", fake_post)
+
+    low = LLM(
+        service_url="http://ai-router.local",
+        analysis_max_input_chars=-1,
+    )
+    high = LLM(
+        service_url="http://ai-router.local",
+        analysis_max_input_chars=999_999,
+    )
+
+    low.analyze("제목\n" + ("본문" * 2_000))
+
+    assert low.analysis_max_input_chars == 1_000
+    assert 0 < len(captured["json"]["content"]) <= 1_000
+    assert high.analysis_max_input_chars == 200_000

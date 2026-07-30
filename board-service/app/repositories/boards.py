@@ -13,9 +13,27 @@ from app.services.popularity import (
     PopularityMetrics,
     calculate_popularity_scores,
 )
-from app.services.vision_text import VisionTextClient, resolve_media_path
+from app.services.vision_text import (
+    VisionTextClient,
+    VisionTextError,
+    resolve_media_path,
+    validate_image_file,
+)
 from app.utils.constants import DEFAULT_GPT_ANSWER
-from app.utils.crawled_content import extract_llm_text, normalize_contents
+from app.utils.crawled_content import (
+    analysis_max_input_chars,
+    analysis_min_body_chars,
+    analysis_min_language_chars,
+    analysis_retryable_backoff_seconds,
+    analysis_vision_fallback_enabled,
+    analysis_vision_max_image_bytes,
+    analysis_vision_max_images,
+    analysis_vision_max_pixels,
+    analysis_vision_prompt,
+    extract_llm_text,
+    has_sufficient_analysis_body,
+    normalize_contents,
+)
 from app.utils.llm import LLM, LLMError
 
 
@@ -23,6 +41,16 @@ logger = logging.getLogger("board-service")
 SNAPSHOT_RETENTION_DAYS = 7
 SNAPSHOT_CLEANUP_INTERVAL = timedelta(hours=1)
 RECENT_CRAWL_WINDOW = timedelta(hours=24)
+VISION_FALLBACK_UNAVAILABLE_ERROR = (
+    "Vision fallback is temporarily unavailable; retry after the vision node recovers"
+)
+VISION_FALLBACK_REJECTED_ERROR = (
+    "Vision fallback request was rejected; check vision node configuration"
+)
+
+
+class RetryableAnalysisError(LLMError):
+    pass
 
 
 @dataclass(frozen=True)
@@ -292,7 +320,14 @@ class BoardRepository:
                 "is_complete": False,
             }
 
-    def analyze_board(self, board_id: str, analyzer: LLM | None = None) -> dict | None:
+    def analyze_board(
+        self,
+        board_id: str,
+        analyzer: LLM | None = None,
+        *,
+        vision_extractor: VisionTextClient | None = None,
+        media_root=None,
+    ) -> dict | None:
         analyzer = analyzer or LLM()
 
         with get_session_factory()() as session:
@@ -314,7 +349,11 @@ class BoardRepository:
                     "llm_engagement_reason": board.llm_engagement_reason,
                 }
 
-            analysis_text = self._analysis_text(board)
+            analysis_text = self._analysis_text(
+                board,
+                vision_extractor=vision_extractor,
+                media_root=media_root,
+            )
             try:
                 analysis = analyzer.analyze(analysis_text)
             except LLMError:
@@ -359,7 +398,18 @@ class BoardRepository:
                 board.analysis_error = None
                 board.analysis_updated_at = now
             else:
-                if board.analysis_status in {self.ANALYSIS_FAILED, None}:
+                if board.analysis_status == self.ANALYSIS_FAILED:
+                    board.analysis_status = self.ANALYSIS_PENDING
+                    board.analysis_retry_count = 0
+                    board.analysis_started_at = None
+                    board.analysis_error = None
+                elif (
+                    board.analysis_status == self.ANALYSIS_PENDING
+                    and board.analysis_error == VISION_FALLBACK_UNAVAILABLE_ERROR
+                ):
+                    board.analysis_retry_count = 0
+                    board.analysis_error = None
+                elif board.analysis_status is None:
                     board.analysis_status = self.ANALYSIS_PENDING
                 elif board.analysis_status not in {self.ANALYSIS_PENDING, self.ANALYSIS_PROCESSING}:
                     board.analysis_status = self.ANALYSIS_PENDING
@@ -412,6 +462,12 @@ class BoardRepository:
                 raise ValueError("Image media path is missing")
 
             image_path = resolve_media_path(media_path, media_root=media_root)
+            if image_path.stat().st_size > analysis_vision_max_image_bytes():
+                raise VisionTextError("image file exceeds the configured size limit")
+            validate_image_file(
+                image_path,
+                max_pixels=analysis_vision_max_pixels(),
+            )
             text = extractor.extract_text(image_path, prompt=prompt)
 
             return {
@@ -425,6 +481,9 @@ class BoardRepository:
         self,
         analyzer: LLM | None = None,
         max_retry_count: int = DEFAULT_MAX_RETRY_COUNT,
+        *,
+        vision_extractor: VisionTextClient | None = None,
+        media_root=None,
     ) -> dict | None:
         analyzer = analyzer or LLM()
         board_id = self._claim_next_analysis_job(max_retry_count=max_retry_count)
@@ -432,10 +491,22 @@ class BoardRepository:
             return None
 
         try:
-            result = self.analyze_board(board_id, analyzer=analyzer)
+            result = self.analyze_board(
+                board_id,
+                analyzer=analyzer,
+                vision_extractor=vision_extractor,
+                media_root=media_root,
+            )
             if result is None:
                 return None
             return {**result, "status": self.ANALYSIS_DONE}
+        except RetryableAnalysisError as exc:
+            return self._record_analysis_failure(
+                board_id,
+                error=str(exc),
+                max_retry_count=max_retry_count,
+                retryable=True,
+            )
         except LLMError as exc:
             return self._record_analysis_failure(
                 board_id,
@@ -465,6 +536,10 @@ class BoardRepository:
                 .where(
                     Board.analysis_status == self.ANALYSIS_PENDING,
                     Board.analysis_retry_count < max_retry_count,
+                    or_(
+                        Board.analysis_requested_at.is_(None),
+                        Board.analysis_requested_at <= now,
+                    ),
                 )
                 .order_by(
                     desc(Board.analysis_priority),
@@ -494,7 +569,14 @@ class BoardRepository:
             session.commit()
             return board.id
 
-    def _record_analysis_failure(self, board_id: str, error: str, max_retry_count: int) -> dict | None:
+    def _record_analysis_failure(
+        self,
+        board_id: str,
+        error: str,
+        max_retry_count: int,
+        *,
+        retryable: bool = False,
+    ) -> dict | None:
         now = self._now()
         with get_session_factory()() as session:
             board = session.get(Board, board_id)
@@ -506,7 +588,20 @@ class BoardRepository:
             board.analysis_error = error[:1000]
             board.analysis_started_at = None
             board.analysis_updated_at = now
-            if retry_count >= max_retry_count:
+            if retryable:
+                board.analysis_status = self.ANALYSIS_PENDING
+                board.analysis_retry_count = min(
+                    retry_count,
+                    max(max_retry_count - 1, 0),
+                )
+                board.analysis_requested_at = now + timedelta(
+                    seconds=analysis_retryable_backoff_seconds()
+                )
+                board.analysis_priority = max(
+                    int(board.analysis_priority or 0) - 1,
+                    0,
+                )
+            elif retry_count >= max_retry_count:
                 board.analysis_status = self.ANALYSIS_FAILED
             else:
                 board.analysis_status = self.ANALYSIS_PENDING
@@ -736,9 +831,153 @@ class BoardRepository:
         elapsed_hours = max((as_of - updated_at).total_seconds() / 3600, 0.0)
         return float(score or 0.0) * exp(-elapsed_hours / decay_hours)
 
+    @classmethod
+    def _analysis_text(
+        cls,
+        board: Board,
+        *,
+        vision_extractor: VisionTextClient | None = None,
+        media_root=None,
+    ) -> str:
+        contents = normalize_contents(board.contents)
+        minimum_body_chars = analysis_min_body_chars()
+        minimum_language_chars = analysis_min_language_chars()
+        if not has_sufficient_analysis_body(
+            contents,
+            title=board.title,
+            min_body_chars=minimum_body_chars,
+            min_language_chars=minimum_language_chars,
+        ):
+            contents = cls._enrich_analysis_contents_with_vision(
+                board.id,
+                contents,
+                vision_extractor=vision_extractor,
+                media_root=media_root,
+                title=board.title,
+                minimum_body_chars=minimum_body_chars,
+                minimum_language_chars=minimum_language_chars,
+            )
+
+        if not has_sufficient_analysis_body(
+            contents,
+            title=board.title,
+            min_body_chars=minimum_body_chars,
+            min_language_chars=minimum_language_chars,
+        ):
+            raise LLMError("Board content is too short for reliable analysis")
+
+        return extract_llm_text(
+            board.title,
+            contents,
+            max_chars=analysis_max_input_chars(),
+        )
+
     @staticmethod
-    def _analysis_text(board: Board) -> str:
-        return extract_llm_text(board.title, board.contents)
+    def _enrich_analysis_contents_with_vision(
+        board_id: str,
+        contents: list[dict[str, str]],
+        *,
+        vision_extractor: VisionTextClient | None,
+        media_root,
+        title: object,
+        minimum_body_chars: int,
+        minimum_language_chars: int,
+    ) -> list[dict[str, str]]:
+        max_images = analysis_vision_max_images()
+        if not analysis_vision_fallback_enabled() or max_images <= 0:
+            return contents
+
+        enriched = [dict(block) for block in contents]
+        extractor = vision_extractor
+        attempted_images = 0
+        retryable_vision_failures = 0
+        permanent_vision_failures = 0
+        max_image_bytes = analysis_vision_max_image_bytes()
+        max_image_pixels = analysis_vision_max_pixels()
+
+        for block in enriched:
+            if has_sufficient_analysis_body(
+                enriched,
+                title=title,
+                min_body_chars=minimum_body_chars,
+                min_language_chars=minimum_language_chars,
+            ):
+                break
+            if block.get("type") != "image" or attempted_images >= max_images:
+                continue
+
+            media_path = block.get("media_path")
+            if not media_path:
+                continue
+
+            try:
+                image_path = resolve_media_path(media_path, media_root=media_root)
+                if image_path.stat().st_size > max_image_bytes:
+                    logger.warning(
+                        "Skipping oversized analysis image for board %s",
+                        board_id,
+                    )
+                    continue
+                validate_image_file(
+                    image_path,
+                    max_pixels=max_image_pixels,
+                )
+            except (OSError, VisionTextError) as exc:
+                logger.warning(
+                    "Skipping unusable analysis image for board %s: %s",
+                    board_id,
+                    exc,
+                )
+                continue
+
+            try:
+                if extractor is None:
+                    extractor = VisionTextClient()
+                attempted_images += 1
+                vision_text = extractor.extract_text(
+                    image_path,
+                    prompt=analysis_vision_prompt(),
+                ).strip()
+            except (OSError, VisionTextError) as exc:
+                if isinstance(exc, VisionTextError) and not exc.retryable:
+                    permanent_vision_failures += 1
+                else:
+                    retryable_vision_failures += 1
+                logger.warning(
+                    "Vision fallback failed for board %s: %s",
+                    board_id,
+                    exc,
+                )
+                continue
+            except Exception as exc:
+                retryable_vision_failures += 1
+                logger.exception(
+                    "Unexpected vision fallback failure for board %s: %s",
+                    board_id,
+                    exc,
+                )
+                continue
+
+            if not vision_text:
+                continue
+            existing_text = block.get("text", "").strip()
+            if existing_text and vision_text not in existing_text:
+                block["text"] = f"{existing_text}\n{vision_text}"
+            else:
+                block["text"] = vision_text
+
+        still_insufficient = not has_sufficient_analysis_body(
+            enriched,
+            title=title,
+            min_body_chars=minimum_body_chars,
+            min_language_chars=minimum_language_chars,
+        )
+        if still_insufficient and retryable_vision_failures:
+            raise RetryableAnalysisError(VISION_FALLBACK_UNAVAILABLE_ERROR)
+        if still_insufficient and permanent_vision_failures:
+            raise LLMError(VISION_FALLBACK_REJECTED_ERROR)
+
+        return enriched
 
     @staticmethod
     def _image_block_at(contents: object, image_index: int) -> dict | None:

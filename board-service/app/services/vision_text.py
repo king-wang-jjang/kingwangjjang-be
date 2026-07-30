@@ -2,12 +2,23 @@ import base64
 import mimetypes
 import os
 from pathlib import Path
+import warnings
 
 import httpx
+from PIL import Image, UnidentifiedImageError
 
 
 class VisionTextError(RuntimeError):
-    pass
+    def __init__(
+        self,
+        message: str,
+        *,
+        retryable: bool = False,
+        status_code: int | None = None,
+    ) -> None:
+        self.retryable = retryable
+        self.status_code = status_code
+        super().__init__(message)
 
 
 DEFAULT_PROMPT = "이미지 안의 한국어 텍스트를 원문에 가깝게 추출해줘."
@@ -21,6 +32,14 @@ IMAGE_MEDIA_TYPES = {
     ".png": "image/png",
     ".webp": "image/webp",
 }
+IMAGE_FORMAT_MEDIA_TYPES = {
+    "GIF": "image/gif",
+    "JPEG": "image/jpeg",
+    "PNG": "image/png",
+    "WEBP": "image/webp",
+}
+SOURCE_WORKSPACE_ROOT = Path(__file__).resolve().parents[4]
+SUPPORTED_IMAGE_FORMATS = {"GIF", "JPEG", "PNG", "WEBP"}
 
 
 class VisionTextClient:
@@ -76,12 +95,19 @@ class VisionTextClient:
             )
             response.raise_for_status()
             data = response.json()
-        except (httpx.HTTPError, ValueError) as exc:
-            raise VisionTextError(str(exc)) from exc
+        except httpx.HTTPStatusError as exc:
+            raise _http_vision_error(exc) from exc
+        except httpx.HTTPError as exc:
+            raise VisionTextError(str(exc), retryable=True) from exc
+        except ValueError as exc:
+            raise VisionTextError(str(exc), retryable=True) from exc
 
         answer = _extract_message_content(data)
         if not answer:
-            raise VisionTextError("vLLM response did not include message content")
+            raise VisionTextError(
+                "vLLM response did not include message content",
+                retryable=True,
+            )
         return answer
 
     def _extract_text_with_service(self, image_data_url: str, *, prompt: str | None) -> str:
@@ -102,12 +128,19 @@ class VisionTextClient:
             )
             response.raise_for_status()
             data = response.json()
-        except (httpx.HTTPError, ValueError) as exc:
-            raise VisionTextError(str(exc)) from exc
+        except httpx.HTTPStatusError as exc:
+            raise _http_vision_error(exc) from exc
+        except httpx.HTTPError as exc:
+            raise VisionTextError(str(exc), retryable=True) from exc
+        except ValueError as exc:
+            raise VisionTextError(str(exc), retryable=True) from exc
 
         text = data.get("text") if isinstance(data, dict) else None
         if not isinstance(text, str) or not text.strip():
-            raise VisionTextError("AI service vision response did not include text")
+            raise VisionTextError(
+                "AI service vision response did not include text",
+                retryable=True,
+            )
         return text.strip()
 
     @staticmethod
@@ -125,7 +158,14 @@ class VisionTextClient:
 
 
 def resolve_media_path(media_path: str, media_root: Path | str | None = None) -> Path:
-    root = Path(media_root or os.getenv("CRAWLER_MEDIA_ROOT") or ".").resolve()
+    if media_root is not None:
+        root = Path(media_root)
+    else:
+        configured_root = os.getenv("CRAWLER_MEDIA_ROOT")
+        root = Path(configured_root or ".")
+        if configured_root and not root.is_absolute():
+            root = SOURCE_WORKSPACE_ROOT / root
+    root = root.resolve()
     candidate = (root / media_path).resolve()
 
     if candidate != root and root not in candidate.parents:
@@ -135,9 +175,40 @@ def resolve_media_path(media_path: str, media_root: Path | str | None = None) ->
     return candidate
 
 
+def validate_image_file(image_path: Path | str, *, max_pixels: int) -> None:
+    """Reject malformed, unsupported, or decompression-heavy crawler media."""
+    path = Path(image_path)
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(path) as image:
+                image_format = (image.format or "").upper()
+                width, height = image.size
+                frame_count = int(getattr(image, "n_frames", 1) or 1)
+                if image_format not in SUPPORTED_IMAGE_FORMATS:
+                    raise VisionTextError("unsupported image format")
+                if width <= 0 or height <= 0:
+                    raise VisionTextError("invalid image dimensions")
+                if width * height * frame_count > max_pixels:
+                    raise VisionTextError("image pixel count exceeds the configured limit")
+                image.verify()
+    except VisionTextError:
+        raise
+    except (
+        Image.DecompressionBombError,
+        Image.DecompressionBombWarning,
+        UnidentifiedImageError,
+        OSError,
+        ValueError,
+    ) as exc:
+        raise VisionTextError("media file is not a valid supported image") from exc
+
+
 def image_to_data_url(image_path: Path | str) -> str:
     path = Path(image_path)
-    media_type = IMAGE_MEDIA_TYPES.get(path.suffix.lower())
+    media_type = _detected_image_media_type(path)
+    if media_type is None:
+        media_type = IMAGE_MEDIA_TYPES.get(path.suffix.lower())
     if media_type is None:
         media_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
     encoded = base64.b64encode(path.read_bytes()).decode("ascii")
@@ -161,3 +232,24 @@ def _extract_message_content(data: object) -> str | None:
         return None
     content = content.strip()
     return content or None
+
+
+def _detected_image_media_type(path: Path) -> str | None:
+    try:
+        with Image.open(path) as image:
+            return IMAGE_FORMAT_MEDIA_TYPES.get((image.format or "").upper())
+    except (UnidentifiedImageError, OSError, ValueError):
+        return None
+
+
+def _http_vision_error(exc: httpx.HTTPStatusError) -> VisionTextError:
+    status_code = exc.response.status_code
+    retryable = (
+        status_code in {408, 409, 425, 429}
+        or status_code >= 500
+    )
+    return VisionTextError(
+        str(exc),
+        retryable=retryable,
+        status_code=status_code,
+    )

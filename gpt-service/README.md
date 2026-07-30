@@ -81,6 +81,12 @@ Ollama URL이 하나도 없으면 기존 기본값
 `http://100.104.51.52:11434` / `gemma4:e4b`를 등록합니다. 이후 환경변수가
 바뀌어도 관리자가 수정한 DB 노드를 덮어쓰지 않습니다.
 
+이미 관리 노드가 한 개라도 있는 설치에서는 `VLLM_BASE_URL`을 나중에 추가해도
+vision 노드가 자동 생성되지 않습니다. 이미지 게시글 자동 보강을 사용하려면 관리
+API에서 OpenAI-compatible 노드와 모델의 `capabilities: ["vision"]`을 명시해
+등록하고 health check를 통과시켜야 합니다. 이는 운영자가 관리한 노드를 시작 시
+환경변수로 임의 변경하지 않기 위한 one-time bootstrap 계약입니다.
+
 실패가 `AI_NODE_FAILURE_THRESHOLD`(기본 2)에 도달하면 노드를 unhealthy로
 표시합니다. `AI_NODE_RETRY_COOLDOWN_SECONDS`(기본 30초) 뒤에는 자동 복구 probe에
 다시 포함됩니다. 전체 요청 deadline은 `AI_REQUEST_DEADLINE_SECONDS`(기본 55초)이며,
@@ -94,8 +100,13 @@ PostgreSQL 시작 지연은 `AI_DATABASE_STARTUP_ATTEMPTS`(기본 10)와
 분산 선택 상태가 추가로 필요합니다.
 
 요청 자원 한도는 분석/채팅 텍스트 20만 자, 채팅 메시지 64개, inline 이미지 data
-URL 합계 약 20MB, vision prompt 4천 자입니다. degraded 또는 cooldown이 끝난
-unhealthy 노드의 half-open 복구 probe는 프로세스 안에서 동시에 하나만 허용합니다.
+URL 합계 약 20MB, vision prompt 4천 자입니다. `/api/ai/analyze`는 이 공개 검증
+상한 안에서 `AI_ANALYSIS_MAX_INPUT_CHARS`(기본 16,000자)를 추가 적용해 upstream
+모델에 전달합니다. 제목과 줄 단위 콘텐츠 구조를 유지하며 결정적으로 축약하므로
+노드별 context 크기를 API 계약에 노출하지 않습니다. 운영에서는 등록된 노드 중
+가장 작은 context에 맞춰 두 서비스에 같은 값을 설정해야 합니다. degraded 또는
+cooldown이 끝난 unhealthy 노드의 half-open 복구 probe는 프로세스 안에서 동시에
+하나만 허용합니다.
 
 환경변수·운영 예시는 [실행·운영 가이드](../docs/RUNBOOK.md), 서비스 소유권과
 금지 경계는 [GPT Service 에이전트 가이드](../docs/agents/gpt-service.md)를 참고하세요.

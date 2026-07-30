@@ -5,8 +5,10 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.config import MAX_ANALYSIS_REQUEST_CHARS
 
-MAX_TEXT_LENGTH = 200_000
+
+MAX_TEXT_LENGTH = MAX_ANALYSIS_REQUEST_CHARS
 MAX_MESSAGES = 64
 MAX_IMAGE_DATA_URL_LENGTH = 20_000_000
 MAX_PROMPT_LENGTH = 4_000

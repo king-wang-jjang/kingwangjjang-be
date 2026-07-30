@@ -1,6 +1,9 @@
 import sys
 from pathlib import Path
 
+import pytest
+from PIL import Image
+
 
 SERVICE_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SERVICE_ROOT))
@@ -8,6 +11,7 @@ sys.path.insert(0, str(SERVICE_ROOT))
 from app.db import postgres
 from app.db.models import Board
 from app.repositories.boards import BoardRepository
+from app.services.vision_text import VisionTextError
 
 
 class FakeVisionExtractor:
@@ -25,9 +29,9 @@ def test_extract_image_text_resolves_board_image_and_calls_extractor(monkeypatch
     postgres.get_session_factory.cache_clear()
 
     media_root = tmp_path / "media"
-    image_path = media_root / "Dcinside" / "humor" / "1" / "image.webp"
+    image_path = media_root / "Dcinside" / "humor" / "1" / "image.png"
     image_path.parent.mkdir(parents=True)
-    image_path.write_bytes(b"image")
+    Image.new("RGB", (2, 2), color="white").save(image_path)
 
     repository = BoardRepository()
     with postgres.get_session_factory()() as session:
@@ -41,7 +45,7 @@ def test_extract_image_text_resolves_board_image_and_calls_extractor(monkeypatch
                 url="https://example.com/post/1",
                 contents=[
                     {"type": "text", "text": "body"},
-                    {"type": "image", "media_path": "Dcinside/humor/1/image.webp"},
+                    {"type": "image", "media_path": "Dcinside/humor/1/image.png"},
                 ],
             )
         )
@@ -60,9 +64,19 @@ def test_extract_image_text_resolves_board_image_and_calls_extractor(monkeypatch
     assert result == {
         "board_id": "board-1",
         "image_index": 0,
-        "media_path": "Dcinside/humor/1/image.webp",
+        "media_path": "Dcinside/humor/1/image.png",
         "text": "image text from vllm",
     }
+    assert extractor.calls == [(image_path.resolve(), "read exactly")]
+
+    image_path.write_bytes(b"broken")
+    with pytest.raises(VisionTextError, match="valid supported image"):
+        repository.extract_image_text(
+            "board-1",
+            image_index=0,
+            extractor=extractor,
+            media_root=media_root,
+        )
     assert extractor.calls == [(image_path.resolve(), "read exactly")]
 
 

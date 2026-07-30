@@ -111,8 +111,22 @@ refresh token 해시가 DB의 활성 세션과 다르거나 만료되면 `401 in
 | `ANALYSIS_WORKER_IDLE_INTERVAL_SECONDS` | 3 | 처리할 항목이 없을 때 대기 시간 |
 | `ANALYSIS_WORKER_ACTIVE_INTERVAL_SECONDS` | 0.2 | 항목 처리 후 다음 polling까지 대기 |
 | `DISABLE_ANALYSIS_WORKER` | `FALSE` | `TRUE`면 worker 비활성화 |
+| `AI_ANALYSIS_MAX_INPUT_CHARS` | 16000 | board·GPT 서비스가 함께 적용하는 분석 입력 상한 |
+| `AI_ANALYSIS_MIN_BODY_CHARS` | 20 | 제목·중복 블록을 제외한 최소 본문 문자 수 |
+| `AI_ANALYSIS_MIN_LANGUAGE_CHARS` | 4 | 숫자·경로만 있는 본문을 거르는 최소 문자 신호 |
+| `AI_ANALYSIS_VISION_FALLBACK_ENABLED` | `TRUE` | 짧은 이미지 게시글의 로컬 미디어 보강 |
+| `AI_ANALYSIS_VISION_MAX_IMAGES` | 2 | 게시글당 vision 보강 이미지 수, 최대 4 |
+| `AI_ANALYSIS_VISION_MAX_IMAGE_BYTES` | 10000000 | 자동 보강할 이미지 한 장의 최대 크기 |
+| `AI_ANALYSIS_VISION_MAX_PIXELS` | 40000000 | animation frame을 포함한 총 픽셀 상한 |
+| `AI_ANALYSIS_VISION_PROMPT` | `.env.example` 참고 | 장면·맥락·보이는 텍스트를 요청하는 prompt |
+| `AI_ANALYSIS_RETRYABLE_BACKOFF_SECONDS` | 300 | vision 인프라 오류 재시도 간격 |
 
 Board가 GPT를 호출하려면 두 서비스의 `AI_SERVICE_TOKEN` 값이 같아야 합니다. Compose에서는 `AI_SERVICE_URL`이 내부 GPT 서비스 주소로 자동 덮어써집니다.
+`AI_ANALYSIS_MAX_INPUT_CHARS`는 등록된 분석 노드 중 가장 작은 context에 맞춰 두
+서비스에 같은 값으로 설정하세요. 본문이 기준보다 짧으면 로컬
+`CRAWLER_MEDIA_ROOT`의 이미지만 제한적으로 vision 보강하며, 원격 URL은 가져오지
+않습니다. 보강 후에도 기준에 못 미치면 worker가 제목만으로 요약하지 않고 실패
+상태를 기록합니다.
 
 ## AI 노드 관리
 
@@ -127,6 +141,9 @@ Invoke-RestMethod -Method Post -Headers $headers http://localhost:33330/gptservi
 Compose에서는 포트를 `8000`으로 바꿉니다. 추론 호출은 별도의 `X-AI-Service-Token`을 사용합니다. 노드의 `api_key_env`에는 key 자체가 아니라 허용된 환경변수 이름만 저장합니다.
 
 AI 노드 테이블이 비어 있을 때만 `OLLAMA_BASE_URLS`/`OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `VLLM_BASE_URL`, `VLLM_MODEL` 등으로 bootstrap합니다. 이후에는 관리 API로 변경하세요.
+특히 기존 노드가 있는 운영 DB에 `VLLM_BASE_URL`만 추가해도 vision 노드는 생기지
+않습니다. 이미지 본문 보강을 켰다면 관리 API에 `vision` capability 모델을
+명시적으로 등록하고 health check가 성공하는지 확인하세요.
 
 ## 테스트
 

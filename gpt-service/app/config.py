@@ -7,6 +7,9 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 DEFAULT_API_KEY_ENV_NAMES = {"VLLM_API_KEY", "OPENAI_API_KEY", "CHATGPT_API_KEY"}
+DEFAULT_ANALYSIS_MAX_INPUT_CHARS = 16_000
+MIN_ANALYSIS_MAX_INPUT_CHARS = 1_000
+MAX_ANALYSIS_REQUEST_CHARS = 200_000
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -71,6 +74,19 @@ class Config:
     @staticmethod
     def request_deadline_seconds() -> float:
         return max(0.1, env_float("AI_REQUEST_DEADLINE_SECONDS", 55.0))
+
+    @staticmethod
+    def analysis_max_input_chars() -> int:
+        return min(
+            max(
+                env_int(
+                    "AI_ANALYSIS_MAX_INPUT_CHARS",
+                    DEFAULT_ANALYSIS_MAX_INPUT_CHARS,
+                ),
+                MIN_ANALYSIS_MAX_INPUT_CHARS,
+            ),
+            MAX_ANALYSIS_REQUEST_CHARS,
+        )
 
     @staticmethod
     def database_startup_attempts() -> int:
