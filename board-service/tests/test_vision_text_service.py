@@ -92,10 +92,16 @@ def test_relative_configured_media_root_uses_shared_workspace(
     image_path = tmp_path / "CrawlScheduler" / "media" / "post.webp"
     image_path.parent.mkdir(parents=True)
     image_path.write_bytes(b"image")
-    monkeypatch.setattr(vision_text, "SOURCE_WORKSPACE_ROOT", tmp_path)
+    monkeypatch.setattr(vision_text, "_resolve_source_workspace_root", lambda: tmp_path)
     monkeypatch.setenv("CRAWLER_MEDIA_ROOT", "CrawlScheduler/media")
 
     assert vision_text.resolve_media_path("post.webp") == image_path.resolve()
+
+
+def test_source_workspace_root_supports_shallow_container_path():
+    from app.services.vision_text import _resolve_source_workspace_root
+
+    assert _resolve_source_workspace_root("/app/app/services/vision_text.py") == Path("/app")
 
 
 def test_validate_image_file_rejects_invalid_and_excessive_pixel_data(tmp_path):

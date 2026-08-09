@@ -38,7 +38,6 @@ IMAGE_FORMAT_MEDIA_TYPES = {
     "PNG": "image/png",
     "WEBP": "image/webp",
 }
-SOURCE_WORKSPACE_ROOT = Path(__file__).resolve().parents[4]
 SUPPORTED_IMAGE_FORMATS = {"GIF", "JPEG", "PNG", "WEBP"}
 
 
@@ -164,7 +163,7 @@ def resolve_media_path(media_path: str, media_root: Path | str | None = None) ->
         configured_root = os.getenv("CRAWLER_MEDIA_ROOT")
         root = Path(configured_root or ".")
         if configured_root and not root.is_absolute():
-            root = SOURCE_WORKSPACE_ROOT / root
+            root = _resolve_source_workspace_root() / root
     root = root.resolve()
     candidate = (root / media_path).resolve()
 
@@ -173,6 +172,24 @@ def resolve_media_path(media_path: str, media_root: Path | str | None = None) ->
     if not candidate.is_file():
         raise VisionTextError("media file was not found")
     return candidate
+
+
+def _resolve_source_workspace_root(source_file: Path | str = __file__) -> Path:
+    """Locate the shared source workspace without assuming a fixed path depth.
+
+    Source checkouts contain CrawlScheduler next to kingwangjjang-be. Production
+    images only contain board-service under /app, so /app is the safe fallback
+    for a relative media root there. Compose uses the absolute /app/public path.
+    """
+    resolved_source = Path(source_file).resolve()
+    for parent in resolved_source.parents:
+        if (parent / "CrawlScheduler").is_dir():
+            return parent
+
+    service_root_index = 2
+    if len(resolved_source.parents) > service_root_index:
+        return resolved_source.parents[service_root_index]
+    return Path.cwd().resolve()
 
 
 def validate_image_file(image_path: Path | str, *, max_pixels: int) -> None:
