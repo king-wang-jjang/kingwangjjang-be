@@ -160,3 +160,107 @@ def test_lists_apply_decay_after_the_last_score_update(monkeypatch, tmp_path):
     assert realtime[0]["hot_score"] > realtime[1]["hot_score"]
     assert daily[0]["id"] == "fresh-lower-score"
     assert daily[0]["daily_score"] > daily[1]["daily_score"]
+
+
+def test_default_lists_cover_each_active_site_before_repeating_one(monkeypatch, tmp_path):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'boards.db'}")
+    postgres.get_engine.cache_clear()
+    postgres.get_session_factory.cache_clear()
+
+    now = datetime.now(timezone.utc)
+    repository = BoardRepository()
+    with postgres.get_session_factory()() as session:
+        session.add_all(
+            [
+                Board(
+                    id="dc-1",
+                    category="humor",
+                    no=1,
+                    site="dcinside",
+                    title="dc first",
+                    url="https://example.com/dc/1",
+                    contents=[],
+                    created_at=now,
+                    hot_score=100,
+                    daily_score=100,
+                    score_updated_at=now,
+                ),
+                Board(
+                    id="dc-2",
+                    category="humor",
+                    no=2,
+                    site="dcinside",
+                    title="dc second",
+                    url="https://example.com/dc/2",
+                    contents=[],
+                    created_at=now - timedelta(minutes=1),
+                    hot_score=90,
+                    daily_score=90,
+                    score_updated_at=now,
+                ),
+                Board(
+                    id="pp-1",
+                    category="humor",
+                    no=3,
+                    site="ppomppu",
+                    title="ppomppu first",
+                    url="https://example.com/pp/1",
+                    contents=[],
+                    created_at=now - timedelta(minutes=2),
+                    hot_score=10,
+                    daily_score=10,
+                    score_updated_at=now,
+                ),
+            ]
+        )
+        session.commit()
+
+    assert [row["id"] for row in repository.list_realtime(0, 3)] == [
+        "dc-1",
+        "pp-1",
+        "dc-2",
+    ]
+    assert [row["id"] for row in repository.list_daily(0, 3)] == [
+        "dc-1",
+        "pp-1",
+        "dc-2",
+    ]
+
+
+def test_balanced_pagination_is_a_stable_slice_without_duplicates(monkeypatch, tmp_path):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'boards.db'}")
+    postgres.get_engine.cache_clear()
+    postgres.get_session_factory.cache_clear()
+
+    now = datetime.now(timezone.utc)
+    repository = BoardRepository()
+    with postgres.get_session_factory()() as session:
+        session.add_all(
+            [
+                Board(
+                    id=f"{site}-{rank}",
+                    category="humor",
+                    no=rank,
+                    site=site,
+                    title=f"{site} {rank}",
+                    url=f"https://example.com/{site}/{rank}",
+                    contents=[],
+                    created_at=now - timedelta(minutes=rank),
+                    hot_score=site_score - rank,
+                    daily_score=site_score - rank,
+                    score_updated_at=now,
+                )
+                for site, site_score in (("dcinside", 100), ("ppomppu", 60))
+                for rank in range(1, 5)
+            ]
+        )
+        session.commit()
+
+    first_page = repository.list_realtime(0, 3)
+    second_page = repository.list_realtime(1, 3)
+    combined_prefix = repository.list_realtime(0, 6)
+
+    assert [row["id"] for row in first_page + second_page] == [
+        row["id"] for row in combined_prefix
+    ]
+    assert len({row["id"] for row in first_page + second_page}) == 6

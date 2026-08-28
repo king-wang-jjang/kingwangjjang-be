@@ -124,7 +124,7 @@ def test_analyze_board_persists_summary_and_tags(monkeypatch, tmp_path):
         assert board.llm_engagement_reason == "호기심과 토론을 강하게 유발함"
         assert board.hot_score > 0
         assert board.daily_score > 0
-        assert board.score_breakdown["algorithm_version"] == 2
+        assert board.score_breakdown["algorithm_version"] == 3
         assert board.score_breakdown["llm_engagement_score"] == 84
         assert board.analysis_status == BoardRepository.ANALYSIS_DONE
 

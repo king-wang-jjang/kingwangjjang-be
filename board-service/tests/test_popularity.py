@@ -37,7 +37,7 @@ def test_hot_score_prioritizes_recent_metric_growth():
     assert rising.breakdown["delta_comments_20m"] == 30
     assert rising.breakdown["delta_likes_20m"] == 22
     assert rising.breakdown["acceleration_component"] == 2.0
-    assert rising.breakdown["algorithm_version"] == 2
+    assert rising.breakdown["algorithm_version"] == 3
 
 
 def test_popularity_score_clamps_negative_deltas():
@@ -230,3 +230,90 @@ def test_source_rank_is_a_bounded_explicit_addend():
     assert first.breakdown["hot_source_rank_addend"] == 2.0
     assert fourth.breakdown["hot_source_rank_addend"] == 1.0
     assert unranked.breakdown["hot_source_rank_addend"] == 0.0
+
+
+def test_site_profiles_make_equivalent_relative_engagement_comparable():
+    captured_at = datetime(2026, 6, 23, 10, 20, tzinfo=timezone.utc)
+    common = {
+        "created_at": captured_at - timedelta(hours=1),
+        "captured_at": captured_at,
+        "source_rank": 3,
+    }
+
+    dcinside = calculate_popularity_scores(
+        PopularityMetrics(
+            **common,
+            site="dcinside",
+            comment_count=60,
+            like_count=100,
+            view_count=12_000,
+        )
+    )
+    ppomppu = calculate_popularity_scores(
+        PopularityMetrics(
+            **common,
+            site="ppomppu",
+            comment_count=25,
+            like_count=20,
+            view_count=4_000,
+        )
+    )
+
+    assert dcinside.hot_score == pytest.approx(ppomppu.hot_score)
+    assert dcinside.daily_score == pytest.approx(ppomppu.daily_score)
+    assert dcinside.breakdown["normalized_comment_count"] == pytest.approx(1.0)
+    assert dcinside.breakdown["normalized_like_count"] == pytest.approx(1.0)
+    assert dcinside.breakdown["normalized_view_count"] == pytest.approx(1.0)
+    assert dcinside.breakdown["site_profile"] == "dcinside"
+    assert ppomppu.breakdown["site_profile"] == "ppomppu"
+
+
+def test_unavailable_source_metric_is_reweighted_instead_of_treated_as_zero():
+    captured_at = datetime(2026, 6, 23, 10, 20, tzinfo=timezone.utc)
+    common = {
+        "site": "theqoo",
+        "created_at": captured_at - timedelta(hours=1),
+        "captured_at": captured_at,
+        "comment_count": 120,
+        "view_count": 30_000,
+    }
+
+    unavailable = calculate_popularity_scores(
+        PopularityMetrics(**common, like_count=None)
+    )
+    known_zero = calculate_popularity_scores(
+        PopularityMetrics(**common, like_count=0)
+    )
+    at_baseline = calculate_popularity_scores(
+        PopularityMetrics(**common, like_count=50)
+    )
+
+    assert unavailable.breakdown["metric_availability"] == {
+        "comments": True,
+        "likes": False,
+        "views": True,
+    }
+    assert unavailable.breakdown["total_available_weight"] == pytest.approx(1.4)
+    assert unavailable.breakdown["total_component"] == pytest.approx(
+        at_baseline.breakdown["total_component"]
+    )
+    assert unavailable.daily_score > known_zero.daily_score
+
+
+def test_unknown_site_uses_documented_default_profile():
+    captured_at = datetime(2026, 6, 23, 10, 20, tzinfo=timezone.utc)
+
+    scores = calculate_popularity_scores(
+        PopularityMetrics(
+            site="new-community",
+            created_at=captured_at,
+            captured_at=captured_at,
+            comment_count=30,
+            like_count=30,
+            view_count=5_000,
+        )
+    )
+
+    assert scores.breakdown["site_profile"] == "default"
+    assert scores.breakdown["site_baselines"]["comment_total"] == 30.0
+    assert scores.breakdown["total_component"] == pytest.approx(3.2)

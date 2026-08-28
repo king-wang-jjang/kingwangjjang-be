@@ -162,3 +162,66 @@ def test_list_recently_crawled_sites_uses_successful_snapshots_from_last_24_hour
     assert repository.list_recently_crawled_sites(
         as_of=now + timedelta(hours=25)
     ) == []
+
+
+def test_explicit_multi_site_filter_keeps_plain_score_order(monkeypatch, tmp_path):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'boards.db'}")
+    postgres.get_engine.cache_clear()
+    postgres.get_session_factory.cache_clear()
+
+    repository = BoardRepository()
+    created_at = datetime.now(timezone.utc)
+    with postgres.get_session_factory()() as session:
+        session.add_all(
+            [
+                Board(
+                    id="dc-first",
+                    category="humor",
+                    no=1,
+                    site="dcinside",
+                    title="dc first",
+                    url="https://example.com/dc/1",
+                    contents=[],
+                    created_at=created_at,
+                    hot_score=100,
+                    score_updated_at=created_at,
+                ),
+                Board(
+                    id="dc-second",
+                    category="humor",
+                    no=2,
+                    site="dcinside",
+                    title="dc second",
+                    url="https://example.com/dc/2",
+                    contents=[],
+                    created_at=created_at - timedelta(minutes=1),
+                    hot_score=90,
+                    score_updated_at=created_at,
+                ),
+                Board(
+                    id="ppomppu-first",
+                    category="humor",
+                    no=3,
+                    site="ppomppu",
+                    title="ppomppu first",
+                    url="https://example.com/ppomppu/1",
+                    contents=[],
+                    created_at=created_at - timedelta(minutes=2),
+                    hot_score=10,
+                    score_updated_at=created_at,
+                ),
+            ]
+        )
+        session.commit()
+
+    rows = repository.list_realtime(
+        0,
+        3,
+        filters=BoardListFilters(sites=("dcinside", "ppomppu")),
+    )
+
+    assert [row["id"] for row in rows] == [
+        "dc-first",
+        "dc-second",
+        "ppomppu-first",
+    ]

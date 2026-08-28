@@ -2,23 +2,57 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from math import exp, isfinite, log1p, sqrt
-from typing import Any
+from math import exp, isfinite, log, log1p, sqrt
+from typing import Any, Iterable
 
 
-SITE_WEIGHTS = {
-    "dcinside": 1.0,
-    "ygosu": 1.0,
-    "ppomppu": 1.0,
-    "theqoo": 1.0,
+@dataclass(frozen=True)
+class SitePopularityProfile:
+    """Typical engagement for a popular-feed post on one source site.
+
+    These values are scale parameters only. Source-native counters remain
+    unchanged in ``boards`` and ``board_metric_snapshots``.
+    """
+
+    comment_total: float
+    like_total: float
+    view_total: float
+    comment_velocity: float
+    like_velocity: float
+    view_velocity: float
+
+
+DEFAULT_SITE_PROFILE = SitePopularityProfile(
+    comment_total=30.0,
+    like_total=30.0,
+    view_total=5_000.0,
+    comment_velocity=5.0,
+    like_velocity=5.0,
+    view_velocity=1_000.0,
+)
+
+# A signal at 1.0 means the post reached the typical level for its site's
+# popular feed. Profiles are shared with CrawlScheduler's algorithm v3.
+SITE_PROFILES = {
+    "dcinside": SitePopularityProfile(60, 100, 12_000, 10, 15, 3_000),
+    "ppomppu": SitePopularityProfile(25, 20, 4_000, 4, 3, 800),
+    "ygosu": SitePopularityProfile(15, 12, 2_000, 3, 2, 400),
+    "theqoo": SitePopularityProfile(120, 50, 30_000, 20, 8, 6_000),
+    "fmkorea": SitePopularityProfile(80, 250, 20_000, 15, 40, 4_000),
+    "arca": SitePopularityProfile(45, 80, 8_000, 8, 12, 1_600),
+    "inven": SitePopularityProfile(20, 25, 3_000, 4, 4, 600),
+    "instiz": SitePopularityProfile(40, 30, 8_000, 7, 5, 1_600),
+    "ruliweb": SitePopularityProfile(45, 70, 8_000, 8, 10, 1_600),
+    "natepan": SitePopularityProfile(80, 150, 20_000, 15, 25, 4_000),
 }
 
-ALGORITHM_VERSION = 2
+ALGORITHM_VERSION = 3
 DEFAULT_INTERVAL_MINUTES = 20.0
 MIN_INTERVAL_SCALE = 0.25
 MAX_INTERVAL_SCALE = 4.0
 HOT_DECAY_HOURS = 12.0
 DAILY_DECAY_HOURS = 36.0
+NORMALIZED_BASELINE_SIGNAL = 1.0 / log(2.0)
 
 
 @dataclass(frozen=True)
@@ -26,8 +60,8 @@ class PopularityMetrics:
     site: str
     created_at: datetime
     captured_at: datetime
-    comment_count: int = 0
-    like_count: int = 0
+    comment_count: int | None = 0
+    like_count: int | None = 0
     view_count: int | None = None
     source_rank: int | None = None
     previous_comment_count: int | None = None
@@ -49,6 +83,9 @@ class PopularityScores:
 
 
 def calculate_popularity_scores(metrics: PopularityMetrics) -> PopularityScores:
+    comment_available = metrics.comment_count is not None
+    like_available = metrics.like_count is not None
+    view_available = metrics.view_count is not None
     comment_count = _clean_count(metrics.comment_count)
     like_count = _clean_count(metrics.like_count)
     view_count = _clean_count(metrics.view_count)
@@ -73,20 +110,48 @@ def calculate_popularity_scores(metrics: PopularityMetrics) -> PopularityScores:
     previous_delta_likes = _clean_count(metrics.previous_delta_likes) * previous_interval_scale
     previous_delta_views = _clean_count(metrics.previous_delta_views) * previous_interval_scale
 
-    total_component = (
-        1.2 * log1p(comment_count)
-        + 1.8 * log1p(like_count)
-        + 0.2 * log1p(view_count)
+    profile = SITE_PROFILES.get(metrics.site, DEFAULT_SITE_PROFILE)
+    normalized_comment_count = _normalized_signal(comment_count, profile.comment_total)
+    normalized_like_count = _normalized_signal(like_count, profile.like_total)
+    normalized_view_count = _normalized_signal(view_count, profile.view_total)
+    total_component, total_available_weight = _weighted_available_component(
+        (
+            (normalized_comment_count, 1.2, comment_available),
+            (normalized_like_count, 1.8, like_available),
+            (normalized_view_count, 0.2, view_available),
+        )
     )
-    velocity_component = _weighted_velocity(
+    normalized_delta_comments = _normalized_signal(
         delta_comments,
-        delta_likes,
-        delta_views,
+        profile.comment_velocity,
     )
-    previous_velocity_component = _weighted_velocity(
+    normalized_delta_likes = _normalized_signal(delta_likes, profile.like_velocity)
+    normalized_delta_views = _normalized_signal(delta_views, profile.view_velocity)
+    velocity_component, velocity_available_weight = _weighted_available_component(
+        (
+            (normalized_delta_comments, 2.4, comment_available),
+            (normalized_delta_likes, 3.2, like_available),
+            (normalized_delta_views, 0.3, view_available),
+        )
+    )
+    normalized_previous_delta_comments = _normalized_signal(
         previous_delta_comments,
+        profile.comment_velocity,
+    )
+    normalized_previous_delta_likes = _normalized_signal(
         previous_delta_likes,
+        profile.like_velocity,
+    )
+    normalized_previous_delta_views = _normalized_signal(
         previous_delta_views,
+        profile.view_velocity,
+    )
+    previous_velocity_component, _ = _weighted_available_component(
+        (
+            (normalized_previous_delta_comments, 2.4, comment_available),
+            (normalized_previous_delta_likes, 3.2, like_available),
+            (normalized_previous_delta_views, 0.3, view_available),
+        )
     )
     acceleration_component = min(
         max(velocity_component - previous_velocity_component, 0.0),
@@ -100,8 +165,6 @@ def calculate_popularity_scores(metrics: PopularityMetrics) -> PopularityScores:
     hot_llm_addend = 1.5 * llm_engagement_signal
     daily_llm_addend = 1.0 * llm_engagement_signal
     age_hours = _age_hours(metrics.created_at, metrics.captured_at)
-    site_weight = SITE_WEIGHTS.get(metrics.site, 1.0)
-
     raw_hot_score = max(
         0.35 * total_component
         + 0.55 * velocity_component
@@ -120,8 +183,8 @@ def calculate_popularity_scores(metrics: PopularityMetrics) -> PopularityScores:
 
     hot_age_decay = exp(-age_hours / HOT_DECAY_HOURS)
     daily_age_decay = exp(-age_hours / DAILY_DECAY_HOURS)
-    hot_score = raw_hot_score * site_weight * hot_age_decay
-    daily_score = raw_daily_score * site_weight * daily_age_decay
+    hot_score = raw_hot_score * hot_age_decay
+    daily_score = raw_daily_score * daily_age_decay
 
     return PopularityScores(
         hot_score=hot_score,
@@ -144,6 +207,31 @@ def calculate_popularity_scores(metrics: PopularityMetrics) -> PopularityScores:
             "previous_delta_comments_20m": previous_delta_comments,
             "previous_delta_likes_20m": previous_delta_likes,
             "previous_delta_views_20m": previous_delta_views,
+            "site_profile": metrics.site if metrics.site in SITE_PROFILES else "default",
+            "site_baselines": {
+                "comment_total": profile.comment_total,
+                "like_total": profile.like_total,
+                "view_total": profile.view_total,
+                "comment_velocity_20m": profile.comment_velocity,
+                "like_velocity_20m": profile.like_velocity,
+                "view_velocity_20m": profile.view_velocity,
+            },
+            "metric_availability": {
+                "comments": comment_available,
+                "likes": like_available,
+                "views": view_available,
+            },
+            "normalized_comment_count": normalized_comment_count,
+            "normalized_like_count": normalized_like_count,
+            "normalized_view_count": normalized_view_count,
+            "normalized_delta_comments_20m": normalized_delta_comments,
+            "normalized_delta_likes_20m": normalized_delta_likes,
+            "normalized_delta_views_20m": normalized_delta_views,
+            "normalized_previous_delta_comments_20m": normalized_previous_delta_comments,
+            "normalized_previous_delta_likes_20m": normalized_previous_delta_likes,
+            "normalized_previous_delta_views_20m": normalized_previous_delta_views,
+            "total_available_weight": total_available_weight,
+            "velocity_available_weight": velocity_available_weight,
             "total_component": total_component,
             "velocity_component": velocity_component,
             "previous_velocity_component": previous_velocity_component,
@@ -161,7 +249,6 @@ def calculate_popularity_scores(metrics: PopularityMetrics) -> PopularityScores:
             "age_hours": age_hours,
             "hot_age_decay": hot_age_decay,
             "daily_age_decay": daily_age_decay,
-            "site_weight": site_weight,
         },
     )
 
@@ -178,12 +265,26 @@ def _delta(current: int, previous: int | None) -> int:
     return max(current - int(previous), 0)
 
 
-def _weighted_velocity(comments: float, likes: float, views: float) -> float:
-    return (
-        2.4 * log1p(comments)
-        + 3.2 * log1p(likes)
-        + 0.3 * log1p(views)
+def _normalized_signal(value: float, baseline: float) -> float:
+    clean_baseline = baseline if isfinite(baseline) and baseline > 0 else 1.0
+    clean_value = max(float(value), 0.0) if isfinite(float(value)) else 0.0
+    return log1p(clean_value / clean_baseline) * NORMALIZED_BASELINE_SIGNAL
+
+
+def _weighted_available_component(
+    signals: Iterable[tuple[float, float, bool]],
+) -> tuple[float, float]:
+    signals = tuple(signals)
+    total_weight = sum(weight for _, weight, _ in signals)
+    available_weight = sum(weight for _, weight, available in signals if available)
+    if available_weight <= 0:
+        return 0.0, 0.0
+    weighted_sum = sum(
+        signal * weight
+        for signal, weight, available in signals
+        if available
     )
+    return weighted_sum * total_weight / available_weight, available_weight
 
 
 def _interval_minutes(captured_at: datetime, previous_captured_at: datetime | None) -> float | None:

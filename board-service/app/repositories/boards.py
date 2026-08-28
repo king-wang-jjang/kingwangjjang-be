@@ -13,6 +13,12 @@ from app.services.popularity import (
     PopularityMetrics,
     calculate_popularity_scores,
 )
+from app.services.ranking import (
+    DAILY_ACTIVE_SITE_HOURS,
+    HOT_ACTIVE_SITE_HOURS,
+    RankingCandidate,
+    balance_site_exposure,
+)
 from app.services.vision_text import (
     VisionTextClient,
     VisionTextError,
@@ -60,6 +66,16 @@ class BoardListFilters:
     tag: str | None = None
     query: str | None = None
     has_thumbnail: bool | None = None
+
+    @property
+    def is_default(self) -> bool:
+        return not (
+            self.sites
+            or self.category
+            or self.tag
+            or self.query
+            or self.has_thumbnail is not None
+        )
 
     @classmethod
     def from_values(
@@ -171,8 +187,8 @@ class BoardRepository:
         self,
         board_id: str,
         *,
-        comment_count: int,
-        like_count: int,
+        comment_count: int | None,
+        like_count: int | None,
         view_count: int | None = None,
         source_rank: int | None = None,
         captured_at: datetime | None = None,
@@ -182,6 +198,9 @@ class BoardRepository:
         captured_at = captured_at or self._now()
         if captured_at.tzinfo is None:
             captured_at = captured_at.replace(tzinfo=timezone.utc)
+        native_comment_count = self._optional_native_count(comment_count)
+        native_like_count = self._optional_native_count(like_count)
+        native_view_count = self._optional_native_count(view_count)
 
         with get_session_factory()() as session:
             board = session.get(Board, board_id)
@@ -214,9 +233,9 @@ class BoardRepository:
                     site=board.site,
                     created_at=board.created_at,
                     captured_at=captured_at,
-                    comment_count=comment_count,
-                    like_count=like_count,
-                    view_count=view_count,
+                    comment_count=native_comment_count,
+                    like_count=native_like_count,
+                    view_count=native_view_count,
                     source_rank=source_rank,
                     llm_engagement_score=board.llm_engagement_score,
                     previous_comment_count=getattr(previous_snapshot, "comment_count", None),
@@ -249,17 +268,17 @@ class BoardRepository:
                 BoardMetricSnapshot(
                     board_id=board_id,
                     captured_at=captured_at,
-                    comment_count=max(int(comment_count or 0), 0),
-                    like_count=max(int(like_count or 0), 0),
-                    view_count=view_count,
+                    comment_count=native_comment_count or 0,
+                    like_count=native_like_count or 0,
+                    view_count=native_view_count,
                     source_rank=source_rank,
                     crawl_status=crawl_status,
                     crawl_error=crawl_error,
                 )
             )
-            board.native_comment_count = max(int(comment_count or 0), 0)
-            board.native_like_count = max(int(like_count or 0), 0)
-            board.native_view_count = view_count
+            board.native_comment_count = native_comment_count
+            board.native_like_count = native_like_count
+            board.native_view_count = native_view_count
             board.source_rank = source_rank
             board.metrics_crawled_at = captured_at
             board.hot_score = scores.hot_score
@@ -634,16 +653,17 @@ class BoardRepository:
                 comment_count=(
                     current_snapshot.comment_count
                     if current_snapshot is not None
-                    else int(board.native_comment_count or 0)
+                    and board.native_comment_count is not None
+                    else board.native_comment_count
                 ),
                 like_count=(
                     current_snapshot.like_count
-                    if current_snapshot is not None
-                    else int(board.native_like_count or 0)
+                    if current_snapshot is not None and board.native_like_count is not None
+                    else board.native_like_count
                 ),
                 view_count=(
                     current_snapshot.view_count
-                    if current_snapshot is not None
+                    if current_snapshot is not None and board.native_view_count is not None
                     else board.native_view_count
                 ),
                 source_rank=(
@@ -695,6 +715,15 @@ class BoardRepository:
         return max(0, min(int(round(numeric_value)), 100))
 
     @staticmethod
+    def _optional_native_count(value: object) -> int | None:
+        if value is None or value == "":
+            return None
+        try:
+            return max(int(value), 0)
+        except (TypeError, ValueError):
+            return None
+
+    @staticmethod
     def _optional_llm_reason(value: object) -> str | None:
         if not isinstance(value, str):
             return None
@@ -710,12 +739,26 @@ class BoardRepository:
     ) -> list[dict]:
         page_size = max(limit, 1)
         offset = max(index, 0) * page_size
+        filters = filters or BoardListFilters()
         ordering = desc(self._effective_score_expression(daily=daily))
-        stmt = self._apply_list_filters(select(Board), filters or BoardListFilters())
+        stmt = self._apply_list_filters(select(Board), filters)
         secondary_ordering = desc(Board.like_count) if daily else desc(Board.created_at)
         score_as_of = self._now()
 
         with get_session_factory()() as session:
+            if filters.is_default:
+                boards = self._list_balanced_candidates(
+                    session,
+                    stmt=stmt,
+                    ordering=ordering,
+                    secondary_ordering=secondary_ordering,
+                    daily=daily,
+                    score_as_of=score_as_of,
+                    target_count=offset + page_size,
+                )
+                boards = boards[offset : offset + page_size]
+                return [self._to_dict(board, score_as_of=score_as_of) for board in boards]
+
             boards = session.scalars(
                 stmt.order_by(ordering, secondary_ordering, desc(Board.created_at))
                 .offset(offset)
@@ -723,6 +766,69 @@ class BoardRepository:
             ).all()
 
             return [self._to_dict(board, score_as_of=score_as_of) for board in boards]
+
+    def _list_balanced_candidates(
+        self,
+        session,
+        *,
+        stmt,
+        ordering,
+        secondary_ordering,
+        daily: bool,
+        score_as_of: datetime,
+        target_count: int,
+    ) -> list[Board]:
+        sites = session.scalars(
+            select(Board.site).distinct().order_by(Board.site)
+        ).all()
+        candidates: list[RankingCandidate[Board]] = []
+        score_attr = "daily_score" if daily else "hot_score"
+        decay_hours = DAILY_DECAY_HOURS if daily else HOT_DECAY_HOURS
+
+        for site in sites:
+            site_boards = session.scalars(
+                stmt.where(Board.site == site)
+                .order_by(ordering, secondary_ordering, desc(Board.created_at))
+                .limit(target_count)
+            ).all()
+            for board in site_boards:
+                updated_at = board.score_updated_at or board.created_at
+                candidates.append(
+                    RankingCandidate(
+                        item=board,
+                        identity=str(board.id),
+                        site=str(board.site or ""),
+                        score=self._effective_score_value(
+                            getattr(board, score_attr),
+                            updated_at,
+                            score_as_of,
+                            decay_hours,
+                        ),
+                        created_at=board.created_at,
+                        is_active=self._is_active_ranking_candidate(
+                            board,
+                            score_as_of=score_as_of,
+                            daily=daily,
+                        ),
+                    )
+                )
+
+        return balance_site_exposure(candidates, limit=target_count)
+
+    @staticmethod
+    def _is_active_ranking_candidate(
+        board: Board,
+        *,
+        score_as_of: datetime,
+        daily: bool,
+    ) -> bool:
+        activity_at = board.metrics_crawled_at or board.score_updated_at or board.created_at
+        if activity_at.tzinfo is None:
+            activity_at = activity_at.replace(tzinfo=timezone.utc)
+        if score_as_of.tzinfo is None:
+            score_as_of = score_as_of.replace(tzinfo=timezone.utc)
+        active_hours = DAILY_ACTIVE_SITE_HOURS if daily else HOT_ACTIVE_SITE_HOURS
+        return activity_at >= score_as_of - timedelta(hours=active_hours)
 
     @staticmethod
     def _effective_score_expression(*, daily: bool):
