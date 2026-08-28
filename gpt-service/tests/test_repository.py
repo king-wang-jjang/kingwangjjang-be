@@ -102,7 +102,7 @@ def test_bootstrap_uses_historical_ollama_defaults_for_missing_or_blank_env(
 def test_bootstrap_registers_summary_vllm_without_legacy_ollama(repository, monkeypatch):
     monkeypatch.setenv("AI_BOOTSTRAP_OLLAMA_ENABLED", "FALSE")
     monkeypatch.setenv("SUMMARY_VLLM_BASE_URL", "http://host.docker.internal:8000/v1/")
-    monkeypatch.setenv("SUMMARY_VLLM_MODEL", "Qwen/Qwen3.6-27B")
+    monkeypatch.setenv("SUMMARY_VLLM_MODEL", "Qwen/Qwen3.8-27B")
     monkeypatch.setenv("SUMMARY_VLLM_MAX_CONCURRENCY", "2")
     monkeypatch.delenv("VLLM_BASE_URL", raising=False)
 
@@ -114,9 +114,34 @@ def test_bootstrap_registers_summary_vllm_without_legacy_ollama(repository, monk
     assert node.priority == 10
     assert node.max_concurrency == 2
     assert {(model.model_name, model.capability) for model in node.models} == {
-        ("Qwen/Qwen3.6-27B", "analysis"),
-        ("Qwen/Qwen3.6-27B", "chat"),
+        ("Qwen/Qwen3.8-27B", "analysis"),
+        ("Qwen/Qwen3.8-27B", "chat"),
     }
+
+
+def test_bootstrap_updates_persisted_summary_vllm_model(repository, monkeypatch):
+    monkeypatch.setenv("AI_BOOTSTRAP_OLLAMA_ENABLED", "FALSE")
+    monkeypatch.setenv("SUMMARY_VLLM_BASE_URL", "http://vllm:8000/v1")
+    monkeypatch.setenv("SUMMARY_VLLM_MODEL", "Qwen/Qwen3.6-27B")
+    monkeypatch.delenv("VLLM_BASE_URL", raising=False)
+
+    assert bootstrap_legacy_nodes(repository) == 1
+    node = repository.list_nodes()[0]
+    repository.record_failure(node.id, "old model failed")
+
+    monkeypatch.setenv("SUMMARY_VLLM_MODEL", "Qwen/Qwen3.8-27B")
+    assert bootstrap_legacy_nodes(repository) == 1
+
+    updated = repository.list_nodes()[0]
+    assert updated.id == node.id
+    assert updated.health_status == "unknown"
+    assert updated.consecutive_failures == 0
+    assert updated.last_error is None
+    assert {(model.model_name, model.capability) for model in updated.models} == {
+        ("Qwen/Qwen3.8-27B", "analysis"),
+        ("Qwen/Qwen3.8-27B", "chat"),
+    }
+    assert bootstrap_legacy_nodes(repository) == 0
 
 
 def test_unhealthy_node_is_automatically_retried_after_cooldown(

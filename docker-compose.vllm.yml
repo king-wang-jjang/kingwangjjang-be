@@ -1,0 +1,50 @@
+name: kingwangjjang-vllm
+
+volumes:
+  qwen-hf-cache:
+    name: qwen-hf-cache
+  qwen-vllm-cache:
+    name: qwen-vllm-cache
+
+services:
+  qwen38-vllm:
+    container_name: kingwangjjang-qwen38
+    image: vllm/vllm-openai@sha256:cec2df507519b5a2c4d9870524f86a2a100fae79cb689d1ce11f3d4da2f4ffad
+    gpus: all
+    ipc: host
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - qwen-hf-cache:/root/.cache/huggingface
+      - qwen-vllm-cache:/root/.cache/vllm
+    command:
+      - RadixArk/Qwen3.8-27B-NVFP4
+      - --served-model-name
+      - Qwen/Qwen3.8-27B
+      - --quantization
+      - modelopt
+      - --max-model-len
+      - "8192"
+      - --gpu-memory-utilization
+      - "0.90"
+      - --kv-cache-dtype
+      - fp8
+      - --max-num-seqs
+      - "2"
+      - --language-model-only
+      - --reasoning-parser
+      - qwen3
+      - --generation-config
+      - vllm
+      - --enforce-eager
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/v1/models', timeout=2)"
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20m

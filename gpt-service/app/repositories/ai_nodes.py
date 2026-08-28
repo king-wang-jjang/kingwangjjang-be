@@ -68,6 +68,87 @@ class AINodeRepository:
                 .options(selectinload(AINode.models))
             )
 
+    def synchronize_named_node(
+        self,
+        values: dict[str, Any],
+        models: list[dict[str, Any]],
+    ) -> bool:
+        """Create or update one environment-managed node by its stable name."""
+        self._validate_node_values(values)
+        name = str(values.get("name") or "").strip()
+        if not name:
+            raise ValueError("node name is required")
+        model_rows = self._model_rows(models)
+
+        with self._session_factory() as session:
+            node = session.scalar(
+                select(AINode)
+                .where(AINode.name == name)
+                .options(selectinload(AINode.models))
+            )
+            if node is None:
+                node = AINode(**values)
+                node.models = [AINodeModel(**row) for row in model_rows]
+                session.add(node)
+                changed = True
+            else:
+                changed = False
+                for field in (
+                    "provider",
+                    "base_url",
+                    "enabled",
+                    "priority",
+                    "weight",
+                    "max_concurrency",
+                    "timeout_seconds",
+                    "api_key_env",
+                ):
+                    desired = values.get(field)
+                    if getattr(node, field) != desired:
+                        setattr(node, field, desired)
+                        changed = True
+
+                current_models = sorted(
+                    (
+                        item.model_name,
+                        item.capability,
+                        item.enabled,
+                        item.is_default,
+                    )
+                    for item in node.models
+                )
+                desired_models = sorted(
+                    (
+                        item["model_name"],
+                        item["capability"],
+                        item["enabled"],
+                        item["is_default"],
+                    )
+                    for item in model_rows
+                )
+                if current_models != desired_models:
+                    node.models.clear()
+                    session.flush()
+                    node.models = [AINodeModel(**row) for row in model_rows]
+                    changed = True
+
+                if changed:
+                    node.health_status = "unknown"
+                    node.consecutive_failures = 0
+                    node.last_latency_ms = None
+                    node.last_error = None
+                    node.last_checked_at = None
+                    node.updated_at = datetime.now(timezone.utc)
+
+            if not changed:
+                return False
+            try:
+                session.commit()
+            except IntegrityError as exc:
+                session.rollback()
+                raise ValueError("AI node name or provider/base_url already exists") from exc
+            return True
+
     def create_node(self, values: dict[str, Any], models: list[dict[str, Any]]) -> AINode:
         self._validate_node_values(values)
         model_rows = self._model_rows(models)

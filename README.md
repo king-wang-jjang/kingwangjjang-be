@@ -50,15 +50,22 @@ Linux/macOS에서는 `./run.sh`를 사용합니다. 컨테이너 Gateway 주소�
 전체 MSA를 시작하지 않고 요약용 GPT 서비스만 `33336` 포트에 실행할 수 있습니다.
 
 ```powershell
+docker compose -f docker-compose.vllm.yml up -d
 docker compose -f docker-compose.summary.yml up -d --build
+Invoke-RestMethod http://127.0.0.1:8000/v1/models
 Invoke-RestMethod http://127.0.0.1:33336/health
 ```
 
-기본 모델은 `Qwen/Qwen3.6-27B`이며 `analysis`와 `chat` capability로 등록됩니다.
+기본 API 모델은 `Qwen/Qwen3.8-27B`이며 `analysis`와 `chat` capability로 등록됩니다.
+RTX 50 시리즈 24GB 환경에서는 `RadixArk/Qwen3.8-27B-NVFP4` 체크포인트를
+vLLM의 `modelopt` 양자화 모드와 `--language-model-only` 옵션으로 실행합니다.
 현재 8K 컨텍스트에 맞춰 분석 입력은 12,000자로 제한되고 출력은 512토큰으로
 제한됩니다. 초과 입력은 앞·중간·끝 문맥을 보존하는 기존 절단 로직을 사용합니다.
 설정과 노드 레지스트리는 `kingwangjjang-summary_gpt-summary-data` 볼륨에 유지됩니다.
-종료할 때는 `docker compose -f docker-compose.summary.yml down`을 사용하세요.
+새 게시글은 DB에 `pending` 상태로 등록되고 board-service worker가 비동기로 요약합니다.
+완료된 요약·태그·반응 점수는 `boards` 테이블에 저장되어 이후 요청은 DB 값을 재사용합니다.
+종료할 때는 `docker compose -f docker-compose.summary.yml down`과
+`docker compose -f docker-compose.vllm.yml down`을 사용하세요.
 
 ## 주요 공개 API
 

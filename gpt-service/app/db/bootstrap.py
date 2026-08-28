@@ -90,7 +90,7 @@ def legacy_node_definitions() -> list[dict]:
                 "models": [
                     {
                         "name": os.getenv("SUMMARY_VLLM_MODEL")
-                        or "Qwen/Qwen3.6-27B",
+                        or "Qwen/Qwen3.8-27B",
                         "capabilities": ["analysis", "chat"],
                         "enabled": True,
                         "is_default": True,
@@ -129,6 +129,26 @@ def legacy_node_definitions() -> list[dict]:
 
 
 def bootstrap_legacy_nodes(repository: AINodeRepository) -> int:
-    """Import legacy endpoint variables only when no managed nodes exist."""
+    """Import legacy nodes once and keep the dedicated summary node in sync."""
 
-    return repository.bootstrap_if_empty(legacy_node_definitions())
+    definitions = legacy_node_definitions()
+    created = repository.bootstrap_if_empty(definitions)
+    if created:
+        return created
+
+    summary_definition = next(
+        (
+            definition
+            for definition in definitions
+            if definition["values"].get("name") == "summary-vllm"
+        ),
+        None,
+    )
+    if summary_definition is None:
+        return 0
+    return int(
+        repository.synchronize_named_node(
+            summary_definition["values"],
+            summary_definition["models"],
+        )
+    )
