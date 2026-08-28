@@ -12,6 +12,7 @@ COPY ./pyproject.toml ./poetry.lock ./poetry.toml /app/
 RUN poetry install --only main --no-root
 
 COPY . /app
+RUN sed -i 's/\r$//' /app/prod.sh && chmod +x /app/prod.sh
 
 EXPOSE 33336
 

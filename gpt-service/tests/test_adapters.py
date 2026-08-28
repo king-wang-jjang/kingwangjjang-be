@@ -214,6 +214,47 @@ def test_openai_models_health_and_factory_aliases():
     assert health.models == ["model-a", "model-b"]
 
 
+def test_openai_chat_applies_optional_summary_generation_controls(monkeypatch):
+    captured = {}
+    monkeypatch.setenv("OPENAI_COMPATIBLE_MAX_TOKENS", "512")
+    monkeypatch.setenv("OPENAI_COMPATIBLE_TEMPERATURE", "0")
+    monkeypatch.setenv("OPENAI_COMPATIBLE_DISABLE_THINKING", "TRUE")
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        captured["payload"] = json.loads(request.content)
+        return httpx.Response(
+            200,
+            json={
+                "model": "Qwen/Qwen3.6-27B",
+                "choices": [
+                    {
+                        "message": {"role": "assistant", "content": "summary"},
+                        "finish_reason": "stop",
+                    }
+                ],
+            },
+        )
+
+    async def scenario():
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            adapter = OpenAICompatibleAdapter(
+                base_url="http://vllm.local/v1",
+                timeout_seconds=2,
+                client=client,
+            )
+            return await adapter.chat(
+                "Qwen/Qwen3.6-27B",
+                [{"role": "user", "content": "summarize"}],
+            )
+
+    result = run(scenario())
+
+    assert result.content == "summary"
+    assert captured["payload"]["max_tokens"] == 512
+    assert captured["payload"]["temperature"] == 0
+    assert captured["payload"]["chat_template_kwargs"] == {"enable_thinking": False}
+
+
 def test_invalid_chat_shape_raises_common_response_error():
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"choices": []})

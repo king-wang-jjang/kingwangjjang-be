@@ -44,6 +44,22 @@ Linux/macOS에서는 `./run.sh`를 사용합니다. 컨테이너 Gateway 주소�
 
 > `run.ps1 clean`과 `run.sh clean`은 PostgreSQL 볼륨까지 제거합니다. 개발 데이터를 지워도 될 때만 사용하세요.
 
+### 로컬 vLLM 요약 서비스
+
+호스트의 OpenAI-compatible vLLM이 `8000` 포트에서 실행 중이면, PostgreSQL이나
+전체 MSA를 시작하지 않고 요약용 GPT 서비스만 `33336` 포트에 실행할 수 있습니다.
+
+```powershell
+docker compose -f docker-compose.summary.yml up -d --build
+Invoke-RestMethod http://127.0.0.1:33336/health
+```
+
+기본 모델은 `Qwen/Qwen3.6-27B`이며 `analysis`와 `chat` capability로 등록됩니다.
+현재 8K 컨텍스트에 맞춰 분석 입력은 12,000자로 제한되고 출력은 512토큰으로
+제한됩니다. 초과 입력은 앞·중간·끝 문맥을 보존하는 기존 절단 로직을 사용합니다.
+설정과 노드 레지스트리는 `kingwangjjang-summary_gpt-summary-data` 볼륨에 유지됩니다.
+종료할 때는 `docker compose -f docker-compose.summary.yml down`을 사용하세요.
+
 ## 주요 공개 API
 
 - 인증: `GET /login`, `GET /callback`, `POST /userservice/api/auth/refresh`

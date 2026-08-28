@@ -11,6 +11,21 @@ def _timeout(name: str, default: float = 60.0) -> float:
     return value if value > 0 else default
 
 
+def _positive_int(name: str, default: int) -> int:
+    try:
+        value = int(os.getenv(name, str(default)))
+    except ValueError:
+        return default
+    return value if value > 0 else default
+
+
+def _enabled(name: str, default: bool = True) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().upper() not in {"0", "FALSE", "NO", "OFF"}
+
+
 def _ollama_urls() -> list[str]:
     multi = os.getenv("OLLAMA_BASE_URLS", "")
     values = [value.strip().rstrip("/") for value in multi.split(",") if value.strip()]
@@ -22,9 +37,13 @@ def _ollama_urls() -> list[str]:
 
 def legacy_node_definitions() -> list[dict]:
     definitions: list[dict] = []
-    ollama_model = os.getenv("OLLAMA_MODEL") or "gemma4:e4b"
-    ollama_timeout = _timeout("OLLAMA_TIMEOUT_SECONDS")
-    for index, base_url in enumerate(_ollama_urls(), start=1):
+    if _enabled("AI_BOOTSTRAP_OLLAMA_ENABLED"):
+        ollama_model = os.getenv("OLLAMA_MODEL") or "gemma4:e4b"
+        ollama_timeout = _timeout("OLLAMA_TIMEOUT_SECONDS")
+        ollama_urls = _ollama_urls()
+    else:
+        ollama_urls = []
+    for index, base_url in enumerate(ollama_urls, start=1):
         definitions.append(
             {
                 "values": {
@@ -41,6 +60,37 @@ def legacy_node_definitions() -> list[dict]:
                 "models": [
                     {
                         "name": ollama_model,
+                        "capabilities": ["analysis", "chat"],
+                        "enabled": True,
+                        "is_default": True,
+                    }
+                ],
+            }
+        )
+
+    summary_vllm_url = os.getenv("SUMMARY_VLLM_BASE_URL", "").strip().rstrip("/")
+    if summary_vllm_url:
+        definitions.append(
+            {
+                "values": {
+                    "name": "summary-vllm",
+                    "provider": "openai_compatible",
+                    "base_url": summary_vllm_url,
+                    "enabled": True,
+                    "priority": 10,
+                    "weight": 1,
+                    "max_concurrency": _positive_int(
+                        "SUMMARY_VLLM_MAX_CONCURRENCY", 2
+                    ),
+                    "timeout_seconds": _timeout(
+                        "SUMMARY_VLLM_TIMEOUT_SECONDS", 50.0
+                    ),
+                    "health_status": "unknown",
+                },
+                "models": [
+                    {
+                        "name": os.getenv("SUMMARY_VLLM_MODEL")
+                        or "Qwen/Qwen3.6-27B",
                         "capabilities": ["analysis", "chat"],
                         "enabled": True,
                         "is_default": True,

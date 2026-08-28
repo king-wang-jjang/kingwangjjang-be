@@ -1,0 +1,40 @@
+name: kingwangjjang-summary
+
+volumes:
+  gpt-summary-data:
+
+services:
+  gpt-summary:
+    container_name: kingwangjjang-gpt-summary
+    build:
+      context: ./gpt-service
+    ports:
+      - "127.0.0.1:33336:33336"
+    environment:
+      DATABASE_URL: sqlite+pysqlite:////data/ai-nodes.db
+      SERVER_RUN_MODE: "FALSE"
+      AI_BOOTSTRAP_OLLAMA_ENABLED: "FALSE"
+      SUMMARY_VLLM_BASE_URL: http://host.docker.internal:8000/v1
+      SUMMARY_VLLM_MODEL: Qwen/Qwen3.6-27B
+      SUMMARY_VLLM_MAX_CONCURRENCY: "2"
+      SUMMARY_VLLM_TIMEOUT_SECONDS: "50"
+      AI_REQUEST_DEADLINE_SECONDS: "50"
+      AI_ANALYSIS_MAX_INPUT_CHARS: "12000"
+      OPENAI_COMPATIBLE_DISABLE_THINKING: "TRUE"
+      OPENAI_COMPATIBLE_MAX_TOKENS: "512"
+      OPENAI_COMPATIBLE_TEMPERATURE: "0"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - gpt-summary-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:33336/health', timeout=2)"
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 20s

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from time import perf_counter
 from typing import Any, Mapping, Sequence
 
@@ -40,6 +41,14 @@ class OpenAICompatibleAdapter(AIAdapter):
             "messages": _to_openai_messages(validate_messages(messages)),
             "stream": False,
         }
+        max_tokens = _optional_positive_int("OPENAI_COMPATIBLE_MAX_TOKENS")
+        if max_tokens is not None:
+            payload["max_tokens"] = max_tokens
+        temperature = _optional_nonnegative_float("OPENAI_COMPATIBLE_TEMPERATURE")
+        if temperature is not None:
+            payload["temperature"] = temperature
+        if _environment_flag("OPENAI_COMPATIBLE_DISABLE_THINKING"):
+            payload["chat_template_kwargs"] = {"enable_thinking": False}
         normalized_format = _to_openai_response_format(response_format)
         if normalized_format is not None:
             payload["response_format"] = normalized_format
@@ -116,6 +125,32 @@ def _to_openai_response_format(response_format: ResponseFormat | None) -> JsonOb
         format_type = "json_object" if response_format == "json" else response_format
         return {"type": format_type}
     return dict(response_format)
+
+
+def _optional_positive_int(name: str) -> int | None:
+    raw_value = os.getenv(name)
+    if raw_value is None or not raw_value.strip():
+        return None
+    try:
+        value = int(raw_value)
+    except ValueError:
+        return None
+    return value if value > 0 else None
+
+
+def _environment_flag(name: str) -> bool:
+    return os.getenv(name, "").strip().upper() in {"1", "TRUE", "YES", "ON"}
+
+
+def _optional_nonnegative_float(name: str) -> float | None:
+    raw_value = os.getenv(name)
+    if raw_value is None or not raw_value.strip():
+        return None
+    try:
+        value = float(raw_value)
+    except ValueError:
+        return None
+    return value if value >= 0 else None
 
 
 def _to_openai_messages(messages: list[JsonObject]) -> list[JsonObject]:
