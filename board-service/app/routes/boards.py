@@ -40,6 +40,32 @@ class BoardFilterOptions(BaseModel):
     sites: list[BoardFilterOption]
 
 
+class IssueSiteBreakdown(BaseModel):
+    site: str
+    site_label: str
+    post_count: int
+
+
+class IssueCategoryOverview(BaseModel):
+    category: str
+    post_count: int
+    current_posts: int
+    previous_posts: int
+    impact_score: float
+    share: float
+    momentum_percent: float
+    top_sites: list[IssueSiteBreakdown]
+    top_tags: list[str]
+
+
+class IssueOverviewResponse(BaseModel):
+    generated_at: datetime
+    window_hours: int
+    total_posts: int
+    total_categories: int
+    categories: list[IssueCategoryOverview]
+
+
 def _to_board_response(board: dict) -> dict:
     return {
         "_id": board["id"],
@@ -102,6 +128,38 @@ def board_filters(response: Response):
     response.headers["Cache-Control"] = "no-store"
     active_sites = BoardRepository().list_recently_crawled_sites()
     return get_board_filter_options(active_sites)
+
+
+@router.get("/issues", response_model=IssueOverviewResponse)
+def issue_overview(
+    response: Response,
+    hours: int = Query(default=24, ge=6, le=168),
+    limit: int = Query(default=16, ge=4, le=24),
+    sites: list[str] | None = Query(default=None),
+):
+    selected_sites = BoardListFilters.from_values(sites=sites).sites
+    overview = BoardRepository().get_issue_overview(
+        window_hours=hours,
+        limit=limit,
+        sites=selected_sites,
+    )
+    response.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=120"
+    return {
+        **overview,
+        "categories": [
+            {
+                **category,
+                "top_sites": [
+                    {
+                        **site,
+                        "site_label": get_site_label(site["site"]),
+                    }
+                    for site in category["top_sites"]
+                ],
+            }
+            for category in overview["categories"]
+        ],
+    }
 
 
 @router.get("/realtime")

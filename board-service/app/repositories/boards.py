@@ -1,4 +1,5 @@
 import logging
+from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from math import exp, isfinite
@@ -126,6 +127,136 @@ class BoardRepository:
         filters: BoardListFilters | None = None,
     ) -> list[dict]:
         return self._list_boards(index=index, limit=limit, daily=True, filters=filters)
+
+    def get_issue_overview(
+        self,
+        *,
+        window_hours: int = 24,
+        limit: int = 16,
+        sites: tuple[str, ...] = (),
+        as_of: datetime | None = None,
+    ) -> dict:
+        """Aggregate recent category momentum without loading board bodies."""
+        reference_time = as_of or self._now()
+        if reference_time.tzinfo is None:
+            reference_time = reference_time.replace(tzinfo=timezone.utc)
+        else:
+            reference_time = reference_time.astimezone(timezone.utc)
+
+        bounded_hours = max(6, min(int(window_hours), 168))
+        category_limit = max(4, min(int(limit), 24))
+        window_start = reference_time - timedelta(hours=bounded_hours)
+        current_period_start = reference_time - timedelta(hours=bounded_hours / 2)
+
+        stmt = select(
+            Board.category,
+            Board.site,
+            Board.tags,
+            Board.created_at,
+            Board.hot_score,
+            Board.score_updated_at,
+        ).where(
+            Board.created_at >= window_start,
+            Board.created_at <= reference_time,
+        )
+        if sites:
+            stmt = stmt.where(Board.site.in_(sites))
+
+        with get_session_factory()() as session:
+            rows = session.execute(stmt).all()
+
+        categories: dict[str, dict] = {}
+        for category, site, tags, created_at, hot_score, score_updated_at in rows:
+            category_name = str(category or "").strip() or "uncategorized"
+            site_name = str(site or "").strip() or "unknown"
+            created_at = self._as_utc(created_at)
+            score_updated_at = self._as_utc(score_updated_at or created_at)
+            raw_hot_score = float(hot_score or 0.0)
+            if not isfinite(raw_hot_score):
+                raw_hot_score = 0.0
+            effective_hot_score = self._effective_score_value(
+                max(raw_hot_score, 0.0),
+                score_updated_at,
+                reference_time,
+                HOT_DECAY_HOURS,
+            )
+
+            aggregate = categories.setdefault(
+                category_name,
+                {
+                    "category": category_name,
+                    "post_count": 0,
+                    "current_posts": 0,
+                    "previous_posts": 0,
+                    "impact_score": 0.0,
+                    "sites": Counter(),
+                    "tags": Counter(),
+                },
+            )
+            aggregate["post_count"] += 1
+            aggregate["impact_score"] += 1.0 + effective_hot_score
+            if created_at >= current_period_start:
+                aggregate["current_posts"] += 1
+            else:
+                aggregate["previous_posts"] += 1
+            aggregate["sites"][site_name] += 1
+
+            seen_tags: set[str] = set()
+            for tag in tags if isinstance(tags, list) else []:
+                clean_tag = str(tag or "").strip()
+                if clean_tag and clean_tag not in seen_tags:
+                    aggregate["tags"][clean_tag] += 1
+                    seen_tags.add(clean_tag)
+
+        total_impact = sum(item["impact_score"] for item in categories.values())
+        ranked_categories = sorted(
+            categories.values(),
+            key=lambda item: (
+                -item["impact_score"],
+                -item["post_count"],
+                item["category"],
+            ),
+        )[:category_limit]
+
+        result_categories = []
+        for item in ranked_categories:
+            current_posts = item["current_posts"]
+            previous_posts = item["previous_posts"]
+            momentum_percent = ((current_posts + 1) / (previous_posts + 1) - 1) * 100
+            top_sites = sorted(
+                item["sites"].items(),
+                key=lambda pair: (-pair[1], pair[0]),
+            )[:3]
+            top_tags = sorted(
+                item["tags"].items(),
+                key=lambda pair: (-pair[1], pair[0]),
+            )[:3]
+            result_categories.append(
+                {
+                    "category": item["category"],
+                    "post_count": item["post_count"],
+                    "current_posts": current_posts,
+                    "previous_posts": previous_posts,
+                    "impact_score": round(item["impact_score"], 4),
+                    "share": round(item["impact_score"] / total_impact, 6)
+                    if total_impact
+                    else 0.0,
+                    "momentum_percent": round(momentum_percent, 1),
+                    "top_sites": [
+                        {"site": site_name, "post_count": count}
+                        for site_name, count in top_sites
+                    ],
+                    "top_tags": [tag for tag, _count in top_tags],
+                }
+            )
+
+        return {
+            "generated_at": reference_time.isoformat().replace("+00:00", "Z"),
+            "window_hours": bounded_hours,
+            "total_posts": len(rows),
+            "total_categories": len(categories),
+            "categories": result_categories,
+        }
 
     def list_recently_crawled_sites(self, *, as_of: datetime | None = None) -> list[str]:
         reference_time = as_of or self._now()
@@ -936,6 +1067,12 @@ class BoardRepository:
             as_of = as_of.replace(tzinfo=timezone.utc)
         elapsed_hours = max((as_of - updated_at).total_seconds() / 3600, 0.0)
         return float(score or 0.0) * exp(-elapsed_hours / decay_hours)
+
+    @staticmethod
+    def _as_utc(value: datetime) -> datetime:
+        if value.tzinfo is None:
+            return value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc)
 
     @classmethod
     def _analysis_text(

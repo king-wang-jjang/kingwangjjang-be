@@ -40,6 +40,7 @@ def authorize_admin(client: TestClient) -> None:
 
 class FakeRepository:
     last_filters = None
+    last_issue_args = None
     last_history_date = None
     last_history_limit = None
     last_history_dates_limit = None
@@ -58,6 +59,28 @@ class FakeRepository:
 
     def list_recently_crawled_sites(self):
         return list(type(self).recently_crawled_sites)
+
+    def get_issue_overview(self, *, window_hours=24, limit=16, sites=()):
+        type(self).last_issue_args = (window_hours, limit, sites)
+        return {
+            "generated_at": "2026-08-31T00:00:00Z",
+            "window_hours": window_hours,
+            "total_posts": 12,
+            "total_categories": 2,
+            "categories": [
+                {
+                    "category": "humor",
+                    "post_count": 8,
+                    "current_posts": 6,
+                    "previous_posts": 2,
+                    "impact_score": 42.5,
+                    "share": 0.75,
+                    "momentum_percent": 133.3,
+                    "top_sites": [{"site": "dcinside", "post_count": 5}],
+                    "top_tags": ["이슈", "유머"],
+                }
+            ],
+        }
 
     def list_realtime(self, index: int, limit: int, filters=None):
         assert index == 0
@@ -184,6 +207,7 @@ def build_client(monkeypatch):
 
     boards.analysis_jobs.clear()
     FakeRepository.last_filters = None
+    FakeRepository.last_issue_args = None
     FakeRepository.last_history_date = None
     FakeRepository.last_history_limit = None
     FakeRepository.last_history_dates_limit = None
@@ -257,6 +281,50 @@ def test_filters_returns_no_static_fallback_when_no_site_crawled_recently(monkey
 
     assert response.status_code == 200
     assert response.json() == {"sites": []}
+
+
+def test_issue_overview_returns_visualization_data_and_applies_site_scope(monkeypatch):
+    client = build_client(monkeypatch)
+
+    response = client.get(
+        "/api/boards/issues?hours=48&limit=12&sites=dcinside&sites=ppomppu"
+    )
+
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == (
+        "public, max-age=60, stale-while-revalidate=120"
+    )
+    assert FakeRepository.last_issue_args == (
+        48,
+        12,
+        ("dcinside", "ppomppu"),
+    )
+    assert response.json()["categories"][0] == {
+        "category": "humor",
+        "post_count": 8,
+        "current_posts": 6,
+        "previous_posts": 2,
+        "impact_score": 42.5,
+        "share": 0.75,
+        "momentum_percent": 133.3,
+        "top_sites": [
+            {
+                "site": "dcinside",
+                "site_label": "디시인사이드",
+                "post_count": 5,
+            }
+        ],
+        "top_tags": ["이슈", "유머"],
+    }
+
+
+def test_issue_overview_validates_window_and_category_limit(monkeypatch):
+    client = build_client(monkeypatch)
+
+    assert client.get("/api/boards/issues?hours=5").status_code == 422
+    assert client.get("/api/boards/issues?hours=169").status_code == 422
+    assert client.get("/api/boards/issues?limit=3").status_code == 422
+    assert client.get("/api/boards/issues?limit=25").status_code == 422
 
 
 def test_daily_returns_rest_shape(monkeypatch):
