@@ -37,6 +37,16 @@ def test_gateway_owns_and_forwards_trusted_admin_role_header():
     assert 'headers["X-User-Role"]' in proxy
 
 
+def test_gateway_protects_ai_management_and_injects_internal_admin_token():
+    proxy = read(ROOT / "api-gateway" / "app" / "routes" / "index.py")
+
+    assert '"gptservice/api/ai/nodes"' in proxy
+    assert '"gptservice/api/ai/resources"' in proxy
+    assert 'getattr(request.state, "user_role", "user") != "admin"' in proxy
+    assert 'headers["X-AI-Admin-Token"] = admin_token' in proxy
+    assert '"X-AI-Admin-Token"' in proxy
+
+
 def test_services_require_trusted_role_and_board_service_rechecks_admin_token():
     board_dependencies = read(ROOT / "board-service" / "app" / "auth" / "dependencies.py")
     user_dependencies = read(ROOT / "user-service" / "app" / "auth" / "dependencies.py")

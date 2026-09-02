@@ -289,6 +289,54 @@ async def test_max_concurrency_routes_parallel_request_to_next_node(repository):
 
 
 @pytest.mark.asyncio
+async def test_resource_snapshot_detects_unhandled_capacity(repository):
+    node = create_test_node(repository, max_concurrency=1)
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    class BlockingAdapter(FakeAdapter):
+        async def chat(self, model, messages, response_format=None):
+            started.set()
+            await release.wait()
+            return ChatResult(content="done", model=model)
+
+    router = AINodeRouter(
+        repository,
+        adapter_factory=lambda _provider, **_kwargs: BlockingAdapter(),
+    )
+    active_task = asyncio.create_task(
+        router.invoke(
+            capability="chat",
+            messages=[{"role": "user", "content": "first"}],
+        )
+    )
+    await started.wait()
+
+    with pytest.raises(NoAvailableNodeError, match="max concurrency"):
+        await router.invoke(
+            capability="chat",
+            messages=[{"role": "user", "content": "overflow"}],
+        )
+
+    snapshot = await router.resource_snapshot()
+    assert snapshot["status"] == "overloaded"
+    assert snapshot["is_overloaded"] is True
+    assert snapshot["capacity"]["active_requests"] == 1
+    assert snapshot["capacity"]["available_capacity"] == 0
+    assert snapshot["traffic"]["recent_capacity_rejections"] == 1
+    assert snapshot["traffic"]["capacity_rejected_requests"] == 1
+    assert snapshot["nodes"][0]["id"] == node.id
+    assert snapshot["nodes"][0]["saturated"] is True
+    assert snapshot["nodes"][0]["capacity_rejections"] == 1
+
+    release.set()
+    await active_task
+    completed = await router.resource_snapshot()
+    assert completed["capacity"]["active_requests"] == 0
+    assert completed["traffic"]["successful_requests"] == 1
+
+
+@pytest.mark.asyncio
 async def test_unhealthy_node_is_probed_after_cooldown_and_recovers(repository, monkeypatch):
     node = create_test_node(repository)
     calls = 0

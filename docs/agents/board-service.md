@@ -29,10 +29,16 @@
 | `/api/boards/daily/history/dates` | Available daily Top 10 snapshot dates. |
 | `/api/boards/daily/history?date=YYYY-MM-DD` | Stored Top 10 ranking for a date. |
 | `/api/boards/daily/shorts-package` | Admin-only live or historical Shorts production package. |
+| `/api/boards/ai/resources` | Admin-only analysis backlog and worker throughput. |
 | `/api/boards/{board_id}/ai` | Read or request board analysis. |
 | `/api/boards/ai/jobs/{job_id}` | Read an authenticated manual-analysis job. |
 | `/api/boards/{board_id}/images/{image_index}/vision-text` | Authenticated image text extraction. |
 | `/api/boards/{board_id}/likes` | Board like endpoint. |
+
+The backlog endpoint reports `overloaded` when the oldest pending analysis has
+waited at least 10 minutes or pending depth reaches 10 jobs per configured
+worker. It reports `busy` from 2 minutes, 2 jobs per worker, or a stale
+processing job.
 
 ## Data Boundary
 

@@ -2,9 +2,10 @@ import asyncio
 import inspect
 import logging
 import os
-from collections import defaultdict
+from collections import defaultdict, deque
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from time import perf_counter
 from typing import Any, Generic, TypeVar
 
@@ -29,6 +30,8 @@ class InvalidInferenceRequestError(ValueError):
 
 
 logger = logging.getLogger("gpt-service")
+METRICS_WINDOW_SECONDS = 60
+MAX_RECENT_EVENTS = 100_000
 
 
 @dataclass(frozen=True)
@@ -37,6 +40,16 @@ class InvocationResult(Generic[T]):
     node_id: str
     node_name: str
     model: str
+
+
+@dataclass
+class NodeRuntimeMetrics:
+    attempts: int = 0
+    successful_attempts: int = 0
+    failed_attempts: int = 0
+    request_rejections: int = 0
+    capacity_rejections: int = 0
+    peak_in_flight: int = 0
 
 
 class AINodeRouter:
@@ -49,8 +62,22 @@ class AINodeRouter:
         self.repository = repository
         self._adapter_factory = adapter_factory or self._default_adapter_factory
         self._inflight: dict[str, int] = defaultdict(int)
+        self._inflight_by_capability: dict[str, int] = defaultdict(int)
         self._concurrency_lock = asyncio.Lock()
         self._weighted_cursor: dict[tuple, int] = defaultdict(int)
+        self._metrics_started_at = datetime.now(timezone.utc)
+        self._total_requests = 0
+        self._successful_requests = 0
+        self._failed_requests = 0
+        self._capacity_rejected_requests = 0
+        self._spillover_requests = 0
+        self._peak_in_flight = 0
+        self._node_metrics: dict[str, NodeRuntimeMetrics] = defaultdict(NodeRuntimeMetrics)
+        self._request_events: deque[float] = deque(maxlen=MAX_RECENT_EVENTS)
+        self._success_events: deque[float] = deque(maxlen=MAX_RECENT_EVENTS)
+        self._failure_events: deque[float] = deque(maxlen=MAX_RECENT_EVENTS)
+        self._capacity_rejection_events: deque[float] = deque(maxlen=MAX_RECENT_EVENTS)
+        self._spillover_events: deque[float] = deque(maxlen=MAX_RECENT_EVENTS)
 
     async def invoke(
         self,
@@ -60,23 +87,30 @@ class AINodeRouter:
         response_format: str | dict | None = None,
         transform: Callable[[str], T] | None = None,
     ) -> InvocationResult[T | str]:
+        self._total_requests += 1
+        self._record_event(self._request_events)
         candidates = self._ordered_candidates(capability)
         if not candidates:
+            self._record_failed_request()
             raise NoAvailableNodeError(f"No enabled AI node supports capability '{capability}'")
 
         failures: list[str] = []
         request_rejections: list[str] = []
         attempted = False
         attempted_count = 0
+        saw_saturated_candidate = False
         deadline = perf_counter() + Config.request_deadline_seconds()
         for index, candidate in enumerate(candidates):
             remaining_seconds = deadline - perf_counter()
             if remaining_seconds <= 0:
                 break
             if not await self._reserve(candidate):
+                saw_saturated_candidate = True
                 continue
             attempted = True
             attempted_count += 1
+            node_metrics = self._node_metrics[candidate.node_id]
+            node_metrics.attempts += 1
             started = perf_counter()
             adapter = None
             try:
@@ -95,6 +129,12 @@ class AINodeRouter:
                 value = transform(result.content) if transform is not None else result.content
                 latency_ms = (perf_counter() - started) * 1000
                 self.repository.record_success(candidate.node_id, latency_ms)
+                node_metrics.successful_attempts += 1
+                self._successful_requests += 1
+                self._record_event(self._success_events)
+                if saw_saturated_candidate:
+                    self._spillover_requests += 1
+                    self._record_event(self._spillover_events)
                 return InvocationResult(
                     value=value,
                     node_id=candidate.node_id,
@@ -102,6 +142,8 @@ class AINodeRouter:
                     model=candidate.model,
                 )
             except AdapterConfigurationError as exc:
+                node_metrics.request_rejections += 1
+                self._record_failed_request()
                 raise InvalidInferenceRequestError("Invalid AI inference request") from exc
             except AdapterHTTPError as exc:
                 if exc.status_code in {400, 413, 415, 422}:
@@ -111,6 +153,7 @@ class AINodeRouter:
                     # report a client-facing 422 if every attempted node rejects
                     # the request.
                     error = self._safe_error(exc)
+                    node_metrics.request_rejections += 1
                     request_rejections.append(f"{candidate.node_name}: {error}")
                     logger.info(
                         "AI node rejected an inference request for %s: %s",
@@ -120,12 +163,14 @@ class AINodeRouter:
                     continue
                 latency_ms = (perf_counter() - started) * 1000
                 error = self._safe_error(exc)
+                node_metrics.failed_attempts += 1
                 failures.append(f"{candidate.node_name}: {error}")
                 self.repository.record_failure(candidate.node_id, error, latency_ms)
                 logger.warning("AI node request failed for %s: %s", candidate.node_name, error)
             except Exception as exc:
                 latency_ms = (perf_counter() - started) * 1000
                 error = self._safe_error(exc)
+                node_metrics.failed_attempts += 1
                 failures.append(f"{candidate.node_name}: {error}")
                 self.repository.record_failure(candidate.node_id, error, latency_ms)
                 logger.warning("AI node request failed for %s: %s", candidate.node_name, error)
@@ -134,19 +179,152 @@ class AINodeRouter:
                 await self._release(candidate)
 
         if not attempted:
+            self._record_capacity_rejected_request()
             raise NoAvailableNodeError(
                 f"All AI nodes for capability '{capability}' are at max concurrency"
             )
         if attempted_count > 0 and len(request_rejections) == attempted_count:
+            self._record_failed_request()
             if attempted_count == len(candidates):
                 raise InvalidInferenceRequestError("AI nodes rejected the inference request")
+            if saw_saturated_candidate:
+                self._capacity_rejected_requests += 1
+                self._record_event(self._capacity_rejection_events)
             raise NoAvailableNodeError(
                 "AI nodes rejected the request while other candidates were unavailable"
             )
         detail = "; ".join(failures) or "all candidates failed"
+        self._record_failed_request()
         raise NodeRequestFailedError(
             f"All AI nodes failed for capability '{capability}': {detail}"
         )
+
+    async def resource_snapshot(self) -> dict[str, Any]:
+        """Return process-local capacity and traffic metrics for the admin UI."""
+        nodes = self.repository.list_nodes()
+        window_seconds = METRICS_WINDOW_SECONDS
+        now = perf_counter()
+        cutoff = now - window_seconds
+
+        async with self._concurrency_lock:
+            recent_requests = self._recent_count(self._request_events, cutoff)
+            recent_successes = self._recent_count(self._success_events, cutoff)
+            recent_failures = self._recent_count(self._failure_events, cutoff)
+            recent_capacity_rejections = self._recent_count(
+                self._capacity_rejection_events, cutoff
+            )
+            recent_spillovers = self._recent_count(self._spillover_events, cutoff)
+
+            node_rows: list[dict[str, Any]] = []
+            configured_capacity = 0
+            effective_capacity = 0
+            active_requests = 0
+            capability_rows: dict[str, dict[str, Any]] = {
+                capability: {
+                    "capability": capability,
+                    "enabled_nodes": 0,
+                    "effective_capacity": 0,
+                    "active_requests": self._inflight_by_capability[capability],
+                    "available_capacity": 0,
+                }
+                for capability in ("analysis", "chat", "vision")
+            }
+
+            for node in nodes:
+                in_flight = self._inflight[node.id]
+                metrics = self._node_metrics[node.id]
+                configured_limit = node.max_concurrency if node.enabled else 0
+                effective_limit = self._effective_limit(node)
+                available_capacity = max(0, effective_limit - in_flight)
+                configured_capacity += configured_limit
+                effective_capacity += effective_limit
+                active_requests += in_flight
+                capabilities = {
+                    model.capability
+                    for model in node.models
+                    if node.enabled and model.enabled
+                }
+                for capability in capabilities:
+                    row = capability_rows[capability]
+                    if effective_limit > 0:
+                        row["enabled_nodes"] += 1
+                    row["effective_capacity"] += effective_limit
+                    row["available_capacity"] += available_capacity
+
+                node_rows.append(
+                    {
+                        "id": node.id,
+                        "in_flight": in_flight,
+                        "configured_capacity": configured_limit,
+                        "effective_capacity": effective_limit,
+                        "available_capacity": available_capacity,
+                        "utilization_percent": self._utilization_percent(
+                            in_flight, effective_limit
+                        ),
+                        "saturated": effective_limit > 0 and available_capacity == 0,
+                        "attempts": metrics.attempts,
+                        "successful_attempts": metrics.successful_attempts,
+                        "failed_attempts": metrics.failed_attempts,
+                        "request_rejections": metrics.request_rejections,
+                        "capacity_rejections": metrics.capacity_rejections,
+                        "peak_in_flight": metrics.peak_in_flight,
+                    }
+                )
+
+            available_capacity = max(0, effective_capacity - active_requests)
+            utilization_percent = self._utilization_percent(
+                active_requests, effective_capacity
+            )
+            if effective_capacity == 0:
+                resource_status = "unavailable"
+            elif recent_capacity_rejections > 0:
+                resource_status = "overloaded"
+            elif utilization_percent >= 80 or recent_spillovers > 0:
+                resource_status = "busy"
+            else:
+                resource_status = "healthy"
+
+            for row in capability_rows.values():
+                if row["effective_capacity"] == 0:
+                    row["status"] = "unavailable"
+                elif row["available_capacity"] == 0:
+                    row["status"] = "saturated"
+                elif (
+                    row["available_capacity"] / row["effective_capacity"]
+                ) <= 0.2:
+                    row["status"] = "busy"
+                else:
+                    row["status"] = "healthy"
+
+            return {
+                "generated_at": datetime.now(timezone.utc),
+                "metrics_started_at": self._metrics_started_at,
+                "status": resource_status,
+                "is_overloaded": recent_capacity_rejections > 0,
+                "window_seconds": window_seconds,
+                "capacity": {
+                    "configured_capacity": configured_capacity,
+                    "effective_capacity": effective_capacity,
+                    "active_requests": active_requests,
+                    "available_capacity": available_capacity,
+                    "utilization_percent": utilization_percent,
+                    "peak_in_flight": self._peak_in_flight,
+                },
+                "traffic": {
+                    "total_requests": self._total_requests,
+                    "successful_requests": self._successful_requests,
+                    "failed_requests": self._failed_requests,
+                    "capacity_rejected_requests": self._capacity_rejected_requests,
+                    "spillover_requests": self._spillover_requests,
+                    "recent_requests": recent_requests,
+                    "recent_successes": recent_successes,
+                    "recent_failures": recent_failures,
+                    "recent_capacity_rejections": recent_capacity_rejections,
+                    "recent_spillovers": recent_spillovers,
+                },
+                "capabilities": list(capability_rows.values()),
+                "nodes": node_rows,
+            }
 
     async def health_check(self, node_id: str):
         node = self.repository.get_node(node_id)
@@ -258,13 +436,62 @@ class AINodeRouter:
                 else candidate.max_concurrency
             )
             if self._inflight[candidate.node_id] >= effective_limit:
+                self._node_metrics[candidate.node_id].capacity_rejections += 1
                 return False
             self._inflight[candidate.node_id] += 1
+            self._inflight_by_capability[candidate.capability] += 1
+            node_metrics = self._node_metrics[candidate.node_id]
+            node_metrics.peak_in_flight = max(
+                node_metrics.peak_in_flight,
+                self._inflight[candidate.node_id],
+            )
+            self._peak_in_flight = max(self._peak_in_flight, sum(self._inflight.values()))
             return True
 
     async def _release(self, candidate: NodeCandidate) -> None:
         async with self._concurrency_lock:
             self._inflight[candidate.node_id] = max(0, self._inflight[candidate.node_id] - 1)
+            self._inflight_by_capability[candidate.capability] = max(
+                0,
+                self._inflight_by_capability[candidate.capability] - 1,
+            )
+
+    @staticmethod
+    def _effective_limit(node: Any) -> int:
+        if not node.enabled or node.health_status == "unhealthy":
+            return 0
+        if node.health_status == "degraded":
+            return 1
+        return node.max_concurrency
+
+    @staticmethod
+    def _utilization_percent(in_flight: int, capacity: int) -> float:
+        if capacity <= 0:
+            return 0.0
+        return round(min(100.0, (in_flight / capacity) * 100), 1)
+
+    @staticmethod
+    def _record_event(events: deque[float]) -> None:
+        now = perf_counter()
+        events.append(now)
+        cutoff = now - METRICS_WINDOW_SECONDS
+        while events and events[0] < cutoff:
+            events.popleft()
+
+    @staticmethod
+    def _recent_count(events: deque[float], cutoff: float) -> int:
+        while events and events[0] < cutoff:
+            events.popleft()
+        return len(events)
+
+    def _record_failed_request(self) -> None:
+        self._failed_requests += 1
+        self._record_event(self._failure_events)
+
+    def _record_capacity_rejected_request(self) -> None:
+        self._record_failed_request()
+        self._capacity_rejected_requests += 1
+        self._record_event(self._capacity_rejection_events)
 
     def _build_adapter(
         self,

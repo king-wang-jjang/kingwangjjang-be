@@ -1,4 +1,5 @@
 from datetime import date, datetime
+from typing import Literal
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Response
@@ -9,6 +10,7 @@ from app.auth.dependencies import require_admin, require_principal
 from app.auth.principal import Principal
 from app.repositories.boards import BoardListFilters, BoardRepository
 from app.services.analysis_jobs import BoardAnalysisJobStore
+from app.services.analysis_worker import analysis_worker_concurrency, analysis_worker_enabled
 from app.services.board_filters import get_board_filter_options, get_site_label
 from app.services.shorts_package import (
     HISTORICAL_RANKING_MODE,
@@ -23,6 +25,8 @@ from app.utils.llm import LLMError
 router = APIRouter(prefix="/api/boards", tags=["boards"])
 analysis_jobs = BoardAnalysisJobStore()
 ANALYSIS_ESTIMATED_SECONDS = 60
+ANALYSIS_BACKLOG_BUSY_SECONDS = 120
+ANALYSIS_BACKLOG_OVERLOAD_SECONDS = 600
 VISION_TEXT_UPSTREAM_ERROR = "Vision text extraction failed"
 SEOUL_TIME_ZONE = ZoneInfo("Asia/Seoul")
 
@@ -64,6 +68,27 @@ class IssueOverviewResponse(BaseModel):
     total_posts: int
     total_categories: int
     categories: list[IssueCategoryOverview]
+
+
+class AnalysisQueueResourceResponse(BaseModel):
+    generated_at: datetime
+    status: Literal["healthy", "busy", "overloaded", "unavailable"]
+    is_overloaded: bool
+    worker_enabled: bool
+    worker_concurrency: int
+    total_count: int
+    pending_count: int
+    ready_pending_count: int
+    deferred_pending_count: int
+    processing_count: int
+    done_count: int
+    failed_count: int
+    stale_processing_count: int
+    oldest_pending_at: datetime | None
+    oldest_pending_age_seconds: int
+    recent_arrivals: int
+    recent_completions: int
+    estimated_clear_seconds: int | None
 
 
 def _to_board_response(board: dict) -> dict:
@@ -253,6 +278,53 @@ def daily_shorts_package(
             else HISTORICAL_RANKING_MODE
         ),
     )
+
+
+@router.get("/ai/resources", response_model=AnalysisQueueResourceResponse)
+def analysis_queue_resources(
+    response: Response,
+    _principal: Principal = Depends(require_admin),
+):
+    metrics = BoardRepository().get_analysis_queue_metrics()
+    worker_enabled = analysis_worker_enabled()
+    worker_concurrency = analysis_worker_concurrency() if worker_enabled else 0
+    pending_count = metrics["pending_count"]
+    oldest_pending_age = metrics["oldest_pending_age_seconds"]
+
+    if not worker_enabled:
+        queue_status = "unavailable"
+    elif (
+        oldest_pending_age >= ANALYSIS_BACKLOG_OVERLOAD_SECONDS
+        or pending_count >= max(worker_concurrency * 10, 1)
+    ):
+        queue_status = "overloaded"
+    elif (
+        oldest_pending_age >= ANALYSIS_BACKLOG_BUSY_SECONDS
+        or pending_count >= max(worker_concurrency * 2, 1)
+        or metrics["stale_processing_count"] > 0
+    ):
+        queue_status = "busy"
+    else:
+        queue_status = "healthy"
+
+    if pending_count == 0:
+        estimated_clear_seconds = 0
+    elif metrics["recent_completions"] > 0:
+        estimated_clear_seconds = round(
+            pending_count * 3600 / metrics["recent_completions"]
+        )
+    else:
+        estimated_clear_seconds = None
+
+    response.headers["Cache-Control"] = "private, no-store"
+    return {
+        **metrics,
+        "status": queue_status,
+        "is_overloaded": queue_status == "overloaded",
+        "worker_enabled": worker_enabled,
+        "worker_concurrency": worker_concurrency,
+        "estimated_clear_seconds": estimated_clear_seconds,
+    }
 
 
 @router.get("/{board_id}/ai")

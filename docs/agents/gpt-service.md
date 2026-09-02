@@ -23,6 +23,7 @@ registry of upstream AI server nodes.
 
 - Internal inference: `/api/ai/analyze`, `/api/ai/chat`, `/api/ai/vision-text`.
 - Node management: `/api/ai/nodes` and `/api/ai/nodes/{node_id}/health-check`.
+- Runtime capacity: `/api/ai/resources` (process-local saturation and traffic metrics).
 - Health: `/health` (Gateway: `/gptservice/health`).
 - Gateway prefix for management: `/gptservice/api/ai/...`.
 - Local source port: `33336`.

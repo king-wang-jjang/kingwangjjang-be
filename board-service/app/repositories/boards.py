@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from math import exp, isfinite
 
-from sqlalchemy import String, cast, delete, desc, func, inspect, nullslast, or_, select, text
+from sqlalchemy import String, case, cast, delete, desc, func, inspect, nullslast, or_, select, text
 
 from app.db.models import Board, BoardLike, BoardMetricSnapshot, DailyTop10Snapshot
 from app.db.postgres import Base, get_engine, get_session_factory
@@ -127,6 +127,97 @@ class BoardRepository:
         filters: BoardListFilters | None = None,
     ) -> list[dict]:
         return self._list_boards(index=index, limit=limit, daily=True, filters=filters)
+
+    def get_analysis_queue_metrics(self, as_of: datetime | None = None) -> dict:
+        """Return queue depth and recent flow without loading board content."""
+        now = as_of or self._now()
+        if now.tzinfo is None:
+            now = now.replace(tzinfo=timezone.utc)
+        else:
+            now = now.astimezone(timezone.utc)
+        hour_ago = now - timedelta(hours=1)
+        stale_cutoff = now - self.PROCESSING_STALE_AFTER
+
+        def count_when(condition):
+            return func.coalesce(func.sum(case((condition, 1), else_=0)), 0)
+
+        pending = Board.analysis_status == self.ANALYSIS_PENDING
+        processing = Board.analysis_status == self.ANALYSIS_PROCESSING
+        done = Board.analysis_status == self.ANALYSIS_DONE
+        failed = Board.analysis_status == self.ANALYSIS_FAILED
+        ready_pending = pending & or_(
+            Board.analysis_requested_at.is_(None),
+            Board.analysis_requested_at <= now,
+        )
+        stale_processing = (
+            processing
+            & Board.analysis_started_at.is_not(None)
+            & (Board.analysis_started_at < stale_cutoff)
+        )
+        recent_completion = (
+            done
+            & Board.analysis_updated_at.is_not(None)
+            & (Board.analysis_updated_at >= hour_ago)
+        )
+
+        with get_session_factory()() as session:
+            row = session.execute(
+                select(
+                    func.count(Board.id),
+                    count_when(pending),
+                    count_when(ready_pending),
+                    count_when(processing),
+                    count_when(done),
+                    count_when(failed),
+                    count_when(stale_processing),
+                    func.min(case((pending, Board.created_at), else_=None)),
+                    count_when(Board.created_at >= hour_ago),
+                    count_when(recent_completion),
+                )
+            ).one()
+
+        (
+            total_count,
+            pending_count,
+            ready_pending_count,
+            processing_count,
+            done_count,
+            failed_count,
+            stale_processing_count,
+            oldest_pending_at,
+            recent_arrivals,
+            recent_completions,
+        ) = row
+
+        if oldest_pending_at is not None:
+            if oldest_pending_at.tzinfo is None:
+                oldest_pending_at = oldest_pending_at.replace(tzinfo=timezone.utc)
+            else:
+                oldest_pending_at = oldest_pending_at.astimezone(timezone.utc)
+            oldest_pending_age_seconds = max(
+                0,
+                int((now - oldest_pending_at).total_seconds()),
+            )
+        else:
+            oldest_pending_age_seconds = 0
+
+        return {
+            "generated_at": now,
+            "total_count": int(total_count),
+            "pending_count": int(pending_count),
+            "ready_pending_count": int(ready_pending_count),
+            "deferred_pending_count": max(
+                0, int(pending_count) - int(ready_pending_count)
+            ),
+            "processing_count": int(processing_count),
+            "done_count": int(done_count),
+            "failed_count": int(failed_count),
+            "stale_processing_count": int(stale_processing_count),
+            "oldest_pending_at": oldest_pending_at,
+            "oldest_pending_age_seconds": oldest_pending_age_seconds,
+            "recent_arrivals": int(recent_arrivals),
+            "recent_completions": int(recent_completions),
+        }
 
     def get_issue_overview(
         self,

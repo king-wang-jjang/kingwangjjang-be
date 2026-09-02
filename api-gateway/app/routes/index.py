@@ -1,3 +1,4 @@
+import os
 import sys
 
 import httpx
@@ -17,6 +18,11 @@ TRUSTED_IDENTITY_HEADERS = (
     "X-User-Role",
     "X-Auth-Status",
     "X-Auth-Error",
+    "X-AI-Admin-Token",
+)
+AI_MANAGEMENT_PATH_PREFIXES = (
+    "gptservice/api/ai/nodes",
+    "gptservice/api/ai/resources",
 )
 
 
@@ -71,6 +77,23 @@ def _response_headers(response: httpx.Response) -> dict[str, str]:
     return headers
 
 
+def _is_ai_management_path(path: str) -> bool:
+    return any(
+        path == prefix or path.startswith(f"{prefix}/")
+        for prefix in AI_MANAGEMENT_PATH_PREFIXES
+    )
+
+
+def _authorize_ai_management(request: Request, path: str, headers: dict[str, str]) -> None:
+    if not _is_ai_management_path(path):
+        return
+    if getattr(request.state, "user_role", "user") != "admin":
+        raise HTTPException(status_code=403, detail="Administrator access required")
+    admin_token = os.getenv("AI_NODE_ADMIN_TOKEN")
+    if admin_token:
+        headers["X-AI-Admin-Token"] = admin_token
+
+
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"])
 async def proxy(request: Request, path: str) -> Response:
     url = get_service_url(path)
@@ -94,6 +117,8 @@ async def proxy(request: Request, path: str) -> Response:
             if auth_error:
                 headers["X-Auth-Error"] = str(auth_error)
 
+            _authorize_ai_management(request, path, headers)
+
             response = await client.request(
                 method=request.method,
                 url=_target_url_with_query(url, request),
@@ -111,6 +136,8 @@ async def proxy(request: Request, path: str) -> Response:
             for cookie in response.headers.get_list("set-cookie"):
                 proxied_response.headers.append("set-cookie", cookie)
             return proxied_response
+    except HTTPException:
+        raise
     except Exception as exc:
         logger.error("Error forwarding request to %s: %s", url, exc)
         raise HTTPException(status_code=500, detail="Error forwarding request to proxy server") from exc

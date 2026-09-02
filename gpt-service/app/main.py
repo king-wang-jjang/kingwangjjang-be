@@ -11,6 +11,7 @@ from app.repositories.ai_nodes import AINodeRepository
 from app.routes.dependencies import get_node_repository
 from app.routes.inference import router as inference_router
 from app.routes.nodes import router as nodes_router
+from app.routes.resources import router as resources_router
 from app.services.node_router import AINodeRouter
 
 
@@ -63,6 +64,7 @@ def create_app(
         return {"status": "ok", "node_count": active_repository.count_nodes()}
 
     application.include_router(nodes_router)
+    application.include_router(resources_router)
     application.include_router(inference_router)
     return application
 

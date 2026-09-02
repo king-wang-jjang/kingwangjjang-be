@@ -58,6 +58,7 @@ def test_all_node_management_routes_require_admin_token(repository, monkeypatch)
     with _client(repository) as client:
         for method, path in (
             (client.get, "/api/ai/nodes"),
+            (client.get, "/api/ai/resources"),
             (client.get, f"/api/ai/nodes/{node.id}"),
             (client.post, f"/api/ai/nodes/{node.id}/health-check"),
             (client.post, "/api/ai/nodes/health-check"),
@@ -71,6 +72,47 @@ def test_all_node_management_routes_require_admin_token(repository, monkeypatch)
         )
     assert response.status_code == 200
     assert response.json()[0]["id"] == node.id
+
+
+def test_resource_overview_reports_node_capacity_and_capabilities(repository, monkeypatch):
+    node = create_test_node(
+        repository,
+        capabilities=["analysis", "chat", "vision"],
+        max_concurrency=3,
+    )
+    monkeypatch.setenv("AI_NODE_ADMIN_TOKEN", "admin-secret")
+
+    with _client(repository) as client:
+        response = client.get(
+            "/api/ai/resources",
+            headers={"X-AI-Admin-Token": "admin-secret"},
+        )
+
+    assert response.status_code == 200
+    overview = response.json()
+    assert overview["status"] == "healthy"
+    assert overview["is_overloaded"] is False
+    assert overview["window_seconds"] == 60
+    assert overview["capacity"] == {
+        "configured_capacity": 3,
+        "effective_capacity": 3,
+        "active_requests": 0,
+        "available_capacity": 3,
+        "utilization_percent": 0.0,
+        "peak_in_flight": 0,
+    }
+    assert {item["capability"] for item in overview["capabilities"]} == {
+        "analysis",
+        "chat",
+        "vision",
+    }
+    assert overview["nodes"][0]["id"] == node.id
+    assert overview["nodes"][0]["runtime"]["effective_capacity"] == 3
+    assert overview["nodes"][0]["models"][0]["capabilities"] == [
+        "analysis",
+        "chat",
+        "vision",
+    ]
 
 
 def test_admin_is_allowed_without_token_only_in_local_mode(repository, monkeypatch):

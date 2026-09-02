@@ -20,6 +20,9 @@ poetry run uvicorn app.main:app --reload --port 33336
 
 - 노드 조회·등록·수정·삭제·health check 전체는
   `X-AI-Admin-Token: <AI_NODE_ADMIN_TOKEN>`을 요구합니다.
+- Gateway의 `/gptservice/api/ai/nodes`, `/gptservice/api/ai/resources` 경로는
+  로그인 사용자의 관리자 역할을 먼저 확인한 뒤 내부에서 이 토큰을 주입합니다.
+  브라우저에는 관리 토큰을 전달하거나 저장하지 않습니다.
 - `AI_NODE_ADMIN_TOKEN`이 없을 때는 `SERVER_RUN_MODE`가 `FALSE`인 로컬 모드에서만
   관리 API를 허용합니다. 서버 모드에서는 설정 누락도 거부합니다.
 - 추론 API는 `AI_SERVICE_TOKEN`을 설정한 경우
@@ -39,6 +42,7 @@ poetry run uvicorn app.main:app --reload --port 33336
 - `GET|PATCH|DELETE /api/ai/nodes/{id}`
 - `POST /api/ai/nodes/{id}/health-check`
 - `POST /api/ai/nodes/health-check` — 전체 노드 검사
+- `GET /api/ai/resources` — 처리량·포화·capability/Node별 실행 지표
 - `POST /api/ai/analyze` — `{ "content": "..." }`
 - `POST /api/ai/chat` — `{ "messages": [...], "capability": "chat", "response_format": null }`
 - `POST /api/ai/vision-text` — `{ "image_data_url": "data:image/...;base64,...", "prompt": "..." }`
@@ -92,6 +96,14 @@ API에서 OpenAI-compatible 노드와 모델의 `capabilities: ["vision"]`을 �
 다시 포함됩니다. 전체 요청 deadline은 `AI_REQUEST_DEADLINE_SECONDS`(기본 55초)이며,
 후보별 timeout을 남은 후보 수에 맞춰 나눠 첫 노드 지연 뒤에도 failover 시간을
 확보합니다.
+
+`/api/ai/resources`는 현재/최대 동시 처리량, 최근 60초 요청·실패·용량 거절,
+포화 Node를 제공합니다. 모든 후보가 `max_concurrency`에 도달해 503으로 끝난
+요청이 최근 60초 안에 있으면 `is_overloaded=true`, `status=overloaded`가 됩니다.
+첫 Node가 가득 찼지만 다른 Node가 처리한 요청은 `recent_spillovers`로 집계하므로
+사용자 오류가 나기 전의 용량 압박도 확인할 수 있습니다. 트래픽 카운터는 서비스
+프로세스 시작 이후의 메모리 지표이며 재시작 시 초기화됩니다. 장기 추이는 추후
+Prometheus 등의 외부 시계열 저장소로 내보내야 합니다.
 
 PostgreSQL 시작 지연은 `AI_DATABASE_STARTUP_ATTEMPTS`(기본 10)와
 `AI_DATABASE_STARTUP_DELAY_SECONDS`(기본 2초) 동안 재시도합니다. 현재

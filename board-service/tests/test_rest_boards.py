@@ -57,6 +57,23 @@ class FakeRepository:
     )
     return_empty_shorts = False
 
+    def get_analysis_queue_metrics(self):
+        return {
+            "generated_at": "2026-09-01T01:00:00Z",
+            "total_count": 30,
+            "pending_count": 12,
+            "ready_pending_count": 10,
+            "deferred_pending_count": 2,
+            "processing_count": 2,
+            "done_count": 15,
+            "failed_count": 1,
+            "stale_processing_count": 0,
+            "oldest_pending_at": "2026-09-01T00:45:00Z",
+            "oldest_pending_age_seconds": 900,
+            "recent_arrivals": 18,
+            "recent_completions": 12,
+        }
+
     def list_recently_crawled_sites(self):
         return list(type(self).recently_crawled_sites)
 
@@ -429,6 +446,48 @@ def test_daily_shorts_package_returns_404_when_ranking_is_empty(monkeypatch):
     response = client.get("/api/boards/daily/shorts-package", headers=ADMIN_HEADERS)
 
     assert response.status_code == 404
+
+
+def test_analysis_queue_resources_requires_admin(monkeypatch):
+    client = build_client(monkeypatch)
+
+    assert client.get("/api/boards/ai/resources").status_code == 401
+    assert (
+        client.get("/api/boards/ai/resources", headers=AUTH_HEADERS).status_code
+        == 403
+    )
+
+
+def test_analysis_queue_resources_reports_backlog_pressure(monkeypatch):
+    monkeypatch.setenv("DISABLE_ANALYSIS_WORKER", "FALSE")
+    monkeypatch.setenv("ANALYSIS_WORKER_CONCURRENCY", "2")
+    client = build_client(monkeypatch)
+    authorize_admin(client)
+
+    response = client.get("/api/boards/ai/resources", headers=ADMIN_HEADERS)
+
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "private, no-store"
+    assert response.json() == {
+        "generated_at": "2026-09-01T01:00:00Z",
+        "status": "overloaded",
+        "is_overloaded": True,
+        "worker_enabled": True,
+        "worker_concurrency": 2,
+        "total_count": 30,
+        "pending_count": 12,
+        "ready_pending_count": 10,
+        "deferred_pending_count": 2,
+        "processing_count": 2,
+        "done_count": 15,
+        "failed_count": 1,
+        "stale_processing_count": 0,
+        "oldest_pending_at": "2026-09-01T00:45:00Z",
+        "oldest_pending_age_seconds": 900,
+        "recent_arrivals": 18,
+        "recent_completions": 12,
+        "estimated_clear_seconds": 3600,
+    }
 
 
 def test_realtime_accepts_board_filters(monkeypatch):
