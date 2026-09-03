@@ -50,8 +50,8 @@ class IssueSiteBreakdown(BaseModel):
     post_count: int
 
 
-class IssueCategoryOverview(BaseModel):
-    category: str
+class IssueTagOverview(BaseModel):
+    tag: str
     post_count: int
     current_posts: int
     previous_posts: int
@@ -59,15 +59,15 @@ class IssueCategoryOverview(BaseModel):
     share: float
     momentum_percent: float
     top_sites: list[IssueSiteBreakdown]
-    top_tags: list[str]
+    related_tags: list[str]
 
 
 class IssueOverviewResponse(BaseModel):
     generated_at: datetime
     window_hours: int
     total_posts: int
-    total_categories: int
-    categories: list[IssueCategoryOverview]
+    total_tags: int
+    tags: list[IssueTagOverview]
 
 
 class AnalysisQueueResourceResponse(BaseModel):
@@ -171,18 +171,18 @@ def issue_overview(
     response.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=120"
     return {
         **overview,
-        "categories": [
+        "tags": [
             {
-                **category,
+                **tag,
                 "top_sites": [
                     {
                         **site,
                         "site_label": get_site_label(site["site"]),
                     }
-                    for site in category["top_sites"]
+                    for site in tag["top_sites"]
                 ],
             }
-            for category in overview["categories"]
+            for tag in overview["tags"]
         ],
     }
 

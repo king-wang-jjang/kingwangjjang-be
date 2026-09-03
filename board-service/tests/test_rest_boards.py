@@ -84,10 +84,10 @@ class FakeRepository:
             "generated_at": "2026-08-31T00:00:00Z",
             "window_hours": window_hours,
             "total_posts": 12,
-            "total_categories": 2,
-            "categories": [
+            "total_tags": 2,
+            "tags": [
                 {
-                    "category": "humor",
+                    "tag": "유머",
                     "post_count": 8,
                     "current_posts": 6,
                     "previous_posts": 2,
@@ -95,7 +95,7 @@ class FakeRepository:
                     "share": 0.75,
                     "momentum_percent": 133.3,
                     "top_sites": [{"site": "dcinside", "post_count": 5}],
-                    "top_tags": ["이슈", "유머"],
+                    "related_tags": ["이슈"],
                 }
             ],
         }
@@ -319,8 +319,8 @@ def test_issue_overview_returns_visualization_data_and_applies_site_scope(monkey
         12,
         ("dcinside", "ppomppu"),
     )
-    assert response.json()["categories"][0] == {
-        "category": "humor",
+    assert response.json()["tags"][0] == {
+        "tag": "유머",
         "post_count": 8,
         "current_posts": 6,
         "previous_posts": 2,
@@ -334,7 +334,7 @@ def test_issue_overview_returns_visualization_data_and_applies_site_scope(monkey
                 "post_count": 5,
             }
         ],
-        "top_tags": ["이슈", "유머"],
+        "related_tags": ["이슈"],
     }
 
 

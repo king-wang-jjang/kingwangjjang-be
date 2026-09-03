@@ -21,6 +21,7 @@ def _board(
     created_at: datetime,
     hot_score: float,
     tags: list[str] | None = None,
+    analysis_status: str = BoardRepository.ANALYSIS_DONE,
 ) -> Board:
     return Board(
         id=board_id,
@@ -31,13 +32,14 @@ def _board(
         url=f"https://example.com/{board_id}",
         contents=[],
         tags=tags,
+        analysis_status=analysis_status,
         created_at=created_at,
         hot_score=hot_score,
         score_updated_at=created_at,
     )
 
 
-def test_issue_overview_aggregates_category_impact_momentum_and_context(
+def test_issue_overview_aggregates_ai_tag_impact_momentum_and_context(
     monkeypatch,
     tmp_path,
 ):
@@ -89,6 +91,15 @@ def test_issue_overview_aggregates_category_impact_momentum_and_context(
                     created_at=as_of - timedelta(hours=25),
                     hot_score=100,
                 ),
+                _board(
+                    "pending-analysis",
+                    category="humor",
+                    site="dcinside",
+                    created_at=as_of,
+                    hot_score=100,
+                    tags=["미분석"],
+                    analysis_status=BoardRepository.ANALYSIS_PENDING,
+                ),
             ]
         )
         session.commit()
@@ -101,24 +112,25 @@ def test_issue_overview_aggregates_category_impact_momentum_and_context(
 
     assert overview["generated_at"] == "2026-08-31T12:00:00Z"
     assert overview["total_posts"] == 4
-    assert overview["total_categories"] == 2
-    assert [item["category"] for item in overview["categories"]] == [
-        "humor",
-        "stock",
+    assert overview["total_tags"] == 4
+    assert [item["tag"] for item in overview["tags"]] == [
+        "이슈",
+        "유머",
+        "증시",
+        "생활",
     ]
 
-    humor = overview["categories"][0]
-    assert humor["post_count"] == 3
-    assert humor["current_posts"] == 2
-    assert humor["previous_posts"] == 1
-    assert humor["momentum_percent"] == 50.0
-    assert humor["impact_score"] == pytest.approx(15.6091)
-    assert humor["share"] == pytest.approx(0.846059)
-    assert humor["top_sites"] == [
+    issue = overview["tags"][0]
+    assert issue["post_count"] == 2
+    assert issue["current_posts"] == 2
+    assert issue["previous_posts"] == 0
+    assert issue["momentum_percent"] == 200.0
+    assert issue["impact_score"] == pytest.approx(14.3859)
+    assert issue["share"] == pytest.approx(0.505672, abs=0.000001)
+    assert issue["top_sites"] == [
         {"site": "dcinside", "post_count": 2},
-        {"site": "ppomppu", "post_count": 1},
     ]
-    assert humor["top_tags"] == ["이슈", "생활", "유머"]
+    assert issue["related_tags"] == ["유머"]
 
 
 def test_issue_overview_applies_site_scope(monkeypatch, tmp_path):
@@ -137,6 +149,7 @@ def test_issue_overview_applies_site_scope(monkeypatch, tmp_path):
                     site="dcinside",
                     created_at=as_of,
                     hot_score=3,
+                    tags=["유머"],
                 ),
                 _board(
                     "pp",
@@ -144,6 +157,7 @@ def test_issue_overview_applies_site_scope(monkeypatch, tmp_path):
                     site="ppomppu",
                     created_at=as_of,
                     hot_score=4,
+                    tags=["특가"],
                 ),
             ]
         )
@@ -155,4 +169,5 @@ def test_issue_overview_applies_site_scope(monkeypatch, tmp_path):
     )
 
     assert overview["total_posts"] == 1
-    assert [item["category"] for item in overview["categories"]] == ["deal"]
+    assert overview["total_tags"] == 1
+    assert [item["tag"] for item in overview["tags"]] == ["특가"]
