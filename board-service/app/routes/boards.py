@@ -337,7 +337,7 @@ def get_board_analysis(board_id: str):
 
 
 @router.get("/ai/jobs/{job_id}")
-def get_analysis_job(job_id: str, _principal: Principal = Depends(require_principal)):
+def get_analysis_job(job_id: str, _principal: Principal = Depends(require_admin)):
     job = analysis_jobs.get(job_id)
     if job is None:
         raise HTTPException(status_code=404, detail="Analysis job not found")
@@ -346,40 +346,35 @@ def get_analysis_job(job_id: str, _principal: Principal = Depends(require_princi
 
 
 @router.post("/{board_id}/ai")
-def analyze_board(
+def reanalyze_board(
     board_id: str,
     background_tasks: BackgroundTasks,
-    _principal: Principal = Depends(require_principal),
+    _principal: Principal = Depends(require_admin),
 ):
     repository = BoardRepository()
     current_analysis = repository.get_analysis_status(board_id)
     if current_analysis is None:
         raise HTTPException(status_code=404, detail="Board not found")
 
-    if current_analysis["is_complete"]:
-        job = analysis_jobs.completed(
-            board_id=current_analysis["board_id"],
-            summary=current_analysis["summary"],
-            tags=current_analysis["tags"],
-            llm_engagement_score=current_analysis.get("llm_engagement_score"),
-            llm_engagement_reason=current_analysis.get("llm_engagement_reason"),
-        )
-        return job.to_response()
-
     job, created = analysis_jobs.start(
         board_id=current_analysis["board_id"],
         estimated_seconds=ANALYSIS_ESTIMATED_SECONDS,
     )
     if created:
-        background_tasks.add_task(_run_analysis_job, job.job_id, current_analysis["board_id"])
+        background_tasks.add_task(
+            _run_analysis_job,
+            job.job_id,
+            current_analysis["board_id"],
+            True,
+        )
 
     return JSONResponse(status_code=202, content=job.to_response())
 
 
-def _run_analysis_job(job_id: str, board_id: str) -> None:
+def _run_analysis_job(job_id: str, board_id: str, force: bool = False) -> None:
     analysis_jobs.mark_running(job_id, estimated_seconds=max(ANALYSIS_ESTIMATED_SECONDS - 15, 1))
     try:
-        result = BoardRepository().analyze_board(board_id)
+        result = BoardRepository().analyze_board(board_id, force=force)
     except LLMError:
         analysis_jobs.mark_failed(job_id, "AI analysis failed")
         return

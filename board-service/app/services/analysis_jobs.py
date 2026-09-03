@@ -50,30 +50,6 @@ class BoardAnalysisJobStore:
         with self._lock:
             return self._jobs.get(job_id)
 
-    def completed(
-        self,
-        board_id: str,
-        summary: str,
-        tags: list[str],
-        llm_engagement_score: int | None = None,
-        llm_engagement_reason: str | None = None,
-    ) -> AnalysisJob:
-        with self._lock:
-            job = AnalysisJob(
-                job_id=str(uuid4()),
-                board_id=board_id,
-                status="completed",
-                progress_percent=100,
-                estimated_seconds_remaining=0,
-                message="Analysis already exists.",
-                summary=summary,
-                tags=tags,
-                llm_engagement_score=llm_engagement_score,
-                llm_engagement_reason=llm_engagement_reason,
-            )
-            self._jobs[job.job_id] = job
-            return job
-
     def start(self, board_id: str, estimated_seconds: int) -> tuple[AnalysisJob, bool]:
         with self._lock:
             existing_job_id = self._active_by_board.get(board_id)

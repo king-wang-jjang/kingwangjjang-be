@@ -62,7 +62,9 @@ vLLM의 `modelopt` 양자화 모드와 `--language-model-only` 옵션으로 실�
 현재 8K 컨텍스트에 맞춰 분석 입력은 12,000자로 제한되고 출력은 512토큰으로
 제한됩니다. 초과 입력은 앞·중간·끝 문맥을 보존하는 기존 절단 로직을 사용합니다.
 설정과 노드 레지스트리는 `kingwangjjang-summary_gpt-summary-data` 볼륨에 유지됩니다.
-새 게시글은 DB에 `pending` 상태로 등록되고 board-service worker가 비동기로 요약합니다.
+본문이 확보된 새 게시글은 DB에 높은 우선순위의 `pending` 상태로 즉시 등록되고
+board-service worker가 비동기로 요약합니다. 게시글 열람은 분석을 호출하지 않으며,
+관리자만 저장된 결과의 재요약을 요청할 수 있습니다.
 완료된 요약·태그·반응 점수는 `boards` 테이블에 저장되어 이후 요청은 DB 값을 재사용합니다.
 종료할 때는 `docker compose -f docker-compose.summary.yml down`과
 `docker compose -f docker-compose.vllm.yml down`을 사용하세요.

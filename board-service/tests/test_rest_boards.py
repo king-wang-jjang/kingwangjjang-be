@@ -56,6 +56,7 @@ class FakeRepository:
         "new-community",
     )
     return_empty_shorts = False
+    last_analysis_force = None
 
     def get_analysis_queue_metrics(self):
         return {
@@ -175,7 +176,8 @@ class FakeRepository:
             "is_complete": False,
         }
 
-    def analyze_board(self, board_id: str):
+    def analyze_board(self, board_id: str, *, force: bool = False):
+        type(self).last_analysis_force = force
         if board_id == "missing":
             return None
 
@@ -240,6 +242,7 @@ def build_client(monkeypatch):
         "new-community",
     )
     FakeRepository.return_empty_shorts = False
+    FakeRepository.last_analysis_force = None
     monkeypatch.setenv("JWT_SECRET_KEY", ADMIN_JWT_SECRET)
     monkeypatch.setenv("ADMIN_USER_IDS", "dev-user")
     monkeypatch.setattr(boards, "BoardRepository", lambda: FakeRepository())
@@ -552,7 +555,7 @@ def test_get_analysis_returns_summary_and_tags(monkeypatch):
     }
 
 
-def test_analyze_board_requires_authentication(monkeypatch):
+def test_reanalyze_board_requires_authentication(monkeypatch):
     client = build_client(monkeypatch)
 
     response = client.post("/api/boards/11111111-1111-1111-1111-111111111111/ai")
@@ -560,12 +563,24 @@ def test_analyze_board_requires_authentication(monkeypatch):
     assert response.status_code == 401
 
 
-def test_analyze_board_starts_authenticated_job_and_exposes_status(monkeypatch):
+def test_reanalyze_board_rejects_non_admin_user(monkeypatch):
     client = build_client(monkeypatch)
 
     response = client.post(
         "/api/boards/11111111-1111-1111-1111-111111111111/ai",
         headers=AUTH_HEADERS,
+    )
+
+    assert response.status_code == 403
+
+
+def test_reanalyze_board_starts_admin_job_and_exposes_status(monkeypatch):
+    client = build_client(monkeypatch)
+    authorize_admin(client)
+
+    response = client.post(
+        "/api/boards/11111111-1111-1111-1111-111111111111/ai",
+        headers=ADMIN_HEADERS,
     )
 
     assert response.status_code == 202
@@ -577,7 +592,7 @@ def test_analyze_board_starts_authenticated_job_and_exposes_status(monkeypatch):
 
     status_response = client.get(
         f"/api/boards/ai/jobs/{started_job['jobId']}",
-        headers=AUTH_HEADERS,
+        headers=ADMIN_HEADERS,
     )
 
     assert status_response.status_code == 200
@@ -588,40 +603,67 @@ def test_analyze_board_starts_authenticated_job_and_exposes_status(monkeypatch):
     assert status_response.json()["tags"] == ["funny", "issue"]
     assert status_response.json()["llmEngagementScore"] == 76
     assert status_response.json()["llmEngagementReason"] == "호기심과 토론 가능성이 높음"
+    assert FakeRepository.last_analysis_force is True
 
 
-def test_analyze_board_returns_stored_summary_without_starting_job(monkeypatch):
+def test_reanalyze_board_replaces_stored_summary(monkeypatch):
     client = build_client(monkeypatch)
+    authorize_admin(client)
 
-    response = client.post("/api/boards/existing/ai", headers=AUTH_HEADERS)
+    response = client.post("/api/boards/existing/ai", headers=ADMIN_HEADERS)
 
-    assert response.status_code == 200
-    assert response.json()["status"] == "completed"
-    assert response.json()["progressPercent"] == 100
-    assert response.json()["estimatedSecondsRemaining"] == 0
-    assert response.json()["summary"] == "stored summary"
-    assert response.json()["tags"] == ["stored"]
-    assert response.json()["llmEngagementScore"] == 64
-    assert response.json()["llmEngagementReason"] == "관심을 끌 요소가 있음"
+    assert response.status_code == 202
+    status_response = client.get(
+        f"/api/boards/ai/jobs/{response.json()['jobId']}",
+        headers=ADMIN_HEADERS,
+    )
+    assert status_response.json()["status"] == "completed"
+    assert status_response.json()["progressPercent"] == 100
+    assert status_response.json()["estimatedSecondsRemaining"] == 0
+    assert status_response.json()["summary"] == "generated summary"
+    assert status_response.json()["tags"] == ["funny", "issue"]
+    assert status_response.json()["llmEngagementScore"] == 76
+    assert FakeRepository.last_analysis_force is True
 
 
 def test_analysis_job_status_requires_authentication(monkeypatch):
     client = build_client(monkeypatch)
+    authorize_admin(client)
 
     start_response = client.post(
         "/api/boards/11111111-1111-1111-1111-111111111111/ai",
-        headers=AUTH_HEADERS,
+        headers=ADMIN_HEADERS,
     )
+    client.cookies.clear()
 
     response = client.get(f"/api/boards/ai/jobs/{start_response.json()['jobId']}")
 
     assert response.status_code == 401
 
 
-def test_analyze_board_returns_404_for_unknown_board(monkeypatch):
+def test_analysis_job_status_rejects_non_admin_user(monkeypatch):
     client = build_client(monkeypatch)
+    authorize_admin(client)
 
-    response = client.post("/api/boards/missing/ai", headers=AUTH_HEADERS)
+    start_response = client.post(
+        "/api/boards/11111111-1111-1111-1111-111111111111/ai",
+        headers=ADMIN_HEADERS,
+    )
+    client.cookies.clear()
+
+    response = client.get(
+        f"/api/boards/ai/jobs/{start_response.json()['jobId']}",
+        headers=AUTH_HEADERS,
+    )
+
+    assert response.status_code == 403
+
+
+def test_reanalyze_board_returns_404_for_unknown_board(monkeypatch):
+    client = build_client(monkeypatch)
+    authorize_admin(client)
+
+    response = client.post("/api/boards/missing/ai", headers=ADMIN_HEADERS)
 
     assert response.status_code == 404
 

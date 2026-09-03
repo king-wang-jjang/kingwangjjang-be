@@ -24,8 +24,8 @@
 | 메서드·내부 경로 | 권한 | 설명 |
 | --- | --- | --- |
 | `POST /api/boards/{board_id}/likes` | 로그인 | 게시글 좋아요 추가 |
-| `POST /api/boards/{board_id}/ai` | 로그인 | 수동 분석 job 시작, 미완료 작업은 202 |
-| `GET /api/boards/ai/jobs/{job_id}` | 로그인 | 프로세스 메모리의 수동 분석 job 조회 |
+| `POST /api/boards/{board_id}/ai` | 관리자 | 기존 결과를 포함한 재요약 job 시작, 202 반환 |
+| `GET /api/boards/ai/jobs/{job_id}` | 관리자 | 프로세스 메모리의 재요약 job 조회 |
 | `POST /api/boards/{board_id}/images/{image_index}/vision-text` | 로그인 | 게시글 이미지 텍스트 추출 |
 | `GET /api/boards/daily/shorts-package[?date=...]` | 관리자 | live 또는 과거 Top 10 제작용 JSON |
 
@@ -33,9 +33,10 @@
 
 ## 자동 AI 분석
 
-서비스 기동 시 기본 1개의 worker가 `pending` 게시글을 가져와 GPT 서비스에 분석을 요청하고 요약·태그·참여도 점수/이유를 저장합니다. 기본 AI 노드의 동시 추론 한도와 충돌하지 않도록 보수적인 값이 사용됩니다.
+서비스 기동 시 기본 2개의 worker가 `pending` 게시글을 가져와 GPT 서비스에 분석을 요청하고 요약·태그·참여도 점수/이유를 저장합니다. 현재 전용 요약 vLLM의 동시 추론 한도 2에 맞춘 값이며 더 작은 노드는 환경변수로 낮출 수 있습니다.
 
-- `ANALYSIS_WORKER_CONCURRENCY`: 1~16, 기본 1
+- `ANALYSIS_WORKER_CONCURRENCY`: 1~16, 기본 2
+- `ANALYSIS_MAX_RETRY_COUNT`: 자동 분석 실패 허용 횟수, 기본 5(최대 20)
 - `DISABLE_ANALYSIS_WORKER=TRUE`: worker 비활성화
 - `AI_SERVICE_URL`: GPT 서비스 주소
 - `AI_SERVICE_TOKEN`: GPT 추론용 내부 토큰

@@ -17,7 +17,9 @@ logger = logging.getLogger("board-service")
 
 
 class LLMError(RuntimeError):
-    pass
+    def __init__(self, message: str, *, retryable: bool = False):
+        self.retryable = retryable
+        super().__init__(message)
 
 
 class LLM:
@@ -162,8 +164,17 @@ class LLM:
             )
             response.raise_for_status()
             response_data = response.json()
-        except (httpx.HTTPError, ValueError) as exc:
-            raise LLMError(str(exc)) from exc
+        except httpx.HTTPStatusError as exc:
+            status_code = exc.response.status_code
+            retryable = (
+                status_code in {408, 409, 425, 429}
+                or status_code >= 500
+            )
+            raise LLMError(str(exc), retryable=retryable) from exc
+        except httpx.RequestError as exc:
+            raise LLMError(str(exc), retryable=True) from exc
+        except ValueError as exc:
+            raise LLMError(str(exc), retryable=True) from exc
 
         if not isinstance(response_data, dict):
             raise LLMError("AI service response was not an object")
@@ -190,7 +201,10 @@ class LLM:
                 last_error = exc
                 logger.warning("Ollama endpoint failed (%s): %s", base_url, exc)
 
-        raise LLMError(str(last_error) if last_error else "Ollama chat request failed")
+        raise LLMError(
+            str(last_error) if last_error else "Ollama chat request failed",
+            retryable=True,
+        )
 
     def _parse_analysis(self, answer: str) -> dict:
         raw_answer = answer.strip()

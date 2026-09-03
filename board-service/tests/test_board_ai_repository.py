@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,7 @@ sys.path.insert(0, str(SERVICE_ROOT))
 from app.db import postgres
 from app.db.models import Board
 from app.repositories.boards import (
+    INSUFFICIENT_ANALYSIS_CONTENT_ERROR,
     VISION_FALLBACK_REJECTED_ERROR,
     VISION_FALLBACK_UNAVAILABLE_ERROR,
     BoardRepository,
@@ -243,6 +245,41 @@ def test_analyze_board_returns_complete_existing_analysis_without_llm_call(monke
     }
 
 
+def test_force_analyze_board_replaces_complete_existing_analysis(monkeypatch, tmp_path):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'boards.db'}")
+    postgres.get_engine.cache_clear()
+    postgres.get_session_factory.cache_clear()
+
+    repository = BoardRepository()
+    with postgres.get_session_factory()() as session:
+        session.add(
+            Board(
+                id="board-1",
+                category="humor",
+                no=1,
+                site="dcinside",
+                title="seed title",
+                url="https://example.com/post/1",
+                contents="seed body with enough detail",
+                gpt_answer="기존 요약",
+                tags=["기존태그"],
+                llm_engagement_score=50,
+                analysis_status=BoardRepository.ANALYSIS_DONE,
+            )
+        )
+        session.commit()
+
+    result = repository.analyze_board("board-1", analyzer=FakeAnalyzer(), force=True)
+
+    assert result == {
+        "board_id": "board-1",
+        "summary": "저장된 요약",
+        "tags": ["유머", "핫딜"],
+        "llm_engagement_score": 84,
+        "llm_engagement_reason": "호기심과 토론을 강하게 유발함",
+    }
+
+
 def test_legacy_summary_without_engagement_score_is_reanalyzed(monkeypatch, tmp_path):
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'boards.db'}")
     postgres.get_engine.cache_clear()
@@ -382,6 +419,110 @@ def test_process_next_analysis_job_prefers_requested_board(monkeypatch, tmp_path
         assert high.analysis_status == BoardRepository.ANALYSIS_DONE
         assert low.gpt_answer is None
         assert low.analysis_status == BoardRepository.ANALYSIS_PENDING
+
+
+def test_process_next_analysis_job_prioritizes_heatmap_window_and_drains_fifo(
+    monkeypatch,
+    tmp_path,
+):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'boards.db'}")
+    postgres.get_engine.cache_clear()
+    postgres.get_session_factory.cache_clear()
+
+    now = datetime.now(timezone.utc)
+    repository = BoardRepository()
+    with postgres.get_session_factory()() as session:
+        session.add_all(
+            [
+                Board(
+                    id="old-backlog",
+                    category="old",
+                    no=1,
+                    site="dcinside",
+                    title="old backlog title",
+                    url="https://example.com/post/old",
+                    contents="old backlog body with enough detail",
+                    created_at=now - timedelta(days=2),
+                ),
+                Board(
+                    id="recent-first",
+                    category="humor",
+                    no=2,
+                    site="dcinside",
+                    title="recent first title",
+                    url="https://example.com/post/recent-first",
+                    contents="recent first body with enough detail",
+                    created_at=now - timedelta(hours=12),
+                ),
+                Board(
+                    id="recent-later",
+                    category="stock",
+                    no=3,
+                    site="ygosu",
+                    title="recent later title",
+                    url="https://example.com/post/recent-later",
+                    contents="recent later body with enough detail",
+                    created_at=now - timedelta(hours=1),
+                ),
+            ]
+        )
+        session.commit()
+
+    result = repository.process_next_analysis_job(
+        analyzer=OrderedAnalyzer("recent first title")
+    )
+
+    assert result["board_id"] == "recent-first"
+
+
+def test_process_next_analysis_job_recovers_non_terminal_failed_analysis(
+    monkeypatch,
+    tmp_path,
+):
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{tmp_path / 'boards.db'}")
+    postgres.get_engine.cache_clear()
+    postgres.get_session_factory.cache_clear()
+
+    repository = BoardRepository()
+    with postgres.get_session_factory()() as session:
+        session.add_all(
+            [
+                Board(
+                    id="recoverable",
+                    category="humor",
+                    no=1,
+                    site="dcinside",
+                    title="recoverable title",
+                    url="https://example.com/post/recoverable",
+                    contents="recoverable body with enough detail",
+                    analysis_status=BoardRepository.ANALYSIS_FAILED,
+                    analysis_retry_count=2,
+                    analysis_error="AI node request failed",
+                ),
+                Board(
+                    id="terminal",
+                    category="humor",
+                    no=2,
+                    site="dcinside",
+                    title="terminal title",
+                    url="https://example.com/post/terminal",
+                    contents=[],
+                    analysis_status=BoardRepository.ANALYSIS_FAILED,
+                    analysis_retry_count=1,
+                    analysis_error=INSUFFICIENT_ANALYSIS_CONTENT_ERROR,
+                ),
+            ]
+        )
+        session.commit()
+
+    result = repository.process_next_analysis_job(
+        analyzer=OrderedAnalyzer("recoverable title")
+    )
+
+    assert result["board_id"] == "recoverable"
+    with postgres.get_session_factory()() as session:
+        assert session.get(Board, "recoverable").analysis_status == BoardRepository.ANALYSIS_DONE
+        assert session.get(Board, "terminal").analysis_status == BoardRepository.ANALYSIS_FAILED
 
 
 def test_analyze_board_rejects_title_only_content_before_llm(monkeypatch, tmp_path):

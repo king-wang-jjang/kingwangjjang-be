@@ -82,9 +82,9 @@ Gateway는 접두사를 제거한 뒤 내부 서비스로 전달합니다.
 
 ## 게시글 분석 흐름
 
-크롤러가 저장한 새 게시글은 `pending` 분석 상태로 들어옵니다. `board-service`의 lifespan에서 시작되는 worker가 대기열을 가져가며, 기본 동시성은 1이고 `ANALYSIS_WORKER_CONCURRENCY`로 1~16 범위에서 조정합니다. 기본값 1은 단일 동시 추론만 받는 기본 AI 노드에서 일시적인 503이 게시글 재시도 횟수를 소모하지 않도록 맞춘 값입니다.
+크롤러가 본문과 함께 저장한 새 게시글은 높은 우선순위의 `pending` 분석 상태로 즉시 들어옵니다. `board-service`의 lifespan에서 시작되는 worker가 대기열을 가져가며, 기본 동시성은 2이고 `ANALYSIS_WORKER_CONCURRENCY`로 1~16 범위에서 조정합니다.
 
-`board-service`는 `gpt-service`의 `POST /api/ai/analyze`를 호출하고 결과 요약·태그·참여도 점수와 이유를 자신의 게시글 데이터에 저장합니다. 인증 사용자는 게시글별 재분석을 비동기 job으로 요청하고 상태를 조회할 수도 있습니다. AI 모델 호출은 `gpt-service`만 담당합니다.
+`board-service`는 `gpt-service`의 `POST /api/ai/analyze`를 호출하고 결과 요약·태그·참여도 점수와 이유를 자신의 게시글 데이터에 저장합니다. 일반 사용자의 게시글 열람은 분석을 호출하지 않습니다. 관리자만 게시글별 강제 재요약을 비동기 job으로 요청하고 상태를 조회할 수 있습니다. AI 모델 호출은 `gpt-service`만 담당합니다.
 
 ## AI 노드 라우팅
 

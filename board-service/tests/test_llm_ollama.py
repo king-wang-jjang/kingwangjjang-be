@@ -8,7 +8,7 @@ SERVICE_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SERVICE_ROOT))
 
 from app.utils import llm as llm_module
-from app.utils.llm import LLM
+from app.utils.llm import LLM, LLMError
 
 
 class DummyResponse:
@@ -292,3 +292,23 @@ def test_analysis_input_override_is_clamped_before_service_request(monkeypatch):
     assert low.analysis_max_input_chars == 1_000
     assert 0 < len(captured["json"]["content"]) <= 1_000
     assert high.analysis_max_input_chars == 200_000
+
+
+def test_ai_service_unavailable_error_is_retryable(monkeypatch):
+    def fake_post(url, *, json, headers, timeout):
+        request = httpx.Request("POST", url)
+        response = httpx.Response(503, request=request)
+        raise httpx.HTTPStatusError(
+            "service unavailable",
+            request=request,
+            response=response,
+        )
+
+    monkeypatch.setattr(llm_module.httpx, "post", fake_post)
+
+    try:
+        LLM(service_url="http://ai-router.local").analyze("게시글 본문")
+    except LLMError as exc:
+        assert exc.retryable is True
+    else:
+        raise AssertionError("AI service 503 must remain retryable")

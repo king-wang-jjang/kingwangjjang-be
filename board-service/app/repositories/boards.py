@@ -54,6 +54,15 @@ VISION_FALLBACK_UNAVAILABLE_ERROR = (
 VISION_FALLBACK_REJECTED_ERROR = (
     "Vision fallback request was rejected; check vision node configuration"
 )
+INSUFFICIENT_ANALYSIS_CONTENT_ERROR = "Board content is too short for reliable analysis"
+CRAWLER_CONTENT_REFRESH_REQUIRED_ERROR = (
+    "crawled body is insufficient for AI analysis; content refresh required"
+)
+TERMINAL_ANALYSIS_ERRORS = (
+    INSUFFICIENT_ANALYSIS_CONTENT_ERROR,
+    CRAWLER_CONTENT_REFRESH_REQUIRED_ERROR,
+    VISION_FALLBACK_REJECTED_ERROR,
+)
 
 
 class RetryableAnalysisError(LLMError):
@@ -103,7 +112,7 @@ class BoardRepository:
     ANALYSIS_DONE = "done"
     ANALYSIS_FAILED = "failed"
     USER_REQUEST_PRIORITY = 100
-    DEFAULT_MAX_RETRY_COUNT = 2
+    DEFAULT_MAX_RETRY_COUNT = 5
     PROCESSING_STALE_AFTER = timedelta(minutes=10)
 
     def __init__(self):
@@ -566,6 +575,7 @@ class BoardRepository:
         board_id: str,
         analyzer: LLM | None = None,
         *,
+        force: bool = False,
         vision_extractor: VisionTextClient | None = None,
         media_root=None,
     ) -> dict | None:
@@ -575,7 +585,7 @@ class BoardRepository:
             board = session.get(Board, board_id)
             if board is None:
                 return None
-            if self._has_complete_analysis(board):
+            if self._has_complete_analysis(board) and not force:
                 if board.analysis_status != self.ANALYSIS_DONE:
                     board.analysis_status = self.ANALYSIS_DONE
                     board.analysis_error = None
@@ -753,11 +763,13 @@ class BoardRepository:
                 board_id,
                 error=str(exc),
                 max_retry_count=max_retry_count,
+                retryable=exc.retryable,
             )
 
     def _claim_next_analysis_job(self, max_retry_count: int) -> str | None:
         now = self._now()
         stale_cutoff = now - self.PROCESSING_STALE_AFTER
+        heatmap_window_start = now - RECENT_CRAWL_WINDOW
 
         with get_session_factory()() as session:
             stale_boards = session.scalars(
@@ -775,7 +787,17 @@ class BoardRepository:
             stmt = (
                 select(Board)
                 .where(
-                    Board.analysis_status == self.ANALYSIS_PENDING,
+                    or_(
+                        Board.analysis_status == self.ANALYSIS_PENDING,
+                        (
+                            (Board.analysis_status == self.ANALYSIS_FAILED)
+                            & (Board.analysis_retry_count < max_retry_count)
+                            & or_(
+                                Board.analysis_error.is_(None),
+                                Board.analysis_error.notin_(TERMINAL_ANALYSIS_ERRORS),
+                            )
+                        ),
+                    ),
                     Board.analysis_retry_count < max_retry_count,
                     or_(
                         Board.analysis_requested_at.is_(None),
@@ -784,8 +806,12 @@ class BoardRepository:
                 )
                 .order_by(
                     desc(Board.analysis_priority),
-                    nullslast(desc(Board.analysis_requested_at)),
-                    desc(Board.created_at),
+                    case((Board.created_at >= heatmap_window_start, 0), else_=1),
+                    func.coalesce(
+                        Board.analysis_requested_at,
+                        Board.created_at,
+                    ),
+                    Board.created_at,
                 )
                 .limit(1)
             )
@@ -847,6 +873,9 @@ class BoardRepository:
             else:
                 board.analysis_status = self.ANALYSIS_PENDING
                 board.analysis_priority = max(int(board.analysis_priority or 0) - 1, 0)
+                board.analysis_requested_at = now + timedelta(
+                    seconds=analysis_retryable_backoff_seconds()
+                )
 
             session.commit()
             session.refresh(board)
@@ -1198,7 +1227,7 @@ class BoardRepository:
             min_body_chars=minimum_body_chars,
             min_language_chars=minimum_language_chars,
         ):
-            raise LLMError("Board content is too short for reliable analysis")
+            raise LLMError(INSUFFICIENT_ANALYSIS_CONTENT_ERROR)
 
         return extract_llm_text(
             board.title,

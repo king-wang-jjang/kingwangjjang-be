@@ -103,11 +103,12 @@ refresh token 해시가 DB의 활성 세션과 다르거나 만료되면 `401 in
 
 ## 게시글 자동 분석
 
-`board-service`는 기본 1개 worker로 `pending` 게시글을 처리합니다. 기본 AI 노드의 동시 추론 한도가 1이므로, 처리량을 높일 때는 AI 노드의 `max_concurrency`도 함께 확인하세요.
+`board-service`는 기본 2개 worker로 `pending` 게시글을 처리합니다. 새로 수집되거나 본문이 복구된 게시글은 자동 분석 우선순위로 즉시 등록됩니다. 처리량을 조정할 때는 AI 노드의 `max_concurrency`도 함께 확인하세요.
 
 | 변수 | 기본값 | 의미 |
 | --- | ---: | --- |
-| `ANALYSIS_WORKER_CONCURRENCY` | 1 | worker 수, 1~16으로 제한 |
+| `ANALYSIS_WORKER_CONCURRENCY` | 2 | worker 수, 1~16으로 제한 |
+| `ANALYSIS_MAX_RETRY_COUNT` | 5 | 자동 분석 실패 허용 횟수, 1~20으로 제한 |
 | `ANALYSIS_WORKER_IDLE_INTERVAL_SECONDS` | 3 | 처리할 항목이 없을 때 대기 시간 |
 | `ANALYSIS_WORKER_ACTIVE_INTERVAL_SECONDS` | 0.2 | 항목 처리 후 다음 polling까지 대기 |
 | `DISABLE_ANALYSIS_WORKER` | `FALSE` | `TRUE`면 worker 비활성화 |
