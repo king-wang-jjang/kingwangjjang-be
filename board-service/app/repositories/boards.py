@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from math import exp, isfinite
 
-from sqlalchemy import String, case, cast, delete, desc, func, inspect, nullslast, or_, select, text
+from sqlalchemy import JSON, case, cast, delete, desc, func, inspect, nullslast, or_, select, text
 
 from app.db.models import Board, BoardLike, BoardMetricSnapshot, DailyTop10Snapshot
 from app.db.postgres import Base, get_engine, get_session_factory
@@ -100,7 +100,7 @@ class BoardListFilters:
         return cls(
             sites=tuple(_split_filter_values(sites or [])),
             category=_clean_filter_value(category),
-            tag=_clean_filter_value(tag),
+            tag=_clean_tag_value(tag),
             query=_clean_filter_value(query),
             has_thumbnail=has_thumbnail,
         )
@@ -272,9 +272,11 @@ class BoardRepository:
             normalized_tags: list[tuple[str, str]] = []
             seen_tags: set[str] = set()
             for raw_tag in tags if isinstance(tags, list) else []:
-                tag_label = str(raw_tag or "").strip().lstrip("#").strip()
+                tag_label = _clean_tag_value(str(raw_tag or ""))
+                if not tag_label:
+                    continue
                 tag_key = tag_label.casefold()
-                if not tag_label or tag_key in seen_tags:
+                if tag_key in seen_tags:
                     continue
                 seen_tags.add(tag_key)
                 tag_labels.setdefault(tag_key, tag_label)
@@ -1122,8 +1124,36 @@ class BoardRepository:
         if filters.category:
             stmt = stmt.where(Board.category == filters.category)
 
-        if filters.tag:
-            stmt = stmt.where(cast(Board.tags, String).ilike(f'%"{filters.tag}"%'))
+        if tag := _clean_tag_value(filters.tag):
+            # Decode JSON elements before comparing: serialized Korean tags may
+            # contain Unicode escapes, and LIKE also treats % and _ as wildcards.
+            if get_engine().dialect.name == "postgresql":
+                tag_array = case(
+                    (func.json_typeof(Board.tags) == "array", Board.tags),
+                    else_=cast("[]", JSON),
+                )
+                tag_values = func.json_array_elements_text(tag_array).table_valued("value")
+            else:
+                tag_array = case(
+                    (func.json_type(Board.tags) == "array", Board.tags),
+                    else_="[]",
+                )
+                tag_values = func.json_each(tag_array).table_valued("value")
+
+            whitespace = " \t\n\r\f\v"
+            normalized_tag = func.lower(
+                func.trim(
+                    func.ltrim(func.trim(tag_values.c.value, whitespace), "#"),
+                    whitespace,
+                )
+            )
+            stmt = stmt.where(
+                select(1)
+                .select_from(tag_values)
+                .where(normalized_tag == tag.lower())
+                .correlate(Board)
+                .exists()
+            )
 
         if filters.query:
             search_pattern = f"%{filters.query}%"
@@ -1516,6 +1546,11 @@ def _clean_filter_value(value: str | None) -> str | None:
         return None
     cleaned = value.strip()
     return cleaned or None
+
+
+def _clean_tag_value(value: str | None) -> str | None:
+    cleaned = _clean_filter_value(value)
+    return cleaned.lstrip("#").strip() or None if cleaned else None
 
 
 def _split_filter_values(values: list[str]) -> list[str]:
