@@ -98,6 +98,12 @@ class FakeRepository:
                     "related_tags": ["이슈"],
                 }
             ],
+            "hourly_rankings": [
+                {
+                    "started_at": "2026-08-31T00:00:00Z",
+                    "tags": [{"tag": "유머", "post_count": 3, "rank": 1}],
+                }
+            ],
         }
 
     def list_realtime(self, index: int, limit: int, filters=None):
@@ -336,6 +342,29 @@ def test_issue_overview_returns_visualization_data_and_applies_site_scope(monkey
         ],
         "related_tags": ["이슈"],
     }
+    assert response.json()["hourly_rankings"] == [
+        {
+            "started_at": "2026-08-31T00:00:00Z",
+            "tags": [{"tag": "유머", "post_count": 3, "rank": 1}],
+        }
+    ]
+
+
+def test_issue_overview_accepts_repository_without_hourly_rankings(monkeypatch):
+    client = build_client(monkeypatch)
+    get_overview = FakeRepository.get_issue_overview
+
+    def without_hourly_rankings(self, **kwargs):
+        overview = get_overview(self, **kwargs)
+        overview.pop("hourly_rankings")
+        return overview
+
+    monkeypatch.setattr(FakeRepository, "get_issue_overview", without_hourly_rankings)
+
+    response = client.get("/api/boards/issues")
+
+    assert response.status_code == 200
+    assert response.json()["hourly_rankings"] == []
 
 
 def test_issue_overview_validates_window_and_category_limit(monkeypatch):

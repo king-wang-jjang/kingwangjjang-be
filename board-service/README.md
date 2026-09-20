@@ -11,6 +11,7 @@
 | `GET /api/boards/realtime` | 실시간 목록 |
 | `GET /api/boards/daily` | 현재 일간 랭킹 |
 | `GET /api/boards/filters` | 최근 24시간 크롤링 성공 사이트 필터 |
+| `GET /api/boards/issues` | AI 태그 통계와 시간별 태그 Top 10 |
 | `GET /api/boards/daily/history/dates` | 저장된 Top 10 날짜 목록 |
 | `GET /api/boards/daily/history?date=YYYY-MM-DD` | 특정 날짜 Top 10 |
 | `GET /api/boards/{board_id}/ai` | 저장된 분석 상태·결과 |
@@ -18,6 +19,16 @@
 실시간·일간 목록은 `index`, `limit`, 반복 가능한 `sites`, `category`, `tag`, `q`, `has_thumbnail` 필터를 지원합니다. history 날짜 목록의 `limit`은 1~365, history 결과의 `limit`은 1~100입니다.
 
 사이트 필터에는 최근 24시간 안에 게시글 저장 또는 원문 지표 갱신이 한 건 이상 성공한 사이트만 표시됩니다. 성공 여부는 `board_metric_snapshots`의 `crawl_status=success`와 `captured_at`을 기준으로 판단합니다.
+
+태그 통계는 `hours`(6~168, 기본 24), `limit`(4~24, 기본 16), 반복 가능한 `sites`를 지원합니다.
+`hourly_rankings`는 UTC 정각인 `started_at`과 `tags: [{tag, post_count, rank}]`를 시간순으로 반환합니다.
+시간별 순위는 분석이 완료된 게시글의 작성 시간을 기준으로 각 태그의 게시글 수를 집계하며,
+동일 게시글의 중복 태그는 한 번만 셉니다. 게시글 수가 같으면 대소문자를 무시한 태그 이름순으로 순위를 정합니다.
+각 시간의 Top 10은 전체 태그 중에서 선택하므로 기존 통계의 영향력 점수나 `limit`과 독립적입니다.
+현재 진행 중인 시간과 그 이전 `hours - 1`개의 온전한 시간을 포함해 정확히 `hours`개의 구간을 반환합니다.
+따라서 기존 통계의 최근 `hours`시간 이동 구간에 포함된 가장 오래된 부분 시간은 그래프에서 제외됩니다.
+게시글이 없는 시간은 빈 `tags` 배열이며, 현재 시점 이후의 게시글은 집계하지 않습니다.
+저장된 과거 순위 스냅샷이 아닌 현재 분석 결과의 시간별 집계이므로 추후 분석이 완료되면 과거 구간도 갱신됩니다.
 
 ## 인증 API
 

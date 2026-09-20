@@ -247,6 +247,13 @@ class BoardRepository:
         tag_limit = max(4, min(int(limit), 24))
         window_start = reference_time - timedelta(hours=bounded_hours)
         current_period_start = reference_time - timedelta(hours=bounded_hours / 2)
+        # Hourly rankings use post counts, independently of the overview's impact
+        # score. Include the current partial clock hour and the preceding full
+        # hours; the older partial hour in the rolling overview is not charted.
+        hourly_start = reference_time.replace(minute=0, second=0, microsecond=0) - timedelta(
+            hours=bounded_hours - 1
+        )
+        hourly_counts: list[Counter[str]] = [Counter() for _ in range(bounded_hours)]
 
         stmt = select(
             Board.site,
@@ -288,6 +295,9 @@ class BoardRepository:
             analyzed_post_count += 1
             site_name = str(site or "").strip() or "unknown"
             created_at = self._as_utc(created_at)
+            hour_index = int((created_at - hourly_start).total_seconds() // 3600)
+            if 0 <= hour_index < bounded_hours:
+                hourly_counts[hour_index].update(tag_key for tag_key, _ in normalized_tags)
             score_updated_at = self._as_utc(score_updated_at or created_at)
             raw_hot_score = float(hot_score or 0.0)
             if not isfinite(raw_hot_score):
@@ -373,6 +383,21 @@ class BoardRepository:
             "total_posts": analyzed_post_count,
             "total_tags": len(tag_aggregates),
             "tags": result_tags,
+            "hourly_rankings": [
+                {
+                    "started_at": (hourly_start + timedelta(hours=hour_index))
+                    .isoformat()
+                    .replace("+00:00", "Z"),
+                    "tags": [
+                        {"tag": tag_labels[tag_key], "post_count": count, "rank": rank}
+                        for rank, (tag_key, count) in enumerate(
+                            sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:10],
+                            start=1,
+                        )
+                    ],
+                }
+                for hour_index, counts in enumerate(hourly_counts)
+            ],
         }
 
     def list_recently_crawled_sites(self, *, as_of: datetime | None = None) -> list[str]:

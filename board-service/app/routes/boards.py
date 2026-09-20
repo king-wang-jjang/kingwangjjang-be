@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Response
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.auth.dependencies import require_admin, require_principal
 from app.auth.principal import Principal
@@ -62,12 +62,24 @@ class IssueTagOverview(BaseModel):
     related_tags: list[str]
 
 
+class HourlyIssueTagRanking(BaseModel):
+    tag: str
+    post_count: int
+    rank: int
+
+
+class HourlyIssueRankings(BaseModel):
+    started_at: datetime
+    tags: list[HourlyIssueTagRanking]
+
+
 class IssueOverviewResponse(BaseModel):
     generated_at: datetime
     window_hours: int
     total_posts: int
     total_tags: int
     tags: list[IssueTagOverview]
+    hourly_rankings: list[HourlyIssueRankings] = Field(default_factory=list)
 
 
 class AnalysisQueueResourceResponse(BaseModel):
