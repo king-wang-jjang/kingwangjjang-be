@@ -87,7 +87,7 @@ GPT health 응답은 `status`와 등록된 `node_count`를 반환합니다. 서�
 
 Kakao 개발자 콘솔의 redirect URI는 Gateway의 `/callback`과 일치해야 합니다. 로컬 소스 실행은 보통 `http://localhost:33330/callback`, 로컬 Compose는 `http://localhost:8000/callback`, 운영은 공개 HTTPS origin을 사용합니다.
 
-로그인 후 `GET /userservice/api/users/me`의 `userId`를 `ADMIN_USER_IDS`에 등록하고 Gateway와 `board-service`를 재시작합니다. 관리자 전용 `GET /boardservice/api/boards/daily/shorts-package`는 오늘의 live Top 10을, `?date=YYYY-MM-DD`는 저장된 이력을 JSON 제작 패키지로 반환합니다.
+로그인 후 `GET /userservice/api/users/me`의 `userId`를 `ADMIN_USER_IDS`에 등록하고 Gateway, `board-service`, `user-service`를 재시작합니다. GitHub Actions로 배포할 때는 같은 이름의 repository secret에 설정하며, 배포 workflow가 각 서비스의 공통 `.env`에 전달합니다. 관리자 전용 `GET /boardservice/api/boards/daily/shorts-package`는 오늘의 live Top 10을, `?date=YYYY-MM-DD`는 저장된 이력을 JSON 제작 패키지로 반환합니다.
 
 세션 쿠키 정책은 다음과 같습니다.
 

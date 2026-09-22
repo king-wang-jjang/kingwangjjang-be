@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import delete, inspect, select, text, update
+from sqlalchemy import delete, func, inspect, or_, select, text, update
 
 from app.auth.principal import Principal
 from app.db.models import User, UserSession
@@ -44,6 +44,50 @@ class UserRepository:
                 )
             )
             return self._to_dict(user) if user is not None else None
+
+    def list_users(
+        self, *, query: str, role: str | None, admin_user_ids: set[str],
+        page: int, page_size: int,
+    ) -> tuple[list[dict], int]:
+        filters = []
+        if query:
+            # Treat LIKE wildcards as literal search text.
+            escaped = query.replace("/", "//").replace("%", "/%").replace("_", "/_")
+            pattern = f"%{escaped}%"
+            filters.append(or_(
+                User.nickname.ilike(pattern, escape="/"),
+                User.display_name.ilike(pattern, escape="/"),
+                User.user_id.ilike(pattern, escape="/"),
+                User.id.ilike(pattern, escape="/"),
+            ))
+        if role == "admin":
+            filters.append(User.user_id.in_(admin_user_ids))
+        elif role == "user":
+            filters.append(User.user_id.not_in(admin_user_ids))
+
+        with get_session_factory()() as session:
+            total = session.scalar(select(func.count()).select_from(User).where(*filters)) or 0
+            users = session.scalars(
+                select(User).where(*filters)
+                .order_by(User.created_at.desc(), User.id.desc())
+                .offset((page - 1) * page_size).limit(page_size)
+            ).all()
+            return [self._to_dict(user) for user in users], total
+
+    def get_user_by_id(self, member_id: str) -> dict | None:
+        with get_session_factory()() as session:
+            user = session.get(User, member_id)
+            return self._to_dict(user) if user is not None else None
+
+    def update_user_display_name(self, member_id: str, display_name: str | None) -> dict | None:
+        with get_session_factory()() as session:
+            user = session.get(User, member_id)
+            if user is None:
+                return None
+            user.display_name = display_name
+            session.commit()
+            session.refresh(user)
+            return self._to_dict(user)
 
     def create_refresh_session(
         self,

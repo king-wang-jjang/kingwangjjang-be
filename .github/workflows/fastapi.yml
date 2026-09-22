@@ -119,6 +119,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Create .env file
+        env:
+          ADMIN_USER_IDS: ${{ secrets.ADMIN_USER_IDS }}
         run: |
           set -euo pipefail
           POSTGRES_DB="${{ secrets.POSTGRES_DB }}"
@@ -163,6 +165,7 @@ jobs:
           echo "VLLM_API_KEY=${{ secrets.VLLM_API_KEY }}" >> .env
           echo "SERVER_RUN_MODE=${SERVER_RUN_MODE:-TRUE}" >> .env
           echo "AUTH_COOKIE_SECURE=${AUTH_COOKIE_SECURE:-TRUE}" >> .env
+          printf '%s\n' "ADMIN_USER_IDS=${ADMIN_USER_IDS}" >> .env
           echo "WEBHOOK_URL=${{ secrets.PRODUCTION_WEBHOOK_URL }}" >> .env
           echo "WAS_HOST=${{ secrets.WAS_HOST }}" >> .env
           echo "WAS_PASSWORD=${{ secrets.WAS_PASSWORD }}" >> .env

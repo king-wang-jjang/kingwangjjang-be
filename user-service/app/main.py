@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes.auth import router as auth_router
 from app.routes.users import router as users_router
+from app.routes.admin_users import router as admin_users_router
 from app.utils.loghandler import catch_exception, setup_logger
 
 app = FastAPI()
@@ -25,6 +26,7 @@ logger = setup_logger()
 
 app.include_router(auth_router)
 app.include_router(users_router)
+app.include_router(admin_users_router)
 
 if __name__ == "__main__":
     logger.info("Starting uvicorn server")

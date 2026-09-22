@@ -28,6 +28,14 @@
 | `/api/auth/refresh` | Atomically rotates the browser session hash and both session cookies. |
 | `/api/users/me` | Returns the current authenticated user. |
 | `PATCH /api/users/me` | Updates the current user's display name. |
+| `GET /api/admin/users` | Lists users with search, role filter, and pagination; admin only. |
+| `GET /api/admin/users/{id}` | Reads a profile by internal user ID; admin only. |
+| `PATCH /api/admin/users/{id}` | Updates only the display name of an existing user; admin only. |
+
+Admin user APIs recheck the access cookie and `ADMIN_USER_IDS` as well as trusted
+gateway identity headers. Keep the allowlist and JWT secret consistent with the
+gateway. Roles remain allowlist-based; profile mutations cannot change roles or
+OAuth identity, create missing accounts, or expose refresh credentials.
 
 ## Data Boundary
 
