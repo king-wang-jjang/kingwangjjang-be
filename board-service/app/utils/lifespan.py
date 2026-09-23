@@ -9,6 +9,7 @@ from app.services.analysis_worker import (
     analysis_worker_enabled,
     run_analysis_worker,
 )
+from app.services.recommendation_cleanup import run_recommendation_cleanup
 import sys
 sys.excepthook = catch_exception
 # from db import context
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
             asyncio.create_task(run_analysis_worker(stop_event))
             for _ in range(analysis_worker_concurrency())
         ]
+    worker_tasks.append(asyncio.create_task(run_recommendation_cleanup(stop_event)))
 
     # before start
     try:

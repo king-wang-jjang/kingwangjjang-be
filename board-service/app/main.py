@@ -13,6 +13,7 @@ from app.utils import lifespan
 from app.utils.loghandler import catch_exception
 from app.utils.loghandler import setup_logger
 from app.routes.boards import router as boards_router
+from app.routes.recommendations import router as recommendations_router
 
 # from routes.board import board_controller
 sys.excepthook = catch_exception
@@ -24,6 +25,7 @@ if Config.get_env("SERVER_RUN_MODE") == "TRUE":
     logging.getLogger("uvicorn.error").handlers = [logger.handlers[1]]
 # static_middleware.add(app)
 app.include_router(boards_router)
+app.include_router(recommendations_router)
 
 if __name__ == "__main__":
     logger.info("Starting uvicorn server")

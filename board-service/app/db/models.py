@@ -114,3 +114,15 @@ class BoardLike(Base):
         nullable=False,
         default=lambda: datetime.now(timezone.utc),
     )
+
+
+class RecommendationProfile(Base):
+    __tablename__ = "board_recommendation_profiles"
+
+    owner: Mapped[str] = mapped_column(String(64), primary_key=True)
+    data: Mapped[dict] = mapped_column(JSON, nullable=False)
+    revision: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    cleanup_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True, index=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
