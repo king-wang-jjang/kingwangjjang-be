@@ -15,6 +15,9 @@
 | `GET /api/boards/daily/history/dates` | 저장된 Top 10 날짜 목록 |
 | `GET /api/boards/daily/history?date=YYYY-MM-DD` | 특정 날짜 Top 10 |
 | `GET /api/boards/{board_id}/ai` | 저장된 분석 상태·결과 |
+| `GET /api/boards/ai/resources` | 관리자용 분석 대기열·성공·실패 집계 |
+| `GET /api/boards/ai/resources/runs` | 관리자용 게시글별 최신 분석 상태 목록 |
+| `POST /api/boards/ai/resources/runs/{board_id}/retry` | 관리자용 실패 분석 재시도 |
 
 실시간·일간 목록은 `index`, `limit`, 반복 가능한 `sites`, `category`, `tag`, `q`, `has_thumbnail` 필터를 지원합니다. history 날짜 목록의 `limit`은 1~365, history 결과의 `limit`은 1~100입니다.
 
@@ -94,6 +97,14 @@
 해석합니다. Compose에서는 절대 경로 `/app/public`과 read-only volume을 사용합니다.
 
 수동 분석 job 상태는 프로세스 메모리에 있으므로 재시작 시 사라지지만, 완료된 게시글 분석 결과는 PostgreSQL에 남습니다.
+
+Resource 화면의 워크플로우는 DB에 저장된 게시글별 최신 분석 상태를 5초마다 조회합니다.
+`runs`는 `status`(`pending`, `processing`, `done`, `failed`), `q`(제목·사이트 ID·게시글 ID),
+`offset`(기본 0), `limit`(기본 20, 최대 100)을 지원하며 개별 시도 이력은 반환하지 않습니다.
+재시도는 `failed` 작업의 실패 횟수와 오류를 초기화하고 우선순위를 높여 기존 worker 대기열에
+등록한 뒤 `202`를 반환합니다. 이미 대기·실행·완료 상태이면 `409`, 없는 작업이면 `404`,
+worker가 비활성화되어 있으면 `503`을 반환하며 상태를 변경하지 않습니다.
+이 API는 기존 관리자 인증을 사용하며 별도 DB 스키마 변경은 필요하지 않습니다.
 
 ## 실행과 테스트
 

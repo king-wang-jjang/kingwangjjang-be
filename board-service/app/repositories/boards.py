@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from math import exp, isfinite
 
-from sqlalchemy import JSON, case, cast, delete, desc, func, inspect, nullslast, or_, select, text
+from sqlalchemy import JSON, case, cast, delete, desc, func, inspect, nullslast, or_, select, text, update
 
 from app.db.models import Board, BoardLike, BoardMetricSnapshot, DailyTop10Snapshot
 from app.db.postgres import Base, get_engine, get_session_factory
@@ -227,6 +227,70 @@ class BoardRepository:
             "recent_arrivals": int(recent_arrivals),
             "recent_completions": int(recent_completions),
         }
+
+    def list_analysis_runs(
+        self, *, status: str | None = None, query: str = "", offset: int = 0, limit: int = 20
+    ) -> dict:
+        """List the latest persisted execution state per board, without loading bodies."""
+        conditions = []
+        if status:
+            conditions.append(Board.analysis_status == status)
+        if query.strip():
+            conditions.append(or_(
+                Board.title.icontains(query.strip(), autoescape=True),
+                Board.id.icontains(query.strip(), autoescape=True),
+                Board.site.icontains(query.strip(), autoescape=True),
+            ))
+        with get_session_factory()() as session:
+            total = session.scalar(select(func.count(Board.id)).where(*conditions))
+            rows = session.execute(
+                select(
+                    Board.id.label("board_id"), Board.title, Board.site,
+                    Board.analysis_status.label("status"),
+                    Board.analysis_retry_count.label("retry_count"),
+                    Board.analysis_error.label("error"), Board.created_at,
+                    Board.analysis_requested_at.label("requested_at"),
+                    Board.analysis_started_at.label("started_at"),
+                    Board.analysis_updated_at.label("updated_at"),
+                )
+                .where(*conditions)
+                .order_by(desc(func.coalesce(Board.analysis_updated_at, Board.created_at)), desc(Board.id))
+                .offset(offset).limit(limit)
+            ).mappings().all()
+        items = []
+        for row in rows:
+            item = dict(row)
+            for key in ("created_at", "requested_at", "started_at", "updated_at"):
+                item[key] = self._datetime_to_api(item[key])
+            items.append(item)
+        return {"items": items, "total": total, "offset": offset, "limit": limit}
+
+    def retry_failed_analysis(self, board_id: str) -> dict | None:
+        """Atomically requeue a failed board; never reset a worker's active claim."""
+        now = self._now()
+        with get_session_factory()() as session:
+            result = session.execute(
+                update(Board)
+                .where(Board.id == board_id, Board.analysis_status == self.ANALYSIS_FAILED)
+                .values(
+                    analysis_status=self.ANALYSIS_PENDING,
+                    analysis_retry_count=0,
+                    analysis_error=None,
+                    analysis_started_at=None,
+                    analysis_requested_at=now,
+                    analysis_updated_at=now,
+                    analysis_priority=case(
+                        (Board.analysis_priority < self.USER_REQUEST_PRIORITY, self.USER_REQUEST_PRIORITY),
+                        else_=Board.analysis_priority,
+                    ),
+                )
+            )
+            if result.rowcount == 0:
+                if session.get(Board, board_id) is None:
+                    return None
+                raise ValueError("실패한 작업만 재시도할 수 있습니다. 최신 상태를 확인해 주세요.")
+            session.commit()
+        return {"board_id": board_id, "status": self.ANALYSIS_PENDING}
 
     def get_issue_overview(
         self,

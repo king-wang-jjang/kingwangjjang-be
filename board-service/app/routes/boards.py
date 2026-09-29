@@ -103,6 +103,35 @@ class AnalysisQueueResourceResponse(BaseModel):
     estimated_clear_seconds: int | None
 
 
+AnalysisRunStatus = Literal["pending", "processing", "done", "failed"]
+
+
+class AnalysisRunResponse(BaseModel):
+    board_id: str
+    title: str
+    site: str
+    site_label: str
+    status: AnalysisRunStatus
+    retry_count: int
+    error: str | None
+    created_at: datetime
+    requested_at: datetime | None
+    started_at: datetime | None
+    updated_at: datetime | None
+
+
+class AnalysisRunListResponse(BaseModel):
+    items: list[AnalysisRunResponse]
+    total: int
+    offset: int
+    limit: int
+
+
+class AnalysisRetryResponse(BaseModel):
+    board_id: str
+    status: Literal["pending"]
+
+
 def _to_board_response(board: dict) -> dict:
     return {
         "_id": board["id"],
@@ -337,6 +366,41 @@ def analysis_queue_resources(
         "worker_concurrency": worker_concurrency,
         "estimated_clear_seconds": estimated_clear_seconds,
     }
+
+
+@router.get("/ai/resources/runs", response_model=AnalysisRunListResponse)
+def analysis_resource_runs(
+    response: Response,
+    status: AnalysisRunStatus | None = None,
+    q: str = Query(default="", max_length=200),
+    offset: int = Query(default=0, ge=0),
+    limit: int = Query(default=20, ge=1, le=100),
+    _principal: Principal = Depends(require_admin),
+):
+    result = BoardRepository().list_analysis_runs(status=status, query=q, offset=offset, limit=limit)
+    response.headers["Cache-Control"] = "private, no-store"
+    return {
+        **result,
+        "items": [{**item, "site_label": get_site_label(item["site"])} for item in result["items"]],
+    }
+
+
+@router.post("/ai/resources/runs/{board_id}/retry", response_model=AnalysisRetryResponse, status_code=202)
+def retry_analysis_resource_run(
+    board_id: str,
+    response: Response,
+    _principal: Principal = Depends(require_admin),
+):
+    if not analysis_worker_enabled():
+        raise HTTPException(status_code=503, detail="분석 Worker가 중지되어 있습니다. Worker를 시작한 뒤 재시도해 주세요.")
+    try:
+        result = BoardRepository().retry_failed_analysis(board_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    if result is None:
+        raise HTTPException(status_code=404, detail="분석 작업을 찾을 수 없습니다.")
+    response.headers["Cache-Control"] = "private, no-store"
+    return result
 
 
 @router.get("/{board_id}/ai")
