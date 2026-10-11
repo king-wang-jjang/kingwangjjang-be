@@ -3,11 +3,13 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from math import exp, isfinite
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import JSON, case, cast, delete, desc, func, inspect, nullslast, or_, select, text, update
 
 from app.db.models import Board, BoardLike, BoardMetricSnapshot, DailyTop10Snapshot
 from app.db.postgres import Base, get_engine, get_session_factory
+from app.services.issue_briefing import BriefingPost, build_issue_briefing
 from app.services.popularity import (
     DAILY_DECAY_HOURS,
     HOT_DECAY_HOURS,
@@ -291,6 +293,48 @@ class BoardRepository:
                 raise ValueError("실패한 작업만 재시도할 수 있습니다. 최신 상태를 확인해 주세요.")
             session.commit()
         return {"board_id": board_id, "status": self.ANALYSIS_PENDING}
+
+    def get_daily_issue_briefing(
+        self,
+        *,
+        limit: int = 5,
+        sites: tuple[str, ...] = (),
+        as_of: datetime | None = None,
+    ) -> dict:
+        reference_time = self._as_utc(as_of or self._now())
+        local_time = reference_time.astimezone(ZoneInfo("Asia/Seoul"))
+        started_at = local_time.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(timezone.utc)
+        stmt = select(
+            Board.id, Board.site, Board.title, Board.url,
+            Board.gpt_answer, Board.tags, Board.created_at,
+        ).where(
+            Board.created_at >= started_at,
+            Board.created_at <= reference_time,
+            Board.analysis_status == self.ANALYSIS_DONE,
+            Board.gpt_answer.is_not(None),
+            Board.gpt_answer != DEFAULT_GPT_ANSWER,
+        )
+        if sites:
+            stmt = stmt.where(Board.site.in_(sites))
+        with get_session_factory()() as session:
+            rows = session.execute(stmt).all()
+        posts = [
+            BriefingPost(
+                id=row.id, site=row.site, title=row.title, url=row.url,
+                summary=row.gpt_answer or "",
+                tags=tuple(tag for tag in row.tags if isinstance(tag, str))
+                if isinstance(row.tags, list) else (),
+                created_at=self._as_utc(row.created_at),
+            )
+            for row in rows
+        ]
+        return {
+            "generated_at": reference_time.isoformat().replace("+00:00", "Z"),
+            "date": local_time.date().isoformat(),
+            "started_at": started_at.isoformat().replace("+00:00", "Z"),
+            "time_zone": "Asia/Seoul",
+            **build_issue_briefing(posts, limit=max(1, min(int(limit), 10))),
+        }
 
     def get_issue_overview(
         self,

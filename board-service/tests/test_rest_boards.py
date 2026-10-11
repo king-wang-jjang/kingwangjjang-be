@@ -257,6 +257,36 @@ def build_client(monkeypatch):
     return TestClient(app)
 
 
+def test_daily_issue_briefing_returns_summaries_sources_and_validates_scope(monkeypatch):
+    client = build_client(monkeypatch)
+
+    def briefing(self, *, limit, sites):
+        assert limit == 3
+        assert sites == ("theqoo", "dcinside")
+        return {
+            "generated_at": "2026-10-11T02:00:00Z", "date": "2026-10-11",
+            "started_at": "2026-10-10T15:00:00Z", "time_zone": "Asia/Seoul",
+            "total_posts": 2, "total_issues": 1, "source_count": 2,
+            "issues": [{
+                "id": "a", "rank": 1, "title": "서울 지하철 파업 예고", "summary": "노조가 파업을 예고했습니다.",
+                "post_count": 2, "source_count": 2,
+                "sources": [{"site": "theqoo", "post_count": 1}],
+                "posts": [{"board_id": "a", "site": "theqoo", "title": "서울 지하철 파업 예고", "url": "https://example.com/a"}],
+            }],
+        }
+
+    monkeypatch.setattr(FakeRepository, "get_daily_issue_briefing", briefing, raising=False)
+    response = client.get("/api/boards/issues/briefing?limit=3&sites=theqoo&sites=dcinside")
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    issue = response.json()["issues"][0]
+    assert issue["summary"] == "노조가 파업을 예고했습니다."
+    assert issue["sources"][0]["site_label"] == "더쿠"
+    assert issue["posts"][0]["site_label"] == "더쿠"
+    assert client.get("/api/boards/issues/briefing?limit=0").status_code == 422
+    assert client.get("/api/boards/issues/briefing?limit=11").status_code == 422
+
+
 def test_realtime_returns_rest_shape(monkeypatch):
     client = build_client(monkeypatch)
 

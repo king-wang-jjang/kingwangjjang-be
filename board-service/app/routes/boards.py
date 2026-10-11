@@ -82,6 +82,36 @@ class IssueOverviewResponse(BaseModel):
     hourly_rankings: list[HourlyIssueRankings] = Field(default_factory=list)
 
 
+class BriefingSourcePost(BaseModel):
+    board_id: str
+    site: str
+    site_label: str
+    title: str
+    url: str
+
+
+class DailyIssue(BaseModel):
+    id: str
+    rank: int
+    title: str
+    summary: str
+    post_count: int
+    source_count: int
+    sources: list[IssueSiteBreakdown]
+    posts: list[BriefingSourcePost]
+
+
+class DailyIssueBriefingResponse(BaseModel):
+    generated_at: datetime
+    date: date
+    started_at: datetime
+    time_zone: str
+    total_posts: int
+    total_issues: int
+    source_count: int
+    issues: list[DailyIssue]
+
+
 class AnalysisQueueResourceResponse(BaseModel):
     generated_at: datetime
     status: Literal["healthy", "busy", "overloaded", "unavailable"]
@@ -224,6 +254,35 @@ def issue_overview(
                 ],
             }
             for tag in overview["tags"]
+        ],
+    }
+
+
+@router.get("/issues/briefing", response_model=DailyIssueBriefingResponse)
+def daily_issue_briefing(
+    response: Response,
+    limit: int = Query(default=5, ge=1, le=10),
+    sites: list[str] | None = Query(default=None),
+):
+    selected_sites = BoardListFilters.from_values(sites=sites).sites
+    briefing = BoardRepository().get_daily_issue_briefing(limit=limit, sites=selected_sites)
+    # Prevent a cached previous-day briefing from crossing Korean midnight.
+    response.headers["Cache-Control"] = "no-store"
+    return {
+        **briefing,
+        "issues": [
+            {
+                **issue,
+                "sources": [
+                    {**source, "site_label": get_site_label(source["site"])}
+                    for source in issue["sources"]
+                ],
+                "posts": [
+                    {**post, "site_label": get_site_label(post["site"])}
+                    for post in issue["posts"]
+                ],
+            }
+            for issue in briefing["issues"]
         ],
     }
 
