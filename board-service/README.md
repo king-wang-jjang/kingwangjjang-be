@@ -10,6 +10,7 @@
 | --- | --- |
 | `GET /api/boards/realtime` | 실시간 목록 |
 | `GET /api/boards/daily` | 현재 일간 랭킹 |
+| `GET /api/boards/daily/hourly-rankings?hours=24` | 인기글 Top 10의 시간별 순위 변화 |
 | `GET /api/boards/filters` | 최근 24시간 크롤링 성공 사이트 필터 |
 | `GET /api/boards/issues` | AI 태그 통계와 시간별 태그 Top 10 |
 | `GET /api/boards/daily/history/dates` | 저장된 Top 10 날짜 목록 |
@@ -32,6 +33,20 @@
 따라서 기존 통계의 최근 `hours`시간 이동 구간에 포함된 가장 오래된 부분 시간은 그래프에서 제외됩니다.
 게시글이 없는 시간은 빈 `tags` 배열이며, 현재 시점 이후의 게시글은 집계하지 않습니다.
 저장된 과거 순위 스냅샷이 아닌 현재 분석 결과의 시간별 집계이므로 추후 분석이 완료되면 과거 구간도 갱신됩니다.
+
+## 인기글 시간별 순위
+
+홈의 순위 변화 그래프는 태그 빈도 대신 전체 인기글 Top 10을 비교합니다.
+`daily/hourly-rankings`는 현재 시간과 그 이전 `hours - 1`개 시간대(6~24, 기본 24)를
+시간순으로 반환합니다. 시간대마다 `started_at`, `captured_at`, `is_live`,
+`posts: [{board_id, rank, title, site, site_label, url}]`을 포함합니다.
+
+과거 구간은 CrawlScheduler가 5분마다 갱신하는 `hourly_top10_snapshots`의 마지막
+관측 순위를 사용하고, 현재 구간은 `daily?index=0&limit=10`과 같은 조회로 생성합니다.
+순위 기록이 없으면 `captured_at=null`, `posts=[]`이며 실제로 확인한 빈 순위는
+`captured_at`이 있는 빈 배열입니다. 과거 순위를 현재 점수로 역산하지 않습니다.
+배포 이후부터 기록이 쌓이며, 스케줄러가 7일 넘은 시간별 기록을 정리합니다.
+새 테이블은 기존 `Base.metadata.create_all` 경로에서 생성됩니다.
 
 ## 개인별 태그 추천
 

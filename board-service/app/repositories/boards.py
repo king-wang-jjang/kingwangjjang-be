@@ -7,7 +7,13 @@ from zoneinfo import ZoneInfo
 
 from sqlalchemy import JSON, case, cast, delete, desc, func, inspect, nullslast, or_, select, text, update
 
-from app.db.models import Board, BoardLike, BoardMetricSnapshot, DailyTop10Snapshot
+from app.db.models import (
+    Board,
+    BoardLike,
+    BoardMetricSnapshot,
+    DailyTop10Snapshot,
+    HourlyTop10Snapshot,
+)
 from app.db.postgres import Base, get_engine, get_session_factory
 from app.services.issue_briefing import BriefingPost, build_issue_briefing
 from app.services.popularity import (
@@ -138,6 +144,50 @@ class BoardRepository:
         filters: BoardListFilters | None = None,
     ) -> list[dict]:
         return self._list_boards(index=index, limit=limit, daily=True, filters=filters)
+
+    def get_hourly_post_rankings(self, window_hours: int = 24) -> dict:
+        """Read observed rankings; missing history stays empty, the current hour is live."""
+        now = self._as_utc(self._now())
+        hours = max(6, min(int(window_hours), 24))
+        current_hour = now.replace(minute=0, second=0, microsecond=0)
+        first_hour = current_hour - timedelta(hours=hours - 1)
+        with get_session_factory()() as session:
+            snapshots = session.scalars(
+                select(HourlyTop10Snapshot).where(
+                    HourlyTop10Snapshot.started_at >= first_hour,
+                    HourlyTop10Snapshot.started_at < current_hour,
+                    HourlyTop10Snapshot.captured_at <= now,
+                )
+            ).all()
+            by_hour = {self._as_utc(snapshot.started_at): snapshot for snapshot in snapshots}
+            rankings = []
+            for index in range(hours):
+                started_at = first_hour + timedelta(hours=index)
+                snapshot = by_hour.get(started_at)
+                rankings.append(
+                    {
+                        "started_at": started_at,
+                        "captured_at": self._as_utc(snapshot.captured_at) if snapshot else None,
+                        "is_live": False,
+                        "posts": snapshot.posts if snapshot else [],
+                    }
+                )
+        rankings[-1] = {
+            "started_at": current_hour,
+            "captured_at": now,
+            "is_live": True,
+            "posts": [
+                {
+                    "board_id": board["id"],
+                    "rank": rank,
+                    "title": board["title"],
+                    "site": board["site"],
+                    "url": board["url"],
+                }
+                for rank, board in enumerate(self.list_daily(index=0, limit=10), start=1)
+            ],
+        }
+        return {"generated_at": now, "window_hours": hours, "rankings": rankings}
 
     def get_analysis_queue_metrics(self, as_of: datetime | None = None) -> dict:
         """Return queue depth and recent flow without loading board content."""

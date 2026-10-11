@@ -102,6 +102,14 @@ class DailyTop10Snapshot(Base):
     captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
+class HourlyTop10Snapshot(Base):
+    __tablename__ = "hourly_top10_snapshots"
+
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), primary_key=True)
+    captured_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    posts: Mapped[list] = mapped_column(JSON, nullable=False)
+
+
 class BoardLike(Base):
     __tablename__ = "board_likes"
     __table_args__ = (UniqueConstraint("board_id", "user_id", name="uq_board_likes_board_user"),)

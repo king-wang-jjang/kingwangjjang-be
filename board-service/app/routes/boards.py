@@ -112,6 +112,28 @@ class DailyIssueBriefingResponse(BaseModel):
     issues: list[DailyIssue]
 
 
+class HourlyRankedPost(BaseModel):
+    board_id: str
+    rank: int
+    title: str
+    site: str
+    site_label: str
+    url: str
+
+
+class HourlyPostRanking(BaseModel):
+    started_at: datetime
+    captured_at: datetime | None
+    is_live: bool
+    posts: list[HourlyRankedPost]
+
+
+class HourlyPostRankingsResponse(BaseModel):
+    generated_at: datetime
+    window_hours: int
+    rankings: list[HourlyPostRanking]
+
+
 class AnalysisQueueResourceResponse(BaseModel):
     generated_at: datetime
     status: Literal["healthy", "busy", "overloaded", "unavailable"]
@@ -331,6 +353,25 @@ def daily(
         _to_board_response(board)
         for board in BoardRepository().list_daily(index, limit, filters=filters)
     ]
+
+
+@router.get("/daily/hourly-rankings", response_model=HourlyPostRankingsResponse)
+def hourly_post_rankings(response: Response, hours: int = Query(default=24, ge=6, le=24)):
+    timeline = BoardRepository().get_hourly_post_rankings(window_hours=hours)
+    response.headers["Cache-Control"] = "no-store"
+    return {
+        **timeline,
+        "rankings": [
+            {
+                **bucket,
+                "posts": [
+                    {**post, "site_label": get_site_label(post["site"])}
+                    for post in bucket["posts"]
+                ],
+            }
+            for bucket in timeline["rankings"]
+        ],
+    }
 
 
 @router.get("/daily/history/dates")
