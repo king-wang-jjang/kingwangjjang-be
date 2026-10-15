@@ -269,7 +269,7 @@ def test_daily_issue_briefing_returns_summaries_sources_and_validates_scope(monk
             "total_posts": 2, "total_issues": 1, "source_count": 2,
             "issues": [{
                 "id": "a", "rank": 1, "title": "서울 지하철 파업 예고", "summary": "노조가 파업을 예고했습니다.",
-                "post_count": 2, "source_count": 2,
+                "post_count": 2, "source_count": 2, "summary_source": "source_excerpt",
                 "sources": [{"site": "theqoo", "post_count": 1}],
                 "posts": [{"board_id": "a", "site": "theqoo", "title": "서울 지하철 파업 예고", "url": "https://example.com/a"}],
             }],
@@ -281,6 +281,7 @@ def test_daily_issue_briefing_returns_summaries_sources_and_validates_scope(monk
     assert response.headers["cache-control"] == "no-store"
     issue = response.json()["issues"][0]
     assert issue["summary"] == "노조가 파업을 예고했습니다."
+    assert issue["summary_source"] == "source_excerpt"
     assert issue["sources"][0]["site_label"] == "더쿠"
     assert issue["posts"][0]["site_label"] == "더쿠"
     assert client.get("/api/boards/issues/briefing?limit=0").status_code == 422

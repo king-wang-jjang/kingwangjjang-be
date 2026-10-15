@@ -1,9 +1,10 @@
-"""Build an extractive public-interest briefing from stored board analyses.
+"""Build a public-interest briefing from today's actual board posts.
 
 Broad categories never identify an event. Matching requires concrete title
 terms or a shared multi-word event tag, so e.g. two unrelated political stories
-do not become one issue just because both are tagged '정치'. No model calls or
-board-body reads are needed on the public request path.
+do not become one issue just because both are tagged '정치'. Stored analyses
+are preferred; unavailable analyses never hide the original headline and link.
+Source excerpts are explicitly identified and require no model calls.
 """
 
 import re
@@ -11,6 +12,9 @@ import unicodedata
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from datetime import datetime
+from html import unescape
+from html.parser import HTMLParser
+from typing import Literal
 
 
 SOCIAL_TAGS = frozenset({
@@ -55,6 +59,83 @@ ENTERTAINMENT_PUBLIC_EVENT = re.compile(
 )
 # Korean particles on title words should not split the same event.
 PARTICLES = re.compile(r"(?:에서는|으로는|에서도|에게서|에서|으로|에게|까지|부터|은|는|이|가|을|를|의|와|과|도)$")
+SummarySource = Literal["ai", "source_excerpt", "pending"]
+_PROMPT_MARKER = re.compile(
+    r"<\|(?:im_start|im_end|start_header_id|end_header_id|eot_id|system|assistant)\|>"
+    r"|\[/?INST\]|<<\s*/?SYS\s*>>|^\s*(?:system|developer|assistant)\s*:",
+    re.IGNORECASE | re.MULTILINE,
+)
+_SOURCE_FOOTER = re.compile(r"^\s*(?:출처\s*[:：]|\[?(?:원본|원문)\s*보기\]?|https?://)")
+# These actual source headlines use event keywords inside unrelated words or
+# cooking phrases. Remove those phrases before testing civic-event signals.
+_NON_EVENT_PHRASES = re.compile(r"전세계|삼성화재|지진\s*(?:동그랑땡|부침개|파전|김치전|감자전|두부)")
+
+
+class _SourceTextParser(HTMLParser):
+    """Keep visible prose, excluding executable and embedded payload blocks."""
+
+    _hidden_tags = frozenset({
+        "script", "style", "template", "iframe", "object", "noscript",
+        "svg", "math", "pre", "code",
+    })
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts: list[str] = []
+        self.hidden: list[str] = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self._hidden_tags:
+            self.hidden.append(tag)
+        elif not self.hidden and tag in {"p", "div", "br", "li"}:
+            self.parts.append("\n")
+
+    def handle_endtag(self, tag):
+        if tag in self.hidden:
+            del self.hidden[self.hidden.index(tag):]
+        elif not self.hidden and tag in {"p", "div", "li"}:
+            self.parts.append("\n")
+
+    def handle_data(self, data):
+        if not self.hidden:
+            self.parts.append(data)
+
+
+def source_excerpt(contents: object, *, title: str = "", max_chars: int = 480) -> str:
+    """Extract bounded source prose, never image filenames or chat instructions."""
+    blocks = contents if isinstance(contents, list) else [contents]
+    lines = []
+    seen = {_normalize(title)}
+    for block in blocks[:64]:
+        if isinstance(block, str):
+            raw = block
+        elif isinstance(block, dict):
+            if block.get("type", "text") != "text" or any(
+                key in block for key in ("role", "prompt", "instructions", "system")
+            ):
+                continue
+            raw = block.get("text")
+        else:
+            continue
+        if not isinstance(raw, str):
+            continue
+        raw = unescape(raw[:20_000])
+        if _PROMPT_MARKER.search(raw):
+            continue
+        parser = _SourceTextParser()
+        parser.feed(raw)
+        parser.close()
+        for line in "".join(parser.parts).splitlines():
+            line = re.sub(r"\s+", " ", line).strip()
+            key = _normalize(line)
+            if not line or key in seen or _SOURCE_FOOTER.search(line):
+                continue
+            lines.append(line)
+            seen.add(key)
+    excerpt = " ".join(lines)
+    if sum(char.isalnum() for char in excerpt) < 20 or sum(char.isalpha() for char in excerpt) < 8:
+        return ""
+    return excerpt[:max_chars].rstrip()
 
 
 def _normalize(value: str) -> str:
@@ -80,16 +161,18 @@ class BriefingPost:
     summary: str
     tags: tuple[str, ...]
     created_at: datetime
+    summary_source: SummarySource = "ai"
 
 
 def _is_social(post: BriefingPost) -> bool:
     tags = {_normalize(tag) for tag in post.tags}
     headline = " ".join((post.title, *tags))
+    event_headline = _NON_EVENT_PHRASES.sub("", headline)
     # A game's reviews/updates do not qualify through an incidental category.
     # Public-interest stories about game companies (e.g. a strike) do qualify.
     if ENTERTAINMENT.search(headline):
-        return bool(ENTERTAINMENT_PUBLIC_EVENT.search(headline))
-    return bool(tags & SOCIAL_TAGS or PUBLIC_EVENT.search(headline))
+        return bool(ENTERTAINMENT_PUBLIC_EVENT.search(event_headline))
+    return bool(tags & SOCIAL_TAGS or PUBLIC_EVENT.search(event_headline))
 
 
 def _event_tags(post: BriefingPost) -> frozenset[str]:
@@ -120,10 +203,14 @@ def _summary(posts: list[BriefingPost]) -> str:
 
 
 def build_issue_briefing(posts: list[BriefingPost], *, limit: int = 5) -> dict:
-    # A re-crawl of the same source URL contributes one mention, not two.
+    # A re-crawl contributes one mention. An unprocessed newer copy must not
+    # hide an available analysis/excerpt from the same canonical source URL.
+    summary_priority = {"ai": 2, "source_excerpt": 1, "pending": 0}
     unique = {}
-    for post in sorted(posts, key=lambda item: (-item.created_at.timestamp(), item.id)):
-        if post.summary.strip() and _is_social(post):
+    for post in sorted(posts, key=lambda item: (
+        -summary_priority[item.summary_source], -item.created_at.timestamp(), item.id,
+    )):
+        if (post.summary.strip() or post.summary_source == "pending") and _is_social(post):
             unique.setdefault((post.site, post.url.strip() or post.id), post)
     candidates = sorted(unique.values(), key=lambda item: (
         -bool(_event_tags(item)), len(item.title), _normalize(item.title), item.id,
@@ -183,6 +270,11 @@ def build_issue_briefing(posts: list[BriefingPost], *, limit: int = 5) -> dict:
         # Use the shortest actual headline and its stored summary first.
         ordered = sorted(group, key=lambda post: (len(post.title), post.title, post.id))
         representative = ordered[0]
+        summary_source = next((
+            source for source in ("ai", "source_excerpt")
+            if any(post.summary_source == source and post.summary.strip() for post in ordered)
+        ), "pending")
+        summary_posts = [post for post in ordered if post.summary_source == summary_source]
         sources = Counter(post.site for post in group)
         examples = []
         used_sites = set()
@@ -197,7 +289,8 @@ def build_issue_briefing(posts: list[BriefingPost], *, limit: int = 5) -> dict:
             "id": representative.id,
             "rank": rank,
             "title": representative.title,
-            "summary": _summary(ordered),
+            "summary": _summary(summary_posts),
+            "summary_source": summary_source,
             "post_count": len(group),
             "source_count": len(sources),
             "sources": [

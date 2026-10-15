@@ -1,6 +1,6 @@
 import logging
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta, timezone
 from math import exp, isfinite
 from zoneinfo import ZoneInfo
@@ -15,7 +15,7 @@ from app.db.models import (
     HourlyTop10Snapshot,
 )
 from app.db.postgres import Base, get_engine, get_session_factory
-from app.services.issue_briefing import BriefingPost, build_issue_briefing
+from app.services.issue_briefing import BriefingPost, build_issue_briefing, source_excerpt
 from app.services.popularity import (
     DAILY_DECAY_HOURS,
     HOT_DECAY_HOURS,
@@ -357,33 +357,56 @@ class BoardRepository:
         stmt = select(
             Board.id, Board.site, Board.title, Board.url,
             Board.gpt_answer, Board.tags, Board.created_at,
+            Board.analysis_status,
         ).where(
             Board.created_at >= started_at,
             Board.created_at <= reference_time,
-            Board.analysis_status == self.ANALYSIS_DONE,
-            Board.gpt_answer.is_not(None),
-            Board.gpt_answer != DEFAULT_GPT_ANSWER,
         )
         if sites:
             stmt = stmt.where(Board.site.in_(sites))
         with get_session_factory()() as session:
             rows = session.execute(stmt).all()
-        posts = [
-            BriefingPost(
+        posts = []
+        for row in rows:
+            has_analysis = (
+                row.analysis_status == self.ANALYSIS_DONE
+                and isinstance(row.gpt_answer, str)
+                and bool(row.gpt_answer.strip())
+                and row.gpt_answer.strip() != DEFAULT_GPT_ANSWER
+            )
+            posts.append(BriefingPost(
                 id=row.id, site=row.site, title=row.title, url=row.url,
-                summary=row.gpt_answer or "",
+                summary=row.gpt_answer if has_analysis else "",
+                summary_source="ai" if has_analysis else "pending",
                 tags=tuple(tag for tag in row.tags if isinstance(tag, str))
                 if isinstance(row.tags, list) else (),
                 created_at=self._as_utc(row.created_at),
-            )
-            for row in rows
-        ]
+            ))
+        bounded_limit = max(1, min(int(limit), 10))
+        briefing = build_issue_briefing(posts, limit=bounded_limit)
+        # First group lightweight metadata; read at most three source bodies per
+        # returned issue, and none for issues with an existing AI summary.
+        excerpt_ids = {
+            post["board_id"]
+            for issue in briefing["issues"] if issue["summary_source"] == "pending"
+            for post in issue["posts"]
+        }
+        if excerpt_ids:
+            with get_session_factory()() as session:
+                contents_by_id = dict(session.execute(
+                    select(Board.id, Board.contents).where(Board.id.in_(sorted(excerpt_ids)))
+                ).all())
+            enriched = []
+            for post in posts:
+                excerpt = source_excerpt(contents_by_id[post.id], title=post.title) if post.id in contents_by_id else ""
+                enriched.append(replace(post, summary=excerpt, summary_source="source_excerpt") if excerpt else post)
+            briefing = build_issue_briefing(enriched, limit=bounded_limit)
         return {
             "generated_at": reference_time.isoformat().replace("+00:00", "Z"),
             "date": local_time.date().isoformat(),
             "started_at": started_at.isoformat().replace("+00:00", "Z"),
             "time_zone": "Asia/Seoul",
-            **build_issue_briefing(posts, limit=max(1, min(int(limit), 10))),
+            **briefing,
         }
 
     def get_issue_overview(

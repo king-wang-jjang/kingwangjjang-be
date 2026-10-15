@@ -25,7 +25,7 @@
 | Path | Description |
 | --- | --- |
 | `/api/boards/realtime` | Realtime board list. |
-| `/api/boards/issues/briefing` | Today's social issues grouped from analyzed posts since Korean midnight; ranked by post count, with stored summary excerpts and source links. |
+| `/api/boards/issues/briefing` | Today's social issues from posts since Korean midnight; ranked by post count, with actual headlines/source links even when AI analysis is unavailable. `summary_source` distinguishes `ai`, cleaned `source_excerpt`, and `pending` (empty summary). |
 | `/api/boards/daily` | Daily board list. |
 | `/api/boards/daily/history/dates` | Available daily Top 10 snapshot dates. |
 | `/api/boards/daily/history?date=YYYY-MM-DD` | Stored Top 10 ranking for a date. |

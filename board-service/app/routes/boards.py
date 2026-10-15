@@ -95,6 +95,7 @@ class DailyIssue(BaseModel):
     rank: int
     title: str
     summary: str
+    summary_source: Literal["ai", "source_excerpt", "pending"] = "ai"
     post_count: int
     source_count: int
     sources: list[IssueSiteBreakdown]
