@@ -15,6 +15,7 @@ from datetime import datetime
 from html import unescape
 from html.parser import HTMLParser
 from typing import Literal
+from urllib.parse import urlsplit
 
 
 SOCIAL_TAGS = frozenset({
@@ -46,7 +47,9 @@ PUBLIC_EVENT = re.compile(
 )
 ENTERTAINMENT = re.compile(
     r"게임|게이밍|플레이스테이션|닌텐도|스팀|롤드컵|e스포츠|아이돌|예능|"
-    r"연예|드라마|웹툰|애니메이션|스포츠|game|gaming", re.IGNORECASE
+    r"연예|드라마|웹툰|애니메이션|스포츠|로스트\s*아크|"
+    r"(?<![가-힣])로아(?=$|[^가-힣]|에서|으로|관련|[의는가를와에도])|game|gaming",
+    re.IGNORECASE,
 )
 # Game titles use words such as '전쟁', '사기', '사고' figuratively. Require
 # explicit real-world civic signals before overriding the entertainment filter.
@@ -68,7 +71,41 @@ _PROMPT_MARKER = re.compile(
 _SOURCE_FOOTER = re.compile(r"^\s*(?:출처\s*[:：]|\[?(?:원본|원문)\s*보기\]?|https?://)")
 # These actual source headlines use event keywords inside unrelated words or
 # cooking phrases. Remove those phrases before testing civic-event signals.
-_NON_EVENT_PHRASES = re.compile(r"전세계|삼성화재|지진\s*(?:동그랑땡|부침개|파전|김치전|감자전|두부)")
+_NON_EVENT_PHRASES = re.compile(
+    r"전세계|삼성화재|지진\s*(?:동그랑땡|부침개|파전|김치전|감자전|두부)|"
+    r"[\[(]\s*혐오\s*주의\s*[\])]"
+)
+_ADULT_CONTENT_HINT = re.compile(r"^\s*(?:[\[(]\s*)?ㅇㅎ(?=$|[\s\])])")
+_SCHOOL_HARM = re.compile(r"폭력|폭행|학대|괴롭힘|교권침해")
+# The crawler's actual Lost Ark source contains UTF-8 bytes interpreted as
+# PTCP154. Repeated three-character Hangul byte sequences distinguish this
+# corruption from ordinary Cyrillic prose; no language is excluded wholesale.
+_PTCP154_KOREAN = re.compile(
+    "[клмн][" + re.escape(bytes(range(0x80, 0xC0)).decode("ptcp154")) + "]{2}"
+)
+
+
+def _restore_source_encoding(value: str) -> str:
+    # Bound normal-source detection to the same excerpt input window. Only
+    # positively identified corruption needs a whole-block strict roundtrip.
+    probe = value[:20_000]
+    damaged_chars = sum(len(match.group()) for match in _PTCP154_KOREAN.finditer(probe))
+    foreign_chars = sum(ord(char) > 127 for char in probe)
+    if damaged_chars < 12 or damaged_chars < foreign_chars / 2:
+        return value
+    try:
+        recovered = value.encode("ptcp154").decode("utf-8")
+        # Repair only a complete reversible conversion that restores Hangul.
+        if recovered.encode("utf-8").decode("ptcp154") == value and (
+            sum("가" <= char <= "힣" for char in recovered)
+            > sum("가" <= char <= "힣" for char in value)
+        ):
+            return recovered
+    except UnicodeError:
+        pass
+    # Whitespace replacement in some stored sources already destroyed bytes.
+    # Keep their headline/link, but never present guessed text as an excerpt.
+    return ""
 
 
 class _SourceTextParser(HTMLParser):
@@ -119,7 +156,7 @@ def source_excerpt(contents: object, *, title: str = "", max_chars: int = 480) -
             continue
         if not isinstance(raw, str):
             continue
-        raw = unescape(raw[:20_000])
+        raw = unescape(_restore_source_encoding(raw)[:20_000])
         if _PROMPT_MARKER.search(raw):
             continue
         parser = _SourceTextParser()
@@ -168,11 +205,29 @@ def _is_social(post: BriefingPost) -> bool:
     tags = {_normalize(tag) for tag in post.tags}
     headline = " ".join((post.title, *tags))
     event_headline = _NON_EVENT_PHRASES.sub("", headline)
+    adult_civic_event = False
+    if _ADULT_CONTENT_HINT.search(post.title):
+        # An adult-content teaser mentioning a school/teacher is not itself
+        # education news. Preserve concrete safety, crime and rights stories.
+        civic_headline = event_headline.replace("학교", "")
+        adult_civic_event = bool(
+            PUBLIC_EVENT.search(civic_headline) or _SCHOOL_HARM.search(civic_headline)
+        )
+        if not adult_civic_event:
+            return False
     # A game's reviews/updates do not qualify through an incidental category.
     # Public-interest stories about game companies (e.g. a strike) do qualify.
-    if ENTERTAINMENT.search(headline):
+    try:
+        source = urlsplit(post.url)
+        game_board = (
+            (source.hostname == "inven.co.kr" or (source.hostname or "").endswith(".inven.co.kr"))
+            and source.path.startswith("/board/lostark/")
+        )
+    except ValueError:
+        game_board = False
+    if ENTERTAINMENT.search(headline) or game_board:
         return bool(ENTERTAINMENT_PUBLIC_EVENT.search(event_headline))
-    return bool(tags & SOCIAL_TAGS or PUBLIC_EVENT.search(event_headline))
+    return bool(adult_civic_event or tags & SOCIAL_TAGS or PUBLIC_EVENT.search(event_headline))
 
 
 def _event_tags(post: BriefingPost) -> frozenset[str]:

@@ -16,6 +16,18 @@ from app.services.issue_briefing import BriefingPost, build_issue_briefing, sour
 
 
 NOW = datetime(2026, 10, 11, 2, tzinfo=timezone.utc)
+# First complete source paragraph from actual board
+# b1eecab6-eff4-47e2-9e59-e032cda5a824, fetched from the public realtime API.
+# It already contains a lost continuation byte (ASCII space at position 74).
+ACTUAL_DAMAGED_SOURCE = (
+    "\u043b\u040e\u04a3\u043d\u0493\u04a3\u043a\u0451\xb0\u043c\u04b7\u0496 "
+    "\u043d\u04b3\u201e\u043c\u0493\u049b\u043c\u049b\u0499\u043c\u04a0\u04b2\u043b\u040e\u04a3 "
+    "\u043c\u049b\u0451\u043d\u2022\u0499 \u043c\u049b\u0458\u043b\u04b0\xac\u043c\u2022\u201e\u043c\u2116\u0451 "
+    "\u043b\u2022\u04a2 \u043c\u04e2\u04a3\u043c\u04bb\u2018\u043d\u2022\u04a3 "
+    "\u043b\u040e\u04a3\u043c\u2022\u201e\u043b\u0498\u0458 \u043c \u2018\u043a\u0406\u04a2\u043b\u0497\u04b3\u043b\xa9\u0499\u043c\u201e\u04a3 "
+    "\u043c\u0406\u04b3\u043c\u049b\u04a2\u043c\u04a3\u0458\u043b\u040e\u04a3 "
+    "\u043a\u0456\u0401\u043b\u201c\u04a3 \u043d\u04b3\u201e\u043a\u04b1\xb0\u043b\u04bb\u04b3\u043b\u0498\u0458 \u043d\u2022\u0499\u043b\u0499\u201e"
+)
 
 
 def post(id, title, *, tags=("사회",), site="dcinside", summary="관련 게시글 요약입니다.", url=None, summary_source="ai"):
@@ -57,6 +69,45 @@ def test_game_company_public_interest_news_qualifies_but_normal_games_do_not():
     ])
     assert result["total_posts"] == 2
     assert {issue["id"] for issue in result["issues"]} == {"labor", "privacy"}
+
+
+def test_real_lostark_headline_and_game_board_do_not_turn_in_game_slang_into_social_issues():
+    game_url = "https://www.inven.co.kr/board/lostark/6271/4201563"
+    result = build_issue_briefing([
+        post("actual-game", "로아 마지막에 만난 사기꾼 민규", site="inven", tags=(),
+             summary="", summary_source="pending", url=game_url),
+        post("game-board", "마지막에 만난 사기꾼 민규", site="inven", tags=("사회",),
+             url=game_url + "?copy=1"),
+        post("game-full-name", "로스트아크 사기 캐릭터 추천", tags=()),
+        post("game-particle", "로아에서 새로 산 사기 무기", tags=()),
+        post("labor", "로아 운영사 노동조합 파업", tags=()),
+        post("lawsuit", "이용자 집단 소송 판결", site="inven", tags=(),
+             url="https://www.inven.co.kr/board/lostark/6271/999"),
+        post("privacy", "로스트아크 개인정보 유출 수사", tags=()),
+        post("country", "크로아티아 국회 선거", tags=()),
+    ], limit=10)
+    assert {issue["id"] for issue in result["issues"]} == {"labor", "lawsuit", "privacy", "country"}
+
+
+def test_actual_adult_school_teaser_and_parenthetical_game_warning_are_not_civic_events():
+    result = build_issue_briefing([
+        post("adult-school", "ㅇㅎ 일본 모 고등학교의 여교사 선생님", site="ppomppu", tags=(),
+             summary="", summary_source="pending",
+             url="https://www.ppomppu.co.kr/zboard/view.php?id=humor&no=786732"),
+        post("doom-mod", "[중갤](혐오주의) 정신병자가 만든 둠 모드...", tags=(),
+             summary="", summary_source="pending",
+             url="https://gall.dcinside.com/board/view/?id=dcbest&no=470655&_dcbest=1&page=1"),
+        post("school-fire", "ㅇㅎ 고등학교 화재 학생 대피", tags=()),
+        post("school-violence", "[ㅇㅎ] 교사의 학생 폭행 사건", tags=()),
+        post("school-rights", "ㅇㅎ 학교 여교사 성차별 논란", tags=()),
+        post("school-crime", "[혐오주의] 학교 불법촬영 범죄 수사", tags=()),
+        post("discrimination", "인종차별과 혐오범죄 증가 논란", tags=()),
+        post("school-policy", "학교 급식 정책 개선안 발표", tags=()),
+    ], limit=10)
+    assert {issue["id"] for issue in result["issues"]} == {
+        "school-fire", "school-violence", "school-rights", "school-crime",
+        "discrimination", "school-policy",
+    }
 
 
 def test_real_source_cooking_brands_and_world_rankings_are_not_social_events():
@@ -225,6 +276,58 @@ def test_source_excerpts_preserve_prose_and_exclude_html_media_footer_and_prompt
     assert source_excerpt([{"type": "image", "alt_text": "meaningful description of an image"}]) == ""
     assert source_excerpt([{"type": "text", "text": "서울 지하철 파업"}], title="서울 지하철 파업") == ""
     assert len(source_excerpt([{"type": "text", "text": "실제 본문 내용입니다. " * 100}])) <= 480
+
+
+def test_source_excerpt_repairs_only_complete_reversible_ptcp154_utf8_corruption():
+    readable = "로태기와 현생이슈로 인해 게임을 접게 되면서 처음으로 거래를 해봤습니다."
+    original_html = f"<p>{readable}</p>"
+    damaged = original_html.encode("utf-8").decode("ptcp154")
+    assert damaged.encode("ptcp154").decode("utf-8") == original_html
+    assert source_excerpt([{"type": "text", "text": damaged}]) == readable
+    with pytest.raises(UnicodeDecodeError):
+        ACTUAL_DAMAGED_SOURCE.encode("ptcp154").decode("utf-8")
+    assert source_excerpt([{"type": "text", "text": ACTUAL_DAMAGED_SOURCE}]) == ""
+
+
+@pytest.mark.parametrize("prose", [
+    "실제 원문에 저장된 정상적인 한국어 본문은 수정하거나 제외하지 않습니다.",
+    "The city council discussed public transport and housing policy today.",
+    "В Москве обсуждают новый закон о городском транспорте и правах работников.",
+    "Қазақстан тұрғындары қоғамдық көлік пен еңбек құқықтары туралы жаңалықтарды талқылады.",
+    "市議会では公共交通機関と労働者の権利に関する新しい政策が議論されました。",
+    "市议会讨论了公共交通和工人权利的新政策，居民可以阅读相关公开文件。",
+])
+def test_source_excerpt_preserves_correct_korean_and_genuine_foreign_prose(prose):
+    assert source_excerpt([{"type": "text", "text": prose}]) == prose
+
+
+def test_unrecoverable_source_keeps_public_issue_pending_then_prefers_available_ai(repository):
+    title = "국회 교통안전 법안 발표"
+    with postgres.get_session_factory()() as session:
+        session.add(Board(
+            id="damaged-public-source", category="issue", site="dcinside", no=1,
+            title=title, url="https://example.com/damaged-source",
+            contents=[{"type": "text", "text": ACTUAL_DAMAGED_SOURCE}],
+            tags=[], created_at=NOW, analysis_status="pending",
+        ))
+        session.commit()
+    result = repository.get_daily_issue_briefing(as_of=NOW)
+    issue = result["issues"][0]
+    assert issue["title"] == title
+    assert issue["summary_source"] == "pending" and issue["summary"] == ""
+    assert issue["posts"][0]["url"] == "https://example.com/damaged-source"
+    with postgres.get_session_factory()() as session:
+        session.add(Board(
+            id="analyzed-public-source", category="issue", site="theqoo", no=2,
+            title=title, url="https://example.com/analyzed-source",
+            gpt_answer="국회가 교통안전 관련 법안을 발표했습니다.",
+            contents=[], tags=[], created_at=NOW, analysis_status="done",
+        ))
+        session.commit()
+    issue = repository.get_daily_issue_briefing(as_of=NOW)["issues"][0]
+    assert issue["post_count"] == 2
+    assert issue["summary_source"] == "ai"
+    assert issue["summary"] == "국회가 교통안전 관련 법안을 발표했습니다."
 
 
 def test_repository_returns_todays_real_headlines_during_ai_outage(repository):
